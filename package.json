@@ -1,0 +1,25 @@
+{
+  "name": "finapp",
+  "version": "1.0.0",
+  "description": "While being a very crowded space, I am still extreme frustrated with the current state of personal finance management apps. I am in an unique situation where I have financial presense in multiple countries and assets in multiple currencies. I have credit, checking, savings, brokerage, and retirement accounts in each of the countries and their respective currencies. On top of that, each of the investment accounts employ just different enough strategies to make analyzing my asset allocation and financial health a real pain.",
+  "main": "general_transaction.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryocown/FinApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ryocown/FinApp/issues"
+  },
+  "homepage": "https://github.com/ryocown/FinApp#readme",
+  "private": "true",
+  "workspaces": [
+    "packages/*"
+  ]
+}
