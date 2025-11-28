@@ -11,7 +11,7 @@ export enum InstrumentType {
   Other = 'OTHER',
 }
 
-export interface FinancialInstrument {
+export interface IFinancialInstrument {
   instrumentId: string;
   accountId: string;
 

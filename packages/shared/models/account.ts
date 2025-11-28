@@ -1,5 +1,6 @@
 import { ICurrency } from "./currency";
 import { v4 } from "uuid";
+import { IFinancialInstrument } from "./financial_instrument";
 
 export interface IAccount {
   accountId: string;
@@ -12,12 +13,9 @@ export interface IAccount {
   subtype: SubType;
 }
 
-export interface ITaxableAccount extends IAccount {
+export interface IInvestmentAccount extends IAccount {
   isTaxable: true;
-}
-
-export interface INonTaxableAccount extends IAccount {
-  isTaxable: false;
+  positions: IFinancialInstrument[];
 }
 
 export enum SubType {
@@ -66,7 +64,7 @@ export class Account implements IAccount {
   }
 }
 
-export class TaxableBrokerageAccount implements ITaxableAccount {
+export class InvestmentAccount implements IInvestmentAccount {
   accountId: string;
 
   accountNumber: string;
@@ -76,6 +74,7 @@ export class TaxableBrokerageAccount implements ITaxableAccount {
   name: string;
   subtype: SubType;
   isTaxable: true;
+  positions: IFinancialInstrument[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
     name: string, subtype: SubType) {
@@ -88,5 +87,6 @@ export class TaxableBrokerageAccount implements ITaxableAccount {
     this.name = name;
     this.subtype = subtype;
     this.isTaxable = true;
+    this.positions = [];
   }
 }
