@@ -1,58 +1,86 @@
-interface IAccount {
+import { ICurrency } from "./currency";
+
+export interface IAccount {
+  accountId: string; // UUID
   accountNumber: string;
   balance: number;
+  country: string;
   currency: ICurrency;
   name: string;
   subtype: SubType;
-  isTaxable: boolean;
 }
 
-enum SubType {
-  TransactionalAccount,
-  InvestmentAccount,
-  CreditAccount,
-  HealthSavingAccount
+export interface ITaxableAccount extends IAccount {
+  isTaxable: true;
 }
 
-enum TransactionalAccount {
+export interface INonTaxableAccount extends IAccount {
+  isTaxable: false;
+}
+
+export enum SubType {
+  // Transactional
   Checking,
   Savings,
   HighYieldSavings,
   MoneyMarket,
-  CertificateOfDeposit
-}
+  CertificateOfDeposit,
 
-enum InvestmentAccount {
+  // Investment
   BrokerageAccount,
   RetirementAccount,
-}
 
-enum CreditAccount {
+  // Credit/debt
   CreditCard,
-  Loan
-}
+  Loan,
 
-enum HealthSavingAccount {
+  // HSA
   HealthSavingAccount,
   HealthFlexibleSpendingAccount
 }
 
-
-class Account implements IAccount {
+export class Account implements IAccount {
+  accountId: string;
   accountNumber: string;
   balance: number;
+  country: string;
   currency: ICurrency;
   name: string;
   subtype: SubType;
   isTaxable: boolean;
 
-  constructor(accountNumber: string, balance: number, currency: ICurrency, 
+  constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
     name: string, subtype: SubType, isTaxable: boolean) {
+    this.accountId = ""; // TODO: Generate UUID
     this.accountNumber = accountNumber;
     this.balance = balance;
+    this.country = country;
     this.currency = currency;
     this.name = name;
     this.subtype = subtype;
-    this.isTaxable = false;
+    this.isTaxable = isTaxable;
+  }
+}
+
+export class TaxableBrokerageAccount implements ITaxableAccount {
+  accountId: string;
+  accountNumber: string;
+  balance: number;
+  country: string;
+  currency: ICurrency;
+  name: string;
+  subtype: SubType;
+  isTaxable: true;
+
+  constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
+    name: string, subtype: SubType) {
+    this.accountId = ""; // TODO: Generate UUID
+    this.accountNumber = accountNumber;
+    this.balance = balance;
+    this.country = country;
+    this.currency = currency;
+    this.name = name;
+    this.subtype = subtype;
+    this.isTaxable = true;
   }
 }

@@ -1,17 +1,17 @@
-interface ICurrency {
+export interface ICurrency {
   name: string;
   symbol: string;
   code: string;
 }
 
-interface ICurrencyPair {
+export interface ICurrencyPair {
   base: ICurrency;
   quote: ICurrency;
   rate: number;
   date: Date;
 }
 
-class Currency implements ICurrency {
+export class Currency implements ICurrency {
   name: string;
   symbol: string;
   code: string;
@@ -23,7 +23,7 @@ class Currency implements ICurrency {
   }
 }
 
-class CurrencyPair implements ICurrencyPair {
+export class CurrencyPair implements ICurrencyPair {
   base: ICurrency;
   quote: ICurrency;
   rate: number;
