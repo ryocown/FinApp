@@ -1,8 +1,10 @@
 import { ICurrency } from "./currency";
+import { v4 } from "uuid";
 
 export interface IAccount {
-  accountId: string; // UUID
+  accountId: string;
   accountNumber: string;
+
   balance: number;
   country: string;
   currency: ICurrency;
@@ -41,6 +43,7 @@ export enum SubType {
 
 export class Account implements IAccount {
   accountId: string;
+
   accountNumber: string;
   balance: number;
   country: string;
@@ -51,7 +54,8 @@ export class Account implements IAccount {
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
     name: string, subtype: SubType, isTaxable: boolean) {
-    this.accountId = ""; // TODO: Generate UUID
+    this.accountId = v4();
+
     this.accountNumber = accountNumber;
     this.balance = balance;
     this.country = country;
@@ -64,6 +68,7 @@ export class Account implements IAccount {
 
 export class TaxableBrokerageAccount implements ITaxableAccount {
   accountId: string;
+
   accountNumber: string;
   balance: number;
   country: string;
@@ -74,7 +79,8 @@ export class TaxableBrokerageAccount implements ITaxableAccount {
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
     name: string, subtype: SubType) {
-    this.accountId = ""; // TODO: Generate UUID
+    this.accountId = v4();
+
     this.accountNumber = accountNumber;
     this.balance = balance;
     this.country = country;

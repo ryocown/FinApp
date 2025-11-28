@@ -1,3 +1,5 @@
+import { v4 } from "uuid";
+
 export enum InstrumentType {
   Unknown = 'UNKNOWN',
   Invalid = 'INVALID',
@@ -94,7 +96,7 @@ export interface OptionInstrument extends FinancialInstrument, UnderlyingAsset {
  */
 
 const appleCommonStock: StockInstrument = {
-  instrumentId: "",
+  instrumentId: v4(),
   accountId: "",
   isin: 'US0378331005',
   cusip: '037833100',
@@ -104,7 +106,7 @@ const appleCommonStock: StockInstrument = {
 };
 
 const appleBond: BondInstrument = {
-  instrumentId: "",
+  instrumentId: v4(),
   accountId: "",
   isin: 'US037833AV20',
   cusip: '037833AV2',
@@ -117,7 +119,7 @@ const appleBond: BondInstrument = {
 };
 
 const appleCallOption: OptionInstrument = {
-  instrumentId: "",
+  instrumentId: v4(),
   accountId: "",
   // Note: ISINs for options are often constructed based on the underlying
   isin: 'US0378331005_OPT_241231C100',

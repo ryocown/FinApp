@@ -1,5 +1,6 @@
 import { ICurrency } from "./currency";
 import { IMerchant } from "./merchant";
+import { v4 } from 'uuid';
 
 /**
  * I don't think we are going to do double entry bookkeeping,
@@ -21,6 +22,7 @@ import { IMerchant } from "./merchant";
 export interface ITransaction {
   transactionId: string;
   accountId: string;
+
   amount: number;
   currency: ICurrency;
   date: Date;
@@ -50,6 +52,7 @@ interface ITradeTransaction extends ITransaction {
 class GeneralTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+
   amount: number;
   currency: ICurrency;
   date: Date;
@@ -60,8 +63,9 @@ class GeneralTransaction implements ITransaction {
   transactionType: TransactionType;
 
   constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null) {
-    this.transactionId = ""; // TODO: Generate UUID
+    this.transactionId = v4();
     this.accountId = accountId;
+
     this.amount = amount;
     this.currency = currency;
     this.date = date;
@@ -87,7 +91,7 @@ class TradeTransaction implements ITransaction {
   transactionType: TransactionType;
 
   constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null) {
-    this.transactionId = ""; // TODO: Generate UUID
+    this.transactionId = v4();
     this.accountId = accountId;
 
     this.amount = amount;
