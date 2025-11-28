@@ -1,0 +1,6 @@
+{
+  "name": "@finapp/shared",
+  "version": "1.0.0",
+  "main": "models/index.js",
+  "private": true
+}
