@@ -19,7 +19,6 @@ export interface IFinancialInstrument {
   cusip: string;
   type: InstrumentType;
   name: string;
-
   sector?: string;
 }
 
@@ -41,7 +40,7 @@ export enum Sector {
  * Stocks
  */
 
-export interface StockInstrument extends FinancialInstrument {
+export interface StockInstrument extends IFinancialInstrument {
   type: InstrumentType.Stock;
   // apparently only stocks and mutual funds have ticker
   // mutual funds trades like stocks anyways
@@ -60,7 +59,7 @@ export enum BondType {
   Other = 'OTHER',
 }
 
-export interface BondInstrument extends FinancialInstrument {
+export interface BondInstrument extends IFinancialInstrument {
   type: InstrumentType.Bond;
   bondType: BondType;
   couponRate: number;
@@ -83,7 +82,7 @@ export interface UnderlyingAsset {
   underlyingType: InstrumentType.Stock | InstrumentType.Index | InstrumentType.Future;
 }
 
-export interface OptionInstrument extends FinancialInstrument, UnderlyingAsset {
+export interface OptionInstrument extends IFinancialInstrument, UnderlyingAsset {
   type: InstrumentType.Option;
   optionType: OptionType;
   strikePrice: number;
@@ -98,6 +97,7 @@ export interface OptionInstrument extends FinancialInstrument, UnderlyingAsset {
 const appleCommonStock: StockInstrument = {
   instrumentId: v4(),
   accountId: "",
+
   isin: 'US0378331005',
   cusip: '037833100',
   type: InstrumentType.Stock,
@@ -108,6 +108,7 @@ const appleCommonStock: StockInstrument = {
 const appleBond: BondInstrument = {
   instrumentId: v4(),
   accountId: "",
+
   isin: 'US037833AV20',
   cusip: '037833AV2',
   type: InstrumentType.Bond,
@@ -121,6 +122,7 @@ const appleBond: BondInstrument = {
 const appleCallOption: OptionInstrument = {
   instrumentId: v4(),
   accountId: "",
+
   // Note: ISINs for options are often constructed based on the underlying
   isin: 'US0378331005_OPT_241231C100',
   cusip: '037833C10',

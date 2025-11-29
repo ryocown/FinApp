@@ -1,11 +1,13 @@
 import { ICurrency } from "./currency";
 import { v4 } from "uuid";
 import { IFinancialInstrument } from "./financial_instrument";
+import { ILot } from "./lot";
 
 export interface IAccount {
   accountId: string;
-  accountNumber: string;
+  userId: string;
 
+  accountNumber: string;
   balance: number;
   country: string;
   currency: ICurrency;
@@ -13,9 +15,14 @@ export interface IAccount {
   subtype: SubType;
 }
 
+export interface IPosition {
+  instrumentId: string;
+  lots: ILot[];
+}
+
 export interface IInvestmentAccount extends IAccount {
   isTaxable: true;
-  positions: IFinancialInstrument[];
+  positions: IPosition[];
 }
 
 export enum SubType {
@@ -41,6 +48,7 @@ export enum SubType {
 
 export class Account implements IAccount {
   accountId: string;
+  userId: string;
 
   accountNumber: string;
   balance: number;
@@ -51,8 +59,9 @@ export class Account implements IAccount {
   isTaxable: boolean;
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
-    name: string, subtype: SubType, isTaxable: boolean) {
+    name: string, subtype: SubType, isTaxable: boolean, userId: string) {
     this.accountId = v4();
+    this.userId = userId;
 
     this.accountNumber = accountNumber;
     this.balance = balance;
@@ -66,6 +75,7 @@ export class Account implements IAccount {
 
 export class InvestmentAccount implements IInvestmentAccount {
   accountId: string;
+  userId: string;
 
   accountNumber: string;
   balance: number;
@@ -74,11 +84,12 @@ export class InvestmentAccount implements IInvestmentAccount {
   name: string;
   subtype: SubType;
   isTaxable: true;
-  positions: IFinancialInstrument[];
+  positions: IPosition[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
-    name: string, subtype: SubType) {
+    name: string, subtype: SubType, userId: string) {
     this.accountId = v4();
+    this.userId = userId;
 
     this.accountNumber = accountNumber;
     this.balance = balance;

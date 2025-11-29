@@ -22,6 +22,8 @@ import { v4 } from 'uuid';
 export interface ITransaction {
   transactionId: string;
   accountId: string;
+  categoryId?: string;
+  tagIds: string[];
 
   amount: number;
   currency: ICurrency;
@@ -37,6 +39,7 @@ enum TransactionType {
   Invalid = 'INVALID',
   General = 'GENERAL',
   Trade = 'TRADE',
+  Transfer = 'TRANSFER',
   Other = 'OTHER'
 }
 
@@ -46,12 +49,24 @@ interface IGeneralTransaction extends ITransaction {
 }
 
 interface ITradeTransaction extends ITransaction {
+  instrumentId: string;
+
   transactionType: TransactionType.Trade;
+  quantity: number;
+  price: number;
+}
+
+interface ITransferTransaction extends ITransaction {
+  destinationAccountId: string;
+
+  transactionType: TransactionType.Transfer;
 }
 
 class GeneralTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+  categoryId?: string;
+  tagIds: string[];
 
   amount: number;
   currency: ICurrency;
@@ -62,7 +77,7 @@ class GeneralTransaction implements ITransaction {
   merchant: IMerchant | null;
   transactionType: TransactionType;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null) {
+  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
 
@@ -74,12 +89,17 @@ class GeneralTransaction implements ITransaction {
     this.hasCapitalGains = hasCapitalGains;
     this.merchant = merchant;
     this.transactionType = TransactionType.General;
+    this.categoryId = categoryId;
+    this.tagIds = tagIds;
   }
 }
 
 class TradeTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+  instrumentId: string;
+  categoryId?: string;
+  tagIds: string[];
 
   amount: number;
   currency: ICurrency;
@@ -89,8 +109,10 @@ class TradeTransaction implements ITransaction {
   hasCapitalGains: boolean;
   merchant: IMerchant | null;
   transactionType: TransactionType;
+  quantity: number;
+  price: number;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null) {
+  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
 
@@ -102,5 +124,42 @@ class TradeTransaction implements ITransaction {
     this.hasCapitalGains = hasCapitalGains;
     this.merchant = merchant;
     this.transactionType = TransactionType.Trade;
+    this.instrumentId = instrumentId;
+    this.quantity = quantity;
+    this.price = price;
+    this.categoryId = categoryId;
+    this.tagIds = tagIds;
+  }
+}
+
+class TransferTransaction implements ITransaction {
+  transactionId: string;
+  accountId: string;
+  destinationAccountId: string;
+  categoryId?: string;
+  tagIds: string[];
+
+  amount: number;
+  currency: ICurrency;
+  date: Date;
+  description: string | null;
+  isTaxDeductable: boolean;
+  hasCapitalGains: boolean;
+  transactionType: TransactionType;
+
+  constructor(accountId: string, destinationAccountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
+    this.transactionId = v4();
+    this.accountId = accountId;
+    this.destinationAccountId = destinationAccountId;
+
+    this.amount = amount;
+    this.currency = currency;
+    this.date = date;
+    this.description = description;
+    this.isTaxDeductable = false;
+    this.hasCapitalGains = false;
+    this.transactionType = TransactionType.Transfer;
+    this.categoryId = categoryId;
+    this.tagIds = tagIds;
   }
 }
