@@ -62,7 +62,7 @@ interface ITransferTransaction extends ITransaction {
   transactionType: TransactionType.Transfer;
 }
 
-class GeneralTransaction implements ITransaction {
+export class GeneralTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
   categoryId?: string;

@@ -33,7 +33,7 @@ This project aims to implement a personal finance management app that addresses 
 - Budgeting
 - Tax
   - Deductables
-  - Capital gains
+  - Capital gains (Tax Lot tracking)
 - Country
   - US
   - AU
@@ -67,4 +67,4 @@ This section documents the agreed-upon technical specifications and architecture
   - Line chart for income over time.
   - Stacked bar chart for spending by category and/or account.
 - **Tax Features**: Implementation of tax-related features is **postponed** for a future version.
-- **Data Models**: The initial data model mockups are present in the root of the project (`general_transaction.js`, `stock_transaction.js`, etc.) and will be evolved as the project is built.
+- **Data Models**: The data models have been implemented in TypeScript under `packages/shared/models/`, covering Accounts, Transactions (General, Trade, Transfer), Instruments, Categories, Budgets, Users, and Recurring Transactions.

@@ -21,5 +21,8 @@
   "private": "true",
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "csv-parse": "^6.1.0"
+  }
 }
