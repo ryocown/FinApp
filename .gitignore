@@ -47,3 +47,4 @@ Thumbs.db
 /packages/server/dist
 /packages/server/node_modules
 *.csv
+.env

@@ -7,10 +7,16 @@ import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../i
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load .env from project root
+dotenv.config({ path: path.resolve(process.cwd(), '../../../../.env') });
+
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 admin.initializeApp({
-  projectId: 'default', // Use a demo project ID for emulator
+  projectId: process.env.FIREBASE_PROJECT_ID,
 });
 
 const db = admin.firestore();

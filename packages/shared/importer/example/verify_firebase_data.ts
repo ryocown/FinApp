@@ -1,9 +1,10 @@
 import admin from 'firebase-admin';
 
+import 'dotenv/config';
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 admin.initializeApp({
-  projectId: 'default', // Use a demo project ID for emulator
+  projectId: process.env.FIREBASE_PROJECT_ID,
 });
 
 const db = admin.firestore();
@@ -23,14 +24,15 @@ async function verifyData() {
 
     for (const accountDoc of accountsSnapshot.docs) {
       console.log(`  Account: ${accountDoc.id} (${accountDoc.data().name})`);
-      const transactionsSnapshot = await accountDoc.ref.collection('transactions').get();
-      console.log(`    Transactions: ${transactionsSnapshot.size}`);
-
-      transactionsSnapshot.docs.forEach(t => {
-        const data = t.data();
-        console.log(data);
-      });
     }
+
+    const transactionsSnapshot = await userDoc.ref.collection('transactions').get();
+    console.log(`  Total Transactions: ${transactionsSnapshot.size}`);
+
+    transactionsSnapshot.docs.forEach(t => {
+      const data = t.data();
+      console.log(`    Transaction: ${JSON.stringify(data)}`);
+    });
   }
 }
 

@@ -29,6 +29,7 @@
     "csv-parse": "^6.1.0"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "firebase-admin": "^13.6.0"
   }
 }

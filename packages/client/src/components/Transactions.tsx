@@ -1,0 +1,222 @@
+import { useState } from 'react'
+import { Search, Filter, Download, ArrowUpDown } from 'lucide-react'
+import { useTransactions, useAccounts } from '../lib/hooks'
+
+interface TransactionsProps {
+  userId: string
+}
+
+export function Transactions({ userId }: TransactionsProps) {
+  const [limitCount, setLimitCount] = useState(50)
+  const [pageToken, setPageToken] = useState<string | null>(null)
+  const [pageHistory, setPageHistory] = useState<(string | null)[]>([null])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
+  const { transactions, nextPageToken } = useTransactions(userId, limitCount, pageToken, selectedAccountId)
+  const { accounts } = useAccounts(userId)
+
+  const getAccountName = (accountId: string, accountName?: string) => {
+    if (accountId) {
+      const account = accounts.find(a => a.accountId === accountId);
+      if (account) return account.name;
+    }
+    return accountName || accountId || 'Unknown';
+  };
+
+  const filteredTransactions = transactions.filter(t => {
+    const accountName = getAccountName(t.accountId, t.account);
+    const matchesSearch = (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (accountName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    // Server already filters by account, but we keep this for search filtering and safety
+    return matchesSearch;
+  })
+
+  const handleNextPage = () => {
+    if (nextPageToken) {
+      setPageHistory([...pageHistory, nextPageToken])
+      setPageToken(nextPageToken)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (pageHistory.length > 1) {
+      const newHistory = [...pageHistory]
+      newHistory.pop() // Remove current page
+      const prevToken = newHistory[newHistory.length - 1]
+      setPageHistory(newHistory)
+      setPageToken(prevToken)
+    }
+  }
+
+  const [columnWidths, setColumnWidths] = useState({
+    date: 140,
+    category: 150,
+    account: 180,
+    amount: 120
+  });
+
+  const handleMouseDown = (column: keyof typeof columnWidths, e: React.MouseEvent) => {
+    const startX = e.pageX;
+    const startWidth = columnWidths[column];
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const newWidth = Math.max(50, startWidth + (moveEvent.pageX - startX));
+      setColumnWidths(prev => ({ ...prev, [column]: newWidth }));
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  return (
+    <main className="flex-1 overflow-auto">
+      <header className="p-6 border-b border-zinc-800 flex justify-between items-center bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">Transactions</h1>
+          <p className="text-zinc-400 text-sm">View and manage your financial transactions</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-md text-zinc-200 transition-colors" title="Export">
+            <Download size={20} />
+          </button>
+          <button className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-md text-sm font-medium text-zinc-200 transition-colors flex items-center gap-2">
+            <Filter size={18} />
+            Filter
+          </button>
+        </div>
+      </header>
+
+      <div className="p-6 space-y-6">
+        {/* Search and Filter Bar */}
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              className="w-full bg-[#18181b] border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            id="pagination-limit"
+            className="bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            value={limitCount}
+            onChange={(e) => {
+              setLimitCount(Number(e.target.value))
+              setPageToken(null)
+              setPageHistory([null])
+            }}
+          >
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+            <option value={150}>150 per page</option>
+            <option value={200}>200 per page</option>
+          </select>
+          <select
+            id="account-filter"
+            className="bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+            value={selectedAccountId}
+            onChange={(e) => {
+              setSelectedAccountId(e.target.value)
+              setPageToken(null)
+              setPageHistory([null])
+            }}
+          >
+            <option value="all">All Accounts</option>
+            {accounts.map(account => (
+              <option key={account.accountId} value={account.accountId}>{account.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Transactions Table */}
+        <div className="bg-[#18181b] rounded-xl border border-zinc-800 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse table-fixed">
+              <thead>
+                <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                  <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.date }}>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-zinc-200 transition-colors">
+                      Date <ArrowUpDown size={14} />
+                    </div>
+                    <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('date', e)} />
+                  </th>
+                  <th className="px-6 py-4 text-sm font-medium text-zinc-400">Description</th>
+                  <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.category }}>
+                    Category
+                    <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('category', e)} />
+                  </th>
+                  <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.account }}>
+                    Account
+                    <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('account', e)} />
+                  </th>
+                  <th className="px-6 py-4 text-sm font-medium text-zinc-400 text-right relative group" style={{ width: columnWidths.amount }}>
+                    Amount
+                    <div className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('amount', e)} />
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {filteredTransactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-zinc-800/50 transition-colors group">
+                    <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">
+                      {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-zinc-100 truncate" title={transaction.description}>
+                      {transaction.description}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700 whitespace-nowrap">
+                        {transaction.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-zinc-400 truncate">
+                      {getAccountName(transaction.accountId, transaction.account)}
+                    </td>
+                    <td className={`px-6 py-4 text-sm font-medium text-right whitespace-nowrap ${transaction.amount >= 0 ? 'text-emerald-400' : 'text-zinc-100'}`}>
+                      {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                    </td>
+                  </tr>
+                ))}
+                {filteredTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+                      No transactions found matching your search.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between text-sm text-zinc-400">
+            <span>Showing {filteredTransactions.length} transactions</span>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-1 rounded border border-zinc-800 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                onClick={handlePrevPage}
+                disabled={pageHistory.length <= 1}
+              >
+                Previous
+              </button>
+              <button
+                className="px-3 py-1 rounded border border-zinc-800 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                onClick={handleNextPage}
+                disabled={!nextPageToken}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
