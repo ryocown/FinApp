@@ -48,3 +48,4 @@ Thumbs.db
 /packages/server/node_modules
 *.csv
 .env
+firestore-debug.log
