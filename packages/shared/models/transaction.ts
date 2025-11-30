@@ -34,21 +34,24 @@ export interface ITransaction {
   transactionType: TransactionType;
 }
 
-enum TransactionType {
+export enum TransactionType {
   Unknown = 'UNKNOWN',
   Invalid = 'INVALID',
   General = 'GENERAL',
   Trade = 'TRADE',
   Transfer = 'TRANSFER',
+  Deposit = 'DEPOSIT',
+  Withdrawal = 'WITHDRAWAL',
+  Fees = 'FEES',
   Other = 'OTHER'
 }
 
-interface IGeneralTransaction extends ITransaction {
+export interface IGeneralTransaction extends ITransaction {
   transactionType: TransactionType.General;
   merchant: IMerchant | null;
 }
 
-interface ITradeTransaction extends ITransaction {
+export interface ITradeTransaction extends ITransaction {
   instrumentId: string;
 
   transactionType: TransactionType.Trade;
@@ -56,7 +59,7 @@ interface ITradeTransaction extends ITransaction {
   price: number;
 }
 
-interface ITransferTransaction extends ITransaction {
+export interface ITransferTransaction extends ITransaction {
   destinationAccountId: string;
 
   transactionType: TransactionType.Transfer;
@@ -77,7 +80,7 @@ export class GeneralTransaction implements ITransaction {
   merchant: IMerchant | null;
   transactionType: TransactionType;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
     this.transactionId = v4();
     this.accountId = accountId;
 
@@ -88,13 +91,13 @@ export class GeneralTransaction implements ITransaction {
     this.isTaxDeductable = isTaxDeductable;
     this.hasCapitalGains = hasCapitalGains;
     this.merchant = merchant;
-    this.transactionType = TransactionType.General;
+    this.transactionType = transactionType;
     this.categoryId = categoryId;
     this.tagIds = tagIds;
   }
 }
 
-class TradeTransaction implements ITransaction {
+export class TradeTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
   instrumentId: string;
@@ -107,12 +110,11 @@ class TradeTransaction implements ITransaction {
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
-  merchant: IMerchant | null;
-  transactionType: TransactionType;
+  transactionType: TransactionType.Trade;
   quantity: number;
   price: number;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
 
@@ -122,7 +124,6 @@ class TradeTransaction implements ITransaction {
     this.description = description;
     this.isTaxDeductable = isTaxDeductable;
     this.hasCapitalGains = hasCapitalGains;
-    this.merchant = merchant;
     this.transactionType = TransactionType.Trade;
     this.instrumentId = instrumentId;
     this.quantity = quantity;
@@ -132,7 +133,7 @@ class TradeTransaction implements ITransaction {
   }
 }
 
-class TransferTransaction implements ITransaction {
+export class TransferTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
   destinationAccountId: string;

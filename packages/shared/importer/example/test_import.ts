@@ -1,27 +1,18 @@
-import { CsvStatementImporter, ICsvMapping } from '../csv_importer';
-import { Currency } from '../../models/currency';
+import { ChaseCreditCsvStatementImporter } from '../institutions/chase';
 import * as fs from 'fs';
 import * as path from 'path';
 
 async function runTest() {
-  const mapping: ICsvMapping = {
-    dateColumn: 'Posting Date',
-    amountColumn: 'Amount',
-    descriptionColumn: 'Description'
-  };
+  const accountId = 'test-account';
+  const importer = new ChaseCreditCsvStatementImporter(accountId);
 
-  const usd = new Currency('US Dollar', '$', 'USD');
-  const importer = new CsvStatementImporter(mapping, usd);
-
-  const csvPath = path.join(__dirname, 'Chase8829_Activity_20251129.CSV');
+  const csvPath = path.join(__dirname, 'Chase6459_Activity20251130.CSV');
   const csvData = fs.readFileSync(csvPath, 'utf-8');
 
-  const accountId = 'test-account';
-  const statement = await importer.import(csvData, accountId);
+  const statement = await importer.import(csvData);
 
   console.log(`Imported ${statement.transactions.length} transactions.`);
-  console.log('First Transaction:', statement.transactions[0]);
-  console.log('Last Transaction:', statement.transactions[statement.transactions.length - 1]);
+  console.log(statement.transactions);
 }
 
 runTest().catch(console.error);

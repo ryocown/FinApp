@@ -1,5 +1,5 @@
 import { IStatement, Statement } from "../models/statement";
-import { ITransaction, GeneralTransaction } from "../models/transaction";
+import { ITransaction, GeneralTransaction, TransactionType, TradeTransaction, TransferTransaction } from "../models/transaction";
 import { ICurrency } from "../models/currency";
 import { IStatementImporter } from "./importer";
 import { parse } from 'csv-parse/sync';
@@ -9,19 +9,24 @@ export interface ICsvMapping {
   amountColumn: string;
   descriptionColumn: string;
   merchantColumn?: string;
-  dateFormat?: string;
+  transactionTypeColumn: string;
+  categoryColumn?: string;
 }
 
-export class CsvStatementImporter implements IStatementImporter {
-  private mapping: ICsvMapping;
-  private currency: ICurrency;
+export abstract class CsvStatementImporter implements IStatementImporter {
+  protected accountId: string;
+  protected mapping: ICsvMapping;
+  protected currency: ICurrency;
+  protected transactionTypeColumn: string;
 
-  constructor(mapping: ICsvMapping, currency: ICurrency) {
+  constructor(mapping: ICsvMapping, currency: ICurrency, accountId: string) {
+    this.accountId = accountId;
     this.mapping = mapping;
     this.currency = currency;
+    this.transactionTypeColumn = mapping.transactionTypeColumn;
   }
 
-  async import(source: string, accountId: string): Promise<IStatement> {
+  async import(source: string): Promise<IStatement> {
     const transactions: ITransaction[] = [];
 
     const records: any[] = parse(source, {
@@ -32,16 +37,36 @@ export class CsvStatementImporter implements IStatementImporter {
     });
 
     for (const record of records) {
-      const date = new Date(record[this.mapping.dateColumn]);
-      const amount = parseFloat(record[this.mapping.amountColumn]);
-      const description = record[this.mapping.descriptionColumn];
-
-      if (isNaN(date.getTime()) || isNaN(amount)) {
-        continue; // Skip invalid rows
+      const transaction = this.processTransaction(record);
+      if (transaction) {
+        transactions.push(transaction);
       }
+    }
 
-      transactions.push(new GeneralTransaction(
-        accountId,
+    // Assuming the statement covers the range of transactions
+    const sortedTransactions = transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+    const startDate = sortedTransactions[0]?.date || new Date();
+    const endDate = sortedTransactions[sortedTransactions.length - 1]?.date || new Date();
+
+    return new Statement(this.accountId, startDate, endDate, transactions);
+  }
+
+  protected abstract checkTransactionType(record: any): TransactionType;
+
+  protected processTransaction(record: any): ITransaction | null {
+    const date = new Date(record[this.mapping.dateColumn]);
+    const amount = parseFloat(record[this.mapping.amountColumn]);
+    const description = record[this.mapping.descriptionColumn];
+
+    if (isNaN(date.getTime()) || isNaN(amount)) {
+      return null; // Skip invalid rows
+    }
+
+    const transactionType = this.checkTransactionType(record);
+
+    if (transactionType === TransactionType.General) {
+      return new GeneralTransaction(
+        this.accountId,
         amount,
         this.currency,
         date,
@@ -51,14 +76,9 @@ export class CsvStatementImporter implements IStatementImporter {
         null, // merchant
         undefined, // categoryId
         [] // tagIds
-      ));
+      );
     }
-
-    // Assuming the statement covers the range of transactions
-    const sortedTransactions = transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
-    const startDate = sortedTransactions[0]?.date || new Date();
-    const endDate = sortedTransactions[sortedTransactions.length - 1]?.date || new Date();
-
-    return new Statement(accountId, startDate, endDate, transactions);
+    // Base class doesn't handle other types, subclasses should override
+    return null;
   }
 }

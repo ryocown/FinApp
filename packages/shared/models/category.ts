@@ -7,6 +7,30 @@ export enum CategoryType {
   Other = 'OTHER'
 }
 
+export enum StandardCategory {
+  Personal = 'Personal',
+  BillsUtilities = 'Bills & Utilities',
+  FoodDrink = 'Food & Drink',
+  Shopping = 'Shopping',
+  Entertainment = 'Entertainment',
+  ProfessionalServices = 'Professional Services',
+  Travel = 'Travel',
+  Groceries = 'Groceries'
+}
+
+export const StandardCategoryTree = {
+  Expense: {
+    Personal: StandardCategory.Personal,
+    BillsUtilities: StandardCategory.BillsUtilities,
+    FoodDrink: StandardCategory.FoodDrink,
+    Shopping: StandardCategory.Shopping,
+    Entertainment: StandardCategory.Entertainment,
+    ProfessionalServices: StandardCategory.ProfessionalServices,
+    Travel: StandardCategory.Travel,
+    Groceries: StandardCategory.Groceries,
+  }
+} as const;
+
 export interface ICategory {
   categoryId: string;
   parentCategoryId: string | null;
@@ -28,5 +52,13 @@ export class Category implements ICategory {
     this.name = name;
     this.type = type;
     this.parentCategoryId = parentCategoryId;
+  }
+
+  static createStandardCategories(): Category[] {
+    const expense = new Category('Expense', CategoryType.Expense);
+    return [
+      expense,
+      ...Object.values(StandardCategory).map(name => new Category(name, CategoryType.Expense, expense.categoryId))
+    ];
   }
 }
