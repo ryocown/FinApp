@@ -1,7 +1,7 @@
-import { IStatement, Statement } from "../models/statement";
-import { ITransaction, GeneralTransaction, TransactionType, TradeTransaction, TransferTransaction } from "../models/transaction";
-import { ICurrency } from "../models/currency";
-import { IStatementImporter } from "./importer";
+import { type IStatement, Statement } from "../models/statement";
+import { type ITransaction, GeneralTransaction, TransactionType, TradeTransaction, TransferTransaction } from "../models/transaction";
+import { type ICurrency } from "../models/currency";
+import { type IStatementImporter } from "./importer";
 import { parse } from 'csv-parse/sync';
 
 export interface ICsvMapping {

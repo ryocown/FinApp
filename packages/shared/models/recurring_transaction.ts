@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { ITransaction } from "./transaction";
+import { type ITransaction } from "./transaction";
 
 export enum RecurrenceFrequency {
   Daily = 'DAILY',

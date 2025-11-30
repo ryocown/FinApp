@@ -1,7 +1,7 @@
-import { ICurrency } from "./currency";
+import { type ICurrency } from "./currency";
 import { v4 } from "uuid";
-import { IFinancialInstrument } from "./financial_instrument";
-import { ILot } from "./lot";
+import { type IFinancialInstrument } from "./financial_instrument";
+import { type ILot } from "./lot";
 
 export interface IAccount {
   accountId: string;

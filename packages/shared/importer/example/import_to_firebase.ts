@@ -1,12 +1,16 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../institutions/chase';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 admin.initializeApp({
-  projectId: 'demo-project', // Use a demo project ID for emulator
+  projectId: 'hirico-internal-project-1', // Use a demo project ID for emulator
 });
 
 const db = admin.firestore();

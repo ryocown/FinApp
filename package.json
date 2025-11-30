@@ -5,9 +5,9 @@
   "main": "general_transaction.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:import": "ts-node --compiler-options '{\"module\": \"commonjs\"}' packages/shared/importer/example/test_import.ts",
-    "firebase:import": "ts-node --compiler-options '{\"module\": \"commonjs\"}' packages/shared/importer/example/import_to_firebase.ts",
-    "firebase:verify": "ts-node --compiler-options '{\"module\": \"commonjs\"}' packages/shared/importer/example/verify_firebase_data.ts"
+    "test:import": "tsx packages/shared/importer/example/test_import.ts",
+    "firebase:import": "tsx packages/shared/importer/example/import_to_firebase.ts",
+    "firebase:verify": "tsx packages/shared/importer/example/verify_firebase_data.ts"
   },
   "repository": {
     "type": "git",

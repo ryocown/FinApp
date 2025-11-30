@@ -1,5 +1,5 @@
-import { ICurrency } from "./currency";
-import { IMerchant } from "./merchant";
+import { type ICurrency } from "./currency";
+import { type IMerchant } from "./merchant";
 import { v4 } from 'uuid';
 
 /**
