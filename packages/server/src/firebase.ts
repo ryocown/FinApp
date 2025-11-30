@@ -5,7 +5,7 @@ if (!admin.apps.length) {
   if (process.env.FIRESTORE_EMULATOR_HOST) {
     console.log('Connecting to Firestore Emulator at', process.env.FIRESTORE_EMULATOR_HOST);
     admin.initializeApp({
-      projectId: 'finapp-test', // Use a test project ID for emulator
+      projectId: 'default', // Match client and population script
     });
   } else {
     // Fallback to default credentials for production/other environments

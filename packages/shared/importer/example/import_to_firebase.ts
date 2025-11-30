@@ -10,13 +10,13 @@ const __dirname = path.dirname(__filename);
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 admin.initializeApp({
-  projectId: 'hirico-internal-project-1', // Use a demo project ID for emulator
+  projectId: 'default', // Use a demo project ID for emulator
 });
 
 const db = admin.firestore();
 
 async function importToFirebase() {
-  const userId = 'fake-user-id-' + Math.random().toString(36).substring(7);
+  const userId = 'fake-user-id-yxt06l';
   const accountId6459 = 'account-6459';
   const accountId8829 = 'account-8829';
 
@@ -47,7 +47,7 @@ async function importToFirebase() {
   console.log(`Importing ${statement6459.transactions.length} transactions for 6459...`);
   const batch6459 = db.batch();
   statement6459.transactions.forEach(t => {
-    const ref = db.collection('users').doc(userId).collection('accounts').doc(accountId6459).collection('transactions').doc(t.transactionId);
+    const ref = db.collection('users').doc(userId).collection('transactions').doc(t.transactionId);
     batch6459.set(ref, JSON.parse(JSON.stringify(t))); // Convert to plain object
   });
   const result6459 = await batch6459.commit();
@@ -62,7 +62,7 @@ async function importToFirebase() {
   console.log(`Importing ${statement8829.transactions.length} transactions for 8829...`);
   const batch8829 = db.batch();
   statement8829.transactions.forEach(t => {
-    const ref = db.collection('users').doc(userId).collection('accounts').doc(accountId8829).collection('transactions').doc(t.transactionId);
+    const ref = db.collection('users').doc(userId).collection('transactions').doc(t.transactionId);
     batch8829.set(ref, JSON.parse(JSON.stringify(t))); // Convert to plain object
   });
   const result8829 = await batch8829.commit();

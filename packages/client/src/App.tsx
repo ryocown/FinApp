@@ -1,34 +1,46 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Sidebar } from './components/Sidebar'
+import { Dashboard } from './components/Dashboard'
+import { Budget } from './components/Budget'
+import { Transactions } from './components/Transactions'
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppContent() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const userId = 'fake-user-id-yxt06l'
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Map current path to view name for Sidebar
+  const currentView = location.pathname.split('/')[1] || 'dashboard'
+  const setCurrentView = (view: string) => {
+    navigate(`/${view}`)
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex font-sans">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        currentView={currentView as any}
+        setCurrentView={setCurrentView}
+      />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard userId={userId} />} />
+        <Route path="/budget" element={<Budget userId={userId} />} />
+        <Route path="/transactions" element={<Transactions userId={userId} />} />
+        {/* Add more routes as needed */}
+      </Routes>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   )
 }
 

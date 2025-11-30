@@ -1,9 +1,9 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 admin.initializeApp({
-  projectId: 'demo-project', // Use a demo project ID for emulator
+  projectId: 'default', // Use a demo project ID for emulator
 });
 
 const db = admin.firestore();

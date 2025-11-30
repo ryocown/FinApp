@@ -2,6 +2,11 @@ import { ChaseCreditCsvStatementImporter } from '../institutions/chase';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 async function runTest() {
   const accountId = 'test-account';
   const importer = new ChaseCreditCsvStatementImporter(accountId);
@@ -13,8 +18,15 @@ async function runTest() {
 
   console.log(`Imported ${statement.transactions.length} transactions.`);
   console.log(statement.transactions);
+
+  // New Data Modeling Example:
+  // To save these transactions to the new top-level collection:
+  // const userId = 'fake-user-id-657ak5';
+  // for (const t of statement.transactions) {
+  //   await db.collection('users').doc(userId).collection('transactions').add(t);
+  // }
 }
 
 runTest().catch(console.error);
 
-//npx ts-node --compiler-options '{"module": "commonjs"}' packages/shared/importer/example/test_import.ts
+// Run with: npx tsx packages/shared/importer/example/test_import.ts
