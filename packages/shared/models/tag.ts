@@ -18,4 +18,10 @@ export class Tag implements ITag {
     this.name = name;
     this.color = color;
   }
+
+  static fromJSON(json: any): Tag {
+    const tag = new Tag(json.name, json.color);
+    tag.tagId = json.tagId;
+    return tag;
+  }
 }

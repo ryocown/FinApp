@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { type ITransaction } from "./transaction";
+import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "./transaction";
 
 export interface IStatement {
   statementId: string;
@@ -25,5 +25,29 @@ export class Statement implements IStatement {
     this.startDate = startDate;
     this.endDate = endDate;
     this.transactions = transactions;
+  }
+
+  static fromJSON(json: any): Statement {
+    const transactions = json.transactions.map((t: any) => {
+      switch (t.transactionType) {
+        case TransactionType.General:
+          return GeneralTransaction.fromJSON(t);
+        case TransactionType.Trade:
+          return TradeTransaction.fromJSON(t);
+        case TransactionType.Transfer:
+          return TransferTransaction.fromJSON(t);
+        default:
+          throw new Error(`Unknown transaction type: ${t.transactionType}`);
+      }
+    });
+
+    const statement = new Statement(
+      json.accountId,
+      new Date(json.startDate),
+      new Date(json.endDate),
+      transactions
+    );
+    statement.statementId = json.statementId;
+    return statement;
   }
 }

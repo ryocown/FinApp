@@ -61,4 +61,10 @@ export class Category implements ICategory {
       ...Object.values(StandardCategory).map(name => new Category(name, CategoryType.Expense, expense.categoryId))
     ];
   }
+
+  static fromJSON(json: any): Category {
+    const category = new Category(json.name, json.type, json.parentCategoryId);
+    category.categoryId = json.categoryId;
+    return category;
+  }
 }

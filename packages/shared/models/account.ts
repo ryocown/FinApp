@@ -1,4 +1,4 @@
-import { type ICurrency } from "./currency";
+import { Currency, type ICurrency } from "./currency";
 import { v4 } from "uuid";
 import { type IFinancialInstrument } from "./financial_instrument";
 import { type ILot } from "./lot";
@@ -53,12 +53,12 @@ export class Account implements IAccount {
   accountNumber: string;
   balance: number;
   country: string;
-  currency: ICurrency;
+  currency: Currency;
   name: string;
   subtype: SubType;
   isTaxable: boolean;
 
-  constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
+  constructor(accountNumber: string, balance: number, country: string, currency: Currency,
     name: string, subtype: SubType, isTaxable: boolean, userId: string) {
     this.accountId = v4();
     this.userId = userId;
@@ -70,6 +70,21 @@ export class Account implements IAccount {
     this.name = name;
     this.subtype = subtype;
     this.isTaxable = isTaxable;
+  }
+
+  static fromJSON(json: any): Account {
+    const account = new Account(
+      json.accountNumber,
+      json.balance,
+      json.country,
+      Currency.fromJSON(json.currency),
+      json.name,
+      json.subtype,
+      json.isTaxable,
+      json.userId
+    );
+    account.accountId = json.accountId;
+    return account;
   }
 }
 

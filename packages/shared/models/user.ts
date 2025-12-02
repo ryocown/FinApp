@@ -18,4 +18,10 @@ export class User implements IUser {
     this.email = email;
     this.name = name;
   }
+
+  static fromJSON(json: any): User {
+    const user = new User(json.email, json.name);
+    user.userId = json.userId;
+    return user;
+  }
 }

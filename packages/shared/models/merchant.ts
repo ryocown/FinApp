@@ -22,4 +22,10 @@ export class Merchant implements Merchant {
     this.category = category;
     this.type = type;
   }
+
+  static fromJSON(json: any): Merchant {
+    const merchant = new Merchant(json.name, json.category, json.type);
+    merchant.merchantId = json.merchantId;
+    return merchant;
+  }
 }

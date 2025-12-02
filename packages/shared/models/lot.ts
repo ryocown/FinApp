@@ -25,4 +25,15 @@ export class Lot implements ILot {
     this.purchaseDate = purchaseDate;
     this.costBasis = costBasis;
   }
+
+  static fromJSON(json: any): Lot {
+    const lot = new Lot(
+      json.transactionId,
+      json.quantity,
+      new Date(json.purchaseDate),
+      json.costBasis
+    );
+    lot.lotId = json.lotId;
+    return lot;
+  }
 }

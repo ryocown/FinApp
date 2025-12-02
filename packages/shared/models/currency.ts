@@ -21,6 +21,10 @@ export class Currency implements ICurrency {
     this.symbol = symbol;
     this.code = code;
   }
+
+  static fromJSON(json: any): Currency {
+    return new Currency(json.name, json.symbol, json.code);
+  }
 }
 
 export class CurrencyPair implements ICurrencyPair {

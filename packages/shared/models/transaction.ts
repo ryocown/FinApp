@@ -1,5 +1,5 @@
-import { type ICurrency } from "./currency";
-import { type IMerchant } from "./merchant";
+import { Currency } from "./currency";
+import { Merchant } from "./merchant";
 import { v4 } from 'uuid';
 
 /**
@@ -27,7 +27,7 @@ export interface ITransaction {
   tagIds: string[];
 
   amount: number;
-  currency: ICurrency;
+  currency: Currency;
   date: Date;
   description: string | null;
   // isTaxDeductable: boolean;
@@ -49,7 +49,7 @@ export enum TransactionType {
 
 export interface IGeneralTransaction extends ITransaction {
   transactionType: TransactionType.General;
-  merchant: IMerchant | null;
+  merchant: Merchant | null;
 }
 
 export interface ITradeTransaction extends ITransaction {
@@ -75,15 +75,15 @@ export class GeneralTransaction implements ITransaction {
   tagIds: string[];
 
   amount: number;
-  currency: ICurrency;
+  currency: Currency;
   date: Date;
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
-  merchant: IMerchant | null;
+  merchant: Merchant | null;
   transactionType: TransactionType;
 
-  constructor(accountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
+  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
     this.transactionId = v4();
     this.accountId = accountId;
     this.userId = userId;
@@ -99,6 +99,25 @@ export class GeneralTransaction implements ITransaction {
     this.categoryId = categoryId;
     this.tagIds = tagIds;
   }
+
+  static fromJSON(json: any): GeneralTransaction {
+    const transaction = new GeneralTransaction(
+      json.accountId,
+      json.userId,
+      json.amount,
+      Currency.fromJSON(json.currency),
+      new Date(json.date),
+      json.description,
+      json.isTaxDeductable,
+      json.hasCapitalGains,
+      json.merchant ? Merchant.fromJSON(json.merchant) : null,
+      json.categoryId,
+      json.tagIds,
+      json.transactionType
+    );
+    transaction.transactionId = json.transactionId;
+    return transaction;
+  }
 }
 
 export class TradeTransaction implements ITransaction {
@@ -110,7 +129,7 @@ export class TradeTransaction implements ITransaction {
   tagIds: string[];
 
   amount: number;
-  currency: ICurrency;
+  currency: Currency;
   date: Date;
   description: string | null;
   isTaxDeductable: boolean;
@@ -119,7 +138,7 @@ export class TradeTransaction implements ITransaction {
   quantity: number;
   price: number;
 
-  constructor(accountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
     this.userId = userId;
@@ -137,6 +156,26 @@ export class TradeTransaction implements ITransaction {
     this.categoryId = categoryId;
     this.tagIds = tagIds;
   }
+
+  static fromJSON(json: any): TradeTransaction {
+    const transaction = new TradeTransaction(
+      json.accountId,
+      json.userId,
+      json.amount,
+      Currency.fromJSON(json.currency),
+      new Date(json.date),
+      json.description,
+      json.isTaxDeductable,
+      json.hasCapitalGains,
+      json.instrumentId,
+      json.quantity,
+      json.price,
+      json.categoryId,
+      json.tagIds
+    );
+    transaction.transactionId = json.transactionId;
+    return transaction;
+  }
 }
 
 export class TransferTransaction implements ITransaction {
@@ -148,14 +187,14 @@ export class TransferTransaction implements ITransaction {
   tagIds: string[];
 
   amount: number;
-  currency: ICurrency;
+  currency: Currency;
   date: Date;
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
   transactionType: TransactionType;
 
-  constructor(accountId: string, destinationAccountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, destinationAccountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
     this.destinationAccountId = destinationAccountId;
@@ -170,5 +209,21 @@ export class TransferTransaction implements ITransaction {
     this.transactionType = TransactionType.Transfer;
     this.categoryId = categoryId;
     this.tagIds = tagIds;
+  }
+
+  static fromJSON(json: any): TransferTransaction {
+    const transaction = new TransferTransaction(
+      json.accountId,
+      json.destinationAccountId,
+      json.userId,
+      json.amount,
+      Currency.fromJSON(json.currency),
+      new Date(json.date),
+      json.description,
+      json.categoryId,
+      json.tagIds
+    );
+    transaction.transactionId = json.transactionId;
+    return transaction;
   }
 }
