@@ -15,13 +15,16 @@ export interface ICsvMapping {
 
 export abstract class CsvStatementImporter implements IStatementImporter {
   protected accountId: string;
+  protected userId: string;
   protected mapping: ICsvMapping;
   protected currency: ICurrency;
   protected transactionTypeColumn: string;
 
-  constructor(mapping: ICsvMapping, currency: ICurrency, accountId: string) {
+  constructor(accountId: string, userId: string, mapping: ICsvMapping, currency: ICurrency) {
     this.accountId = accountId;
+    this.userId = userId;
     this.mapping = mapping;
+
     this.currency = currency;
     this.transactionTypeColumn = mapping.transactionTypeColumn;
   }
@@ -67,6 +70,7 @@ export abstract class CsvStatementImporter implements IStatementImporter {
     if (transactionType === TransactionType.General) {
       return new GeneralTransaction(
         this.accountId,
+        this.userId,
         amount,
         this.currency,
         date,

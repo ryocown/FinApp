@@ -27,23 +27,23 @@ export interface IInvestmentAccount extends IAccount {
 
 export enum SubType {
   // Transactional
-  Checking,
-  Savings,
-  HighYieldSavings,
-  MoneyMarket,
-  CertificateOfDeposit,
+  Checking = 'CHECKING',
+  Savings = 'SAVINGS',
+  HighYieldSavings = 'HIGH_YIELD_SAVINGS',
+  MoneyMarket = 'MONEY_MARKET',
+  CertificateOfDeposit = 'CERTIFICATE_OF_DEPOSIT',
 
   // Investment
-  BrokerageAccount,
-  RetirementAccount,
+  BrokerageAccount = 'BROKERAGE_ACCOUNT',
+  RetirementAccount = 'RETIREMENT_ACCOUNT',
 
   // Credit/debt
-  CreditCard,
-  Loan,
+  CreditCard = 'CREDIT_CARD',
+  Loan = 'LOAN',
 
   // HSA
-  HealthSavingAccount,
-  HealthFlexibleSpendingAccount
+  HealthSavingAccount = 'HEALTH_SAVING_ACCOUNT',
+  HealthFlexibleSpendingAccount = 'HEALTH_FLEXIBLE_SPENDING_ACCOUNT'
 }
 
 export class Account implements IAccount {

@@ -29,6 +29,7 @@ export class Budget implements IBudget {
   constructor(categoryId: string, amount: number, period: BudgetPeriod, startDate: Date, endDate: Date | null = null) {
     this.budgetId = v4();
     this.categoryId = categoryId;
+    
     this.amount = amount;
     this.period = period;
     this.startDate = startDate;

@@ -26,6 +26,7 @@ export class PricePoint implements IPricePoint {
   constructor(targetId: string, date: Date, open: number, high: number, low: number, close: number, volume: number) {
     this.pricePointId = v4();
     this.targetId = targetId;
+    
     this.date = date;
     this.open = open;
     this.high = high;

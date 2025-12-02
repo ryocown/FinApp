@@ -10,8 +10,8 @@ import { type ICurrency } from '../../models/currency';
  * DEBIT,11/28/2025,"INTERNATIONAL INCOMING WIRE FEE",-15.00,FEE_TRANSACTION,51362.79,,
  */
 export class ChaseCsvStatementImporter extends CsvStatementImporter {
-  constructor(accountId: string) {
-    super({
+  constructor(accountId: string, userId: string) {
+    super(accountId, userId, {
       dateColumn: 'Posting Date',
       amountColumn: 'Amount',
       descriptionColumn: 'Description',
@@ -21,7 +21,7 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
       code: 'USD',
       name: 'US Dollar',
       symbol: '$'
-    }, accountId);
+    });
   }
 
   protected override checkTransactionType(record: any): TransactionType {
@@ -67,6 +67,8 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
       return new TransferTransaction(
         this.accountId,
         'unknown_destination', // TODO: Parse destination from description
+        this.userId,
+        
         amount,
         this.currency,
         date,
@@ -78,6 +80,8 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
 
     return new GeneralTransaction(
       this.accountId,
+      this.userId,
+
       amount,
       this.currency,
       date,
@@ -100,19 +104,21 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
  * 11/23/2025,11/24/2025,GOOGLE*YOUTUBEPREMIUM,Bills & Utilities,Sale,-14.60,
  */
 export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
-  constructor(accountId: string) {
-    super({
-      dateColumn: 'Transaction Date',
-      amountColumn: 'Amount',
-      descriptionColumn: 'Description',
-      merchantColumn: 'Description',
-      transactionTypeColumn: 'Type',
-      categoryColumn: 'Category',
-    }, {
-      code: 'USD',
-      name: 'US Dollar',
-      symbol: '$'
-    }, accountId);
+  constructor(accountId: string, userId: string) {
+    super(accountId, userId, 
+      {
+        dateColumn: 'Transaction Date',
+        amountColumn: 'Amount',
+        descriptionColumn: 'Description',
+        merchantColumn: 'Description',
+        transactionTypeColumn: 'Type',
+        categoryColumn: 'Category',
+      }, {
+        code: 'USD',
+        name: 'US Dollar',
+        symbol: '$'
+      }
+    );
   }
 
   protected override checkTransactionType(record: any): TransactionType {
@@ -134,6 +140,7 @@ export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
   }
 
   protected override processTransaction(record: any): ITransaction | null {
+    const userId = this.userId;
     const date = new Date(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);
     const description = record[this.mapping.descriptionColumn];
@@ -149,6 +156,7 @@ export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
       return new TransferTransaction(
         'unknown_source', // For credit card payments, money comes from somewhere else
         this.accountId,
+        this.userId,
         amount,
         this.currency,
         date,
@@ -160,6 +168,7 @@ export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
 
     return new GeneralTransaction(
       this.accountId,
+      this.userId,
       amount,
       this.currency,
       date,

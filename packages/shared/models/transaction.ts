@@ -22,6 +22,7 @@ import { v4 } from 'uuid';
 export interface ITransaction {
   transactionId: string;
   accountId: string;
+  userId: string;
   categoryId?: string;
   tagIds: string[];
 
@@ -68,6 +69,8 @@ export interface ITransferTransaction extends ITransaction {
 export class GeneralTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+  userId: string;
+
   categoryId?: string;
   tagIds: string[];
 
@@ -80,9 +83,10 @@ export class GeneralTransaction implements ITransaction {
   merchant: IMerchant | null;
   transactionType: TransactionType;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
+  constructor(accountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: IMerchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
     this.transactionId = v4();
     this.accountId = accountId;
+    this.userId = userId;
 
     this.amount = amount;
     this.currency = currency;
@@ -100,6 +104,7 @@ export class GeneralTransaction implements ITransaction {
 export class TradeTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+  userId: string;
   instrumentId: string;
   categoryId?: string;
   tagIds: string[];
@@ -114,9 +119,10 @@ export class TradeTransaction implements ITransaction {
   quantity: number;
   price: number;
 
-  constructor(accountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
+    this.userId = userId;
 
     this.amount = amount;
     this.currency = currency;
@@ -136,6 +142,7 @@ export class TradeTransaction implements ITransaction {
 export class TransferTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
+  userId: string;
   destinationAccountId: string;
   categoryId?: string;
   tagIds: string[];
@@ -148,10 +155,11 @@ export class TransferTransaction implements ITransaction {
   hasCapitalGains: boolean;
   transactionType: TransactionType;
 
-  constructor(accountId: string, destinationAccountId: string, amount: number, currency: ICurrency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, destinationAccountId: string, userId: string, amount: number, currency: ICurrency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
     this.transactionId = v4();
     this.accountId = accountId;
     this.destinationAccountId = destinationAccountId;
+    this.userId = userId;
 
     this.amount = amount;
     this.currency = currency;
