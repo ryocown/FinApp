@@ -15,7 +15,7 @@ export interface IFinancialInstrument {
   instrumentId: string;
   accountId: string;
 
-  isin: string;
+  isin?: string;
   cusip: string;
   type: InstrumentType;
   name: string;
@@ -38,6 +38,10 @@ export enum Sector {
 
 /**
  * Stocks
+ * 
+ * All stocks are required to have ISIN
+ * US stocks can be identified with CUSIP and ticker
+ * JP stocks can be identified with ticker only
  */
 
 export interface StockInstrument extends IFinancialInstrument {
@@ -119,22 +123,22 @@ const appleBond: BondInstrument = {
   faceValue: 1000,
 };
 
-const appleCallOption: OptionInstrument = {
-  instrumentId: v4(),
-  accountId: "",
+// const appleCallOption: OptionInstrument = {
+//   instrumentId: v4(),
+//   accountId: "",
 
-  // Note: ISINs for options are often constructed based on the underlying
-  isin: 'US0378331005_OPT_241231C100',
-  cusip: '037833C10',
-  type: InstrumentType.Option,
-  name: 'AAPL Dec 31 2024 Call @ $100',
+//   // Note: ISINs for options are often constructed based on the underlying
+//   isin: 'US0378331005_OPT_241231C100',
+//   cusip: '037833C10',
+//   type: InstrumentType.Option,
+//   name: 'AAPL Dec 31 2024 Call @ $100',
 
-  underlyingIsin: appleCommonStock.isin,
-  underlyingTicker: 'AAPL',
-  underlyingType: InstrumentType.Stock,
+//   underlyingIsin!: appleCommonStock.isin,
+//   underlyingTicker: 'AAPL',
+//   underlyingType: InstrumentType.Stock,
 
-  optionType: OptionType.Call,
-  strikePrice: 100.00,
-  optionSymbol: 'AAPL241231C00100000',
-  expirationDate: new Date('2024-12-31'),
-};
+//   optionType: OptionType.Call,
+//   strikePrice: 100.00,
+//   optionSymbol: 'AAPL241231C00100000',
+//   expirationDate: new Date('2024-12-31'),
+// };

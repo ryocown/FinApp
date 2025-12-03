@@ -1,6 +1,7 @@
-import { CsvStatementImporter, type ICsvMapping } from '../csv_importer';
+import { StatementImporter, type ICsvMapping } from '../importer';
 import { type ITransaction, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction';
 import { type ICurrency } from '../../models/currency';
+import { Category, CategoryType } from '../../models/category';
 
 /**
  * Checking account CSV format:
@@ -9,7 +10,7 @@ import { type ICurrency } from '../../models/currency';
  * DEBIT,12/01/2025,"ZELLE PAYMENT TO XXXX 123456789",-16.00,QUICKPAY_DEBIT, ,,
  * DEBIT,11/28/2025,"INTERNATIONAL INCOMING WIRE FEE",-15.00,FEE_TRANSACTION,51362.79,,
  */
-export class ChaseCsvStatementImporter extends CsvStatementImporter {
+export class ChaseCsvStatementImporter extends StatementImporter {
   constructor(accountId: string, userId: string) {
     super(accountId, userId, {
       dateColumn: 'Posting Date',
@@ -26,7 +27,7 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
 
   protected override checkTransactionType(record: any): TransactionType {
     const type = record[this.mapping.transactionTypeColumn];
-    if (!type) return TransactionType.General;
+    if (!type) return TransactionType.Unknown;
 
     switch (true) {
       case type.includes('ACCT_XFER'):
@@ -48,11 +49,11 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
       case type.includes('DEPOSIT_RETURN'):
         return TransactionType.Withdrawal;
       default:
-        return TransactionType.General;
+        return TransactionType.Unknown;
     }
   }
 
-  protected override processTransaction(record: any): ITransaction | null {
+  protected override async processTransaction(record: any): Promise<ITransaction | null> {
     const date = new Date(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);
     const description = record[this.mapping.descriptionColumn];
@@ -68,12 +69,12 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
         this.accountId,
         'unknown_destination', // TODO: Parse destination from description
         this.userId,
-        
+
         amount,
         this.currency,
         date,
         description,
-        undefined, // categoryId
+        CategoryType.Transfer, // categoryId
         [] // tagIds
       );
     }
@@ -89,7 +90,7 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
       false, // isTaxDeductable
       false, // hasCapitalGains
       null, // merchant
-      undefined, // categoryId
+      CategoryType.Unknown,
       [], // tagIds
       transactionType
     );
@@ -103,9 +104,9 @@ export class ChaseCsvStatementImporter extends CsvStatementImporter {
  * 11/28/2025,11/28/2025,GO/MASSAGE* GOOGLER SE,Personal,Sale,-17.03,
  * 11/23/2025,11/24/2025,GOOGLE*YOUTUBEPREMIUM,Bills & Utilities,Sale,-14.60,
  */
-export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
+export class ChaseCreditCsvStatementImporter extends StatementImporter {
   constructor(accountId: string, userId: string) {
-    super(accountId, userId, 
+    super(accountId, userId,
       {
         dateColumn: 'Transaction Date',
         amountColumn: 'Amount',
@@ -114,10 +115,10 @@ export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
         transactionTypeColumn: 'Type',
         categoryColumn: 'Category',
       }, {
-        code: 'USD',
-        name: 'US Dollar',
-        symbol: '$'
-      }
+      code: 'USD',
+      name: 'US Dollar',
+      symbol: '$'
+    }
     );
   }
 
@@ -139,7 +140,7 @@ export class ChaseCreditCsvStatementImporter extends CsvStatementImporter {
     }
   }
 
-  protected override processTransaction(record: any): ITransaction | null {
+  protected override async processTransaction(record: any): Promise<ITransaction | null> {
     const userId = this.userId;
     const date = new Date(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);

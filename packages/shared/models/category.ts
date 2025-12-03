@@ -1,6 +1,8 @@
 import { v4 } from "uuid";
 
 export enum CategoryType {
+  Unknown = 'UNKNOWN',
+  Invalid = 'INVALID',
   Income = 'INCOME',
   Expense = 'EXPENSE',
   Transfer = 'TRANSFER',

@@ -138,7 +138,10 @@ export class TradeTransaction implements ITransaction {
   quantity: number;
   price: number;
 
-  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date,
+    description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean,
+    instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+
     this.transactionId = v4();
     this.accountId = accountId;
     this.userId = userId;

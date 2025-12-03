@@ -6,5 +6,8 @@
   "private": true,
   "devDependencies": {
     "uuid": "^13.0.0"
+  },
+  "dependencies": {
+    "node-xlsx": "^0.24.0"
   }
 }
