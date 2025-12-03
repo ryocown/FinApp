@@ -1,4 +1,15 @@
 import express, { type Request, type Response } from 'express';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load env vars from root .env
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
 import cors from 'cors';
 import accountRoutes from './routes/accounts';
 import transactionRoutes from './routes/transactions';

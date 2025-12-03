@@ -1,10 +1,28 @@
 import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
 import { AlpacaQuoteProvider } from '../provider/quote_providers/alpaca';
+import { GeminiAIProvider } from '../provider/ai_providers/gemini';
 import { InstrumentType } from '@finapp/shared/models/financial_instrument';
 
 const router = Router();
-const quoteProvider = new AlpacaQuoteProvider();
+
+// Lazy instantiation to ensure env vars are loaded
+let _quoteProvider: AlpacaQuoteProvider;
+let _aiProvider: GeminiAIProvider;
+
+function getQuoteProvider() {
+  if (!_quoteProvider) {
+    _quoteProvider = new AlpacaQuoteProvider();
+  }
+  return _quoteProvider;
+}
+
+function getAiProvider() {
+  if (!_aiProvider) {
+    _aiProvider = new GeminiAIProvider();
+  }
+  return _aiProvider;
+}
 
 // Get instrument by CUSIP
 router.get('/', async (req: Request, res: Response) => {
@@ -80,19 +98,37 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Enrich with Quote Provider if type is unknown or missing
-    let enrichedData = {};
+    let enrichedData: any = {};
+    let instrumentName = name;
+
     if (!type || type === 'unknown' || type === InstrumentType.Unknown) {
       try {
-        const quote = await quoteProvider.getInstrumentByCusip(cusip);
+        const quote = await getQuoteProvider().getInstrumentByCusip(cusip);
         if (quote) {
           enrichedData = {
             ...quote,
             // We prefer the provider's name if available and better than "Unknown..."
             // But for now let's just use what we got if it's valid
           };
+          if (quote.name) {
+            instrumentName = quote.name;
+          }
         }
       } catch (err) {
         console.warn(`Failed to enrich instrument ${cusip}:`, err);
+      }
+    }
+
+    // Enrich with AI Provider for Sector
+    // We do this if we have a valid name (either provided or enriched)
+    if (instrumentName && instrumentName !== 'Unknown Instrument') {
+      try {
+        const sector = await getAiProvider().getSector(instrumentName);
+        if (sector) {
+          enrichedData.sector = sector;
+        }
+      } catch (err) {
+        console.warn(`Failed to categorize sector for ${instrumentName}:`, err);
       }
     }
 
@@ -102,7 +138,7 @@ router.post('/', async (req: Request, res: Response) => {
       name,
       type: type || 'unknown', // Default to unknown if not provided
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...enrichedData, // Override with enriched data (e.g. type, ticker, better name)
+      ...enrichedData, // Override with enriched data (e.g. type, ticker, better name, sector)
     };
 
     const docRef = await db.collection('instruments').add(newInstrument);
