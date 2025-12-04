@@ -12,7 +12,7 @@ export interface IAccount {
   country: string;
   currency: ICurrency;
   name: string;
-  subtype: SubType;
+  AccountType: AccountType;
 }
 
 export interface IPosition {
@@ -25,25 +25,44 @@ export interface IInvestmentAccount extends IAccount {
   positions: IPosition[];
 }
 
-export enum SubType {
-  // Transactional
-  Checking = 'CHECKING',
-  Savings = 'SAVINGS',
-  HighYieldSavings = 'HIGH_YIELD_SAVINGS',
-  MoneyMarket = 'MONEY_MARKET',
-  CertificateOfDeposit = 'CERTIFICATE_OF_DEPOSIT',
 
-  // Investment
-  BrokerageAccount = 'BROKERAGE_ACCOUNT',
-  RetirementAccount = 'RETIREMENT_ACCOUNT',
+export enum AccountType {
+  BANK = 'Bank',
+  CREDIT_CARD = 'Credit Card',
+  INVESTMENT = 'Investment',
+  SUPERANNUATION = 'Superannuation',
+  EMPLOYER = 'Employer',
+  LOAN = 'Loan',
+  OTHER = 'Other',
+  INVALID = 'Invalid'
+}
+
+export enum AccountTag {
+  // Banking
+  CHECKING = 'Checking',
+  SAVINGS = 'Savings',
+  CREDIT = 'Credit',
+  HIGH_YIELD_SAVINGS = 'High Yield Savings',
+
+  // Bonds and Investments
+  MONEY_MARKET = 'Money Market',
+  CERTIFICATE_OF_DEPOSIT = 'Certificate of Deposit',
+  BROKERAGE_ACCOUNT = 'Brokerage Account',
+
+  // Retirement
+  RETIREMENT_ACCOUNT = 'Retirement Account',
 
   // Credit/debt
-  CreditCard = 'CREDIT_CARD',
-  Loan = 'LOAN',
+  CREDIT_CARD = 'Credit Card',
+  LOAN = 'Loan',
 
   // HSA
-  HealthSavingAccount = 'HEALTH_SAVING_ACCOUNT',
-  HealthFlexibleSpendingAccount = 'HEALTH_FLEXIBLE_SPENDING_ACCOUNT'
+  HEALTH_SAVING_ACCOUNT = 'Health Saving Account',
+  HEALTH_FLEXIBLE_SPENDING_ACCOUNT = 'Health Flexible Spending Account',
+
+  // Misc
+  OTHER = 'Other',
+  INVALID = 'Invalid'
 }
 
 export class Account implements IAccount {
@@ -55,11 +74,11 @@ export class Account implements IAccount {
   country: string;
   currency: Currency;
   name: string;
-  subtype: SubType;
+  AccountType: AccountType;
   isTaxable: boolean;
 
   constructor(accountNumber: string, balance: number, country: string, currency: Currency,
-    name: string, subtype: SubType, isTaxable: boolean, userId: string) {
+    name: string, AccountType: AccountType, isTaxable: boolean, userId: string) {
     this.accountId = v4();
     this.userId = userId;
 
@@ -68,7 +87,7 @@ export class Account implements IAccount {
     this.country = country;
     this.currency = currency;
     this.name = name;
-    this.subtype = subtype;
+    this.AccountType = AccountType;
     this.isTaxable = isTaxable;
   }
 
@@ -79,7 +98,7 @@ export class Account implements IAccount {
       json.country,
       Currency.fromJSON(json.currency),
       json.name,
-      json.subtype,
+      json.AccountType,
       json.isTaxable,
       json.userId
     );
@@ -97,12 +116,12 @@ export class InvestmentAccount implements IInvestmentAccount {
   country: string;
   currency: ICurrency;
   name: string;
-  subtype: SubType;
+  AccountType: AccountType;
   isTaxable: true;
   positions: IPosition[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
-    name: string, subtype: SubType, userId: string) {
+    name: string, AccountType: AccountType, userId: string) {
     this.accountId = v4();
     this.userId = userId;
 
@@ -111,7 +130,7 @@ export class InvestmentAccount implements IInvestmentAccount {
     this.country = country;
     this.currency = currency;
     this.name = name;
-    this.subtype = subtype;
+    this.AccountType = AccountType;
     this.isTaxable = true;
     this.positions = [];
   }

@@ -5,9 +5,11 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "uuid": "^13.0.0"
+    "@types/uuid": "^10.0.0"
   },
   "dependencies": {
-    "node-xlsx": "^0.24.0"
+    "csv-parse": "^5.5.0",
+    "node-xlsx": "^0.24.0",
+    "uuid": "^10.0.0"
   }
 }
