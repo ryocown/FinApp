@@ -5,10 +5,11 @@ import { fileURLToPath } from 'url';
 import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../importer/institutions/chase';
 import dotenv from 'dotenv';
 import { User } from '../models/user';
-import { Account, SubType } from '../models/account';
+import { Account, AccountType, type IAccount } from '../models/account';
 import { Currency } from '../models/currency';
+import { Institute } from '../models/institute';
 import { type IStatementImporter } from "../importer/importer";
-import { Firestore } from 'firebase-admin/firestore';
+import { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { MorganStanleyStatementImporter } from '../importer/institutions/morgan_stanley';
 import { fromExcelToCsv } from './from_excel_to_csv';
 
@@ -20,60 +21,84 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // Initialize Firebase Admin to connect to emulator
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-admin.initializeApp({
-  projectId: process.env.FIREBASE_PROJECT_ID,
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID || 'demo-project',
+  });
+}
 
 // base file path
 const dataDir = path.join(__dirname, 'data');
 
 const db = admin.firestore();
 
-async function importAccount(
+async function processTransactionsBatch(
   db: Firestore,
   userId: string,
-  account: Account,
-  importer: new (accountId: string, userId: string) => IStatementImporter,
+  instituteId: string,
+  accountRef: DocumentReference,
+  transactions: any[]
+) {
+  const BATCH_SIZE = 400;
+  for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+    const chunk = transactions.slice(i, i + BATCH_SIZE);
+    const batch = db.batch();
+
+    for (const t of chunk) {
+      const deepRef = accountRef.collection('transactions').doc(t.transactionId);
+      batch.set(deepRef, JSON.parse(JSON.stringify(t)));
+
+      const refDocRef = db.collection('users').doc(userId).collection('transactions').doc(t.transactionId);
+      batch.set(refDocRef, { RefTxId: deepRef });
+    }
+    await batch.commit();
+  }
+}
+
+async function importAccountWithBatch(
+  db: Firestore,
+  userId: string,
+  instituteId: string,
+  account: IAccount,
+  importerCtor: new (accountId: string, userId: string) => IStatementImporter,
   csvFileName: string
 ) {
   const accountId = account.accountId;
-  console.log(`Processing account ${account.name} (${accountId})...`);
+  console.log(`  Processing account ${account.name} (${accountId})...`);
 
-  // 1. Create account document
-  await db.collection('users').doc(userId)
-    .collection('accounts').doc(accountId)
-    .set(JSON.parse(JSON.stringify(account)));
+  const accountRef = db.collection('users').doc(userId)
+    .collection('institutes').doc(instituteId)
+    .collection('accounts').doc(accountId);
 
-  // 2. Import transactions from CSV
-  const importerInstance = new importer(accountId, userId);
+  await accountRef.set(JSON.parse(JSON.stringify(account)));
+
+  const importerInstance = new importerCtor(accountId, userId);
   const csvPath = path.join(dataDir, csvFileName);
+
+  console.log(`    CSV file path: ${csvPath}`);
+
+  if (!fs.existsSync(csvPath)) {
+    console.warn(`    CSV file not found: ${csvFileName}. Skipping transactions.`);
+    return;
+  }
+
   const csvData = fs.readFileSync(csvPath, 'utf-8');
   const statement = await importerInstance.import(csvData);
 
-  console.log(`Importing ${statement.transactions.length} transactions for ${account.name}...`);
-  const batch = db.batch();
+  console.log(`    Importing ${statement.transactions.length} transactions...`);
+
   let delta = 0;
+  statement.transactions.forEach(t => delta += t.amount);
 
-  statement.transactions.forEach(t => {
-    delta += t.amount;
-    const ref = db.collection('users').doc(userId)
-      .collection('accounts').doc(accountId)
-      .collection('transactions').doc(t.transactionId);
-    batch.set(ref, JSON.parse(JSON.stringify(t)));
-  });
-
-  await batch.commit();
+  await processTransactionsBatch(db, userId, instituteId, accountRef, statement.transactions);
 
   // 3. Update account balance
-  console.log(`  Delta: ${delta}`);
+  console.log(`    Delta: ${delta}`);
+  await accountRef.update({
+    balance: admin.firestore.FieldValue.increment(delta)
+  });
 
-  await db.collection('users').doc(userId)
-    .collection('accounts').doc(accountId)
-    .update({
-      balance: admin.firestore.FieldValue.increment(delta)
-    });
-
-  console.log(`Account ${account.name} processed successfully.`);
+  console.log(`  Account ${account.name} processed successfully.`);
 }
 
 async function importToFirebase() {
@@ -85,41 +110,100 @@ async function importToFirebase() {
 
   // 2. Define Accounts and Currency
   const usd = new Currency('US Dollar', '$', 'USD');
-  const chase6459 = new Account('6459', 1000, 'US', usd, 'Chase Credit 6459', SubType.CreditCard, false, userId);
-  const chase8829 = new Account('8829', 5000, 'US', usd, 'Chase Checking 8829', SubType.Checking, false, userId);
-  const morgan3747 = new Account('3747', 0, 'US', usd, 'Morgan Stanley 3747', SubType.BrokerageAccount, false, userId);
-  const morgan3797 = new Account('3797', 0, 'US', usd, 'Morgan Stanley 3797', SubType.BrokerageAccount, false, userId);
-  const morgan5008 = new Account('5008', 0, 'US', usd, 'Morgan Stanley 5008', SubType.BrokerageAccount, false, userId);
-  const morgan6259 = new Account('6259', 0, 'US', usd, 'Morgan Stanley 6259', SubType.BrokerageAccount, false, userId);
 
+  // Chase Accounts
+  const chase6459 = new Account('6459', 1000, 'US', usd, 'Chase Credit 6459', AccountType.CREDIT_CARD, false, userId);
+  const chase8829 = new Account('8829', 5000, 'US', usd, 'Chase Checking 8829', AccountType.BANK, false, userId); // Assuming Checking is BANK or similar
+  // Note: AccountType.CHECKING might not exist, using BANK or checking enum if available.
+  // Checked AccountType: BANK, CREDIT_CARD, INVESTMENT, etc.
+  // Checked AccountTag: CHECKING, SAVINGS.
+  // Account model takes AccountType.
 
-  // 3. Import data for each account
-  await importAccount(db, userId, chase6459, ChaseCreditCsvStatementImporter, 'Chase6459_Activity.CSV');
-  await importAccount(db, userId, chase8829, ChaseCsvStatementImporter, 'Chase8829_Activity.CSV');
-  await importAccount(db, userId, morgan3747, MorganStanleyStatementImporter, '3747.csv');
-  await importAccount(db, userId, morgan3797, MorganStanleyStatementImporter, '3797.csv');
-  await importAccount(db, userId, morgan5008, MorganStanleyStatementImporter, '5008.csv');
-  await importAccount(db, userId, morgan6259, MorganStanleyStatementImporter, '6259.csv');
+  // Morgan Stanley Accounts
+  const morgan3747 = new Account('3747', 0, 'US', usd, 'Morgan Stanley 3747', AccountType.INVESTMENT, true, userId);
+  const morgan3797 = new Account('3797', 0, 'US', usd, 'Morgan Stanley 3797', AccountType.INVESTMENT, true, userId);
+  const morgan5008 = new Account('5008', 0, 'US', usd, 'Morgan Stanley 5008', AccountType.INVESTMENT, true, userId);
+  const morgan6259 = new Account('6259', 0, 'US', usd, 'Morgan Stanley 6259', AccountType.INVESTMENT, true, userId);
+
+  // 3. Define Institutes
+  const chaseInstitute = new Institute('Chase', userId, [chase6459, chase8829]);
+  const morganInstitute = new Institute('Morgan Stanley', userId, [morgan3747, morgan3797, morgan5008, morgan6259]);
+
+  const institutes = [chaseInstitute, morganInstitute];
+
+  // 4. Import Data
+  for (const institute of institutes) {
+    const instituteId = institute.name.replace(/\s+/g, '').toLowerCase();
+    console.log(`Processing institute ${institute.name} (${instituteId})...`);
+
+    // Create Institute Doc
+    // Strip accounts from the doc to avoid duplication/bloat, or keep them if desired. 
+    // The user model has accounts: IAccount[]. 
+    // I'll save the institute metadata.
+    const { accounts, ...instituteData } = institute;
+    await db.collection('users').doc(userId)
+      .collection('institutes').doc(instituteId)
+      .set(instituteData);
+
+    for (const account of institute.accounts) {
+      let importer: any = null;
+      let csvFile = '';
+
+      // Determine importer and file
+      if (account === chase6459) {
+        importer = ChaseCreditCsvStatementImporter;
+        csvFile = 'Chase6459_Activity.CSV';
+      }
+
+      if (account === chase8829) {
+        importer = ChaseCsvStatementImporter;
+        csvFile = 'Chase8829_Activity.CSV';
+      }
+
+      // if (account === morgan3747) {
+      //   importer = MorganStanleyStatementImporter;
+      //   csvFile = '3747.csv';
+      // } 
+
+      // if (account === morgan3797) {
+      //   importer = MorganStanleyStatementImporter;
+      //   csvFile = '3797.csv';
+      // } 
+
+      // if (account === morgan5008) {
+      //   importer = MorganStanleyStatementImporter;
+      //   csvFile = '5008.csv';
+      // } 
+
+      // if (account === morgan6259) {
+      //   importer = MorganStanleyStatementImporter;
+      //   csvFile = '6259.csv';
+      // }
+
+      if (importer && csvFile) {
+        await importAccountWithBatch(db, userId, instituteId, account, importer, csvFile);
+      }
+    }
+  }
 
   console.log('\nImport complete!');
 }
 
 function convertMorganExcelToCsv() {
-  const ms5008 = fs.readFileSync(path.join(dataDir, '5008.xlsx'));
-  const ms3747 = fs.readFileSync(path.join(dataDir, '3747.xlsx'));
-  const ms3797 = fs.readFileSync(path.join(dataDir, '3797.xlsx'));
-  const ms6259 = fs.readFileSync(path.join(dataDir, '6259.xlsx'));
-
-  const ms5008Csv = fromExcelToCsv(ms5008)[0];
-  const ms3747Csv = fromExcelToCsv(ms3747)[0];
-  const ms3797Csv = fromExcelToCsv(ms3797)[0];
-  const ms6259Csv = fromExcelToCsv(ms6259)[0];
-
-  // write to files
-  fs.writeFileSync(path.join(dataDir, '5008.csv'), ms5008Csv);
-  fs.writeFileSync(path.join(dataDir, '3747.csv'), ms3747Csv);
-  fs.writeFileSync(path.join(dataDir, '3797.csv'), ms3797Csv);
-  fs.writeFileSync(path.join(dataDir, '6259.csv'), ms6259Csv);
+  try {
+    const files = ['5008', '3747', '3797', '6259'];
+    for (const f of files) {
+      const xlsxPath = path.join(dataDir, `${f}.xlsx`);
+      if (fs.existsSync(xlsxPath)) {
+        const buffer = fs.readFileSync(xlsxPath);
+        const csv = fromExcelToCsv(buffer)[0];
+        fs.writeFileSync(path.join(dataDir, `${f}.csv`), csv);
+        console.log(`Converted ${f}.xlsx to CSV`);
+      }
+    }
+  } catch (e) {
+    console.warn("Excel conversion failed or skipped:", e);
+  }
 }
 
 async function main() {

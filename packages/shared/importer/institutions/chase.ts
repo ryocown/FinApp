@@ -67,7 +67,7 @@ export class ChaseCsvStatementImporter extends StatementImporter {
     if (transactionType === TransactionType.Transfer) {
       return new TransferTransaction(
         this.accountId,
-        'unknown_destination', // TODO: Parse destination from description
+        'unknown_linked_tx', // We don't know the linked transaction yet
         this.userId,
 
         amount,
@@ -90,7 +90,7 @@ export class ChaseCsvStatementImporter extends StatementImporter {
       false, // isTaxDeductable
       false, // hasCapitalGains
       null, // merchant
-      CategoryType.Unknown,
+      CategoryType.Other,
       [], // tagIds
       transactionType
     );
@@ -155,8 +155,8 @@ export class ChaseCreditCsvStatementImporter extends StatementImporter {
 
     if (transactionType === TransactionType.Transfer) {
       return new TransferTransaction(
-        'unknown_source', // For credit card payments, money comes from somewhere else
         this.accountId,
+        'unknown_linked_tx', // We don't know the linked transaction yet
         this.userId,
         amount,
         this.currency,

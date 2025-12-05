@@ -61,9 +61,9 @@ export interface ITradeTransaction extends ITransaction {
 }
 
 export interface ITransferTransaction extends ITransaction {
-  destinationAccountId: string;
-
   transactionType: TransactionType.Transfer;
+  linkedTransactionId: string;
+  exchangeRate?: number;
 }
 
 export class GeneralTransaction implements ITransaction {
@@ -185,7 +185,7 @@ export class TransferTransaction implements ITransaction {
   transactionId: string;
   accountId: string;
   userId: string;
-  destinationAccountId: string;
+  linkedTransactionId: string;
   categoryId?: string;
   tagIds: string[];
 
@@ -196,11 +196,12 @@ export class TransferTransaction implements ITransaction {
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
   transactionType: TransactionType;
+  exchangeRate?: number;
 
-  constructor(accountId: string, destinationAccountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = []) {
+  constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = [], exchangeRate?: number) {
     this.transactionId = v4();
     this.accountId = accountId;
-    this.destinationAccountId = destinationAccountId;
+    this.linkedTransactionId = linkedTransactionId;
     this.userId = userId;
 
     this.amount = amount;
@@ -212,21 +213,86 @@ export class TransferTransaction implements ITransaction {
     this.transactionType = TransactionType.Transfer;
     this.categoryId = categoryId;
     this.tagIds = tagIds;
+    this.exchangeRate = exchangeRate;
   }
 
   static fromJSON(json: any): TransferTransaction {
     const transaction = new TransferTransaction(
       json.accountId,
-      json.destinationAccountId,
+      json.linkedTransactionId,
       json.userId,
       json.amount,
       Currency.fromJSON(json.currency),
       new Date(json.date),
       json.description,
       json.categoryId,
-      json.tagIds
+      json.tagIds,
+      json.exchangeRate
     );
     transaction.transactionId = json.transactionId;
     return transaction;
+  }
+
+  /**
+   * Helper to create a pair of linked transfer transactions.
+   * 
+   * @param sourceAccountId Account ID sending money (amount should be negative)
+   * @param destinationAccountId Account ID receiving money (amount should be positive)
+   * @param userId User ID
+   * @param sourceAmount Amount in source currency (negative)
+   * @param sourceCurrency Source Currency
+   * @param destinationAmount Amount in destination currency (positive)
+   * @param destinationCurrency Destination Currency
+   * @param date Date of transfer
+   * @param description Description
+   */
+  static createTransferPair(
+    sourceAccountId: string,
+    destinationAccountId: string,
+    userId: string,
+    sourceAmount: number,
+    sourceCurrency: Currency,
+    destinationAmount: number,
+    destinationCurrency: Currency,
+    date: Date,
+    description: string | null
+  ): [TransferTransaction, TransferTransaction] {
+    // Pre-generate IDs so we can link them
+    const sourceTxId = v4();
+    const destTxId = v4();
+
+    // Calculate implied exchange rate (Source -> Dest)
+    // Rate = DestAmount / Abs(SourceAmount)
+    const rate = Math.abs(destinationAmount / sourceAmount);
+
+    const sourceTx = new TransferTransaction(
+      sourceAccountId,
+      destTxId,
+      userId,
+      sourceAmount,
+      sourceCurrency,
+      date,
+      description,
+      undefined,
+      [],
+      rate
+    );
+    sourceTx.transactionId = sourceTxId; // Override with pre-generated ID
+
+    const destTx = new TransferTransaction(
+      destinationAccountId,
+      sourceTxId,
+      userId,
+      destinationAmount,
+      destinationCurrency,
+      date,
+      description,
+      undefined,
+      [],
+      rate
+    );
+    destTx.transactionId = destTxId; // Override with pre-generated ID
+
+    return [sourceTx, destTx];
   }
 }

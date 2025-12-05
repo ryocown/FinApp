@@ -47,4 +47,14 @@ export class CurrencyPair implements ICurrencyPair {
 
     return this;
   }
+
+  static getPairId(base: ICurrency | string, quote: ICurrency | string): string {
+    const baseCode = typeof base === 'string' ? base : base.code;
+    const quoteCode = typeof quote === 'string' ? quote : quote.code;
+
+    if (baseCode > quoteCode) {
+      return `${quoteCode}${baseCode}`;
+    }
+    return `${baseCode}${quoteCode}`;
+  }
 }

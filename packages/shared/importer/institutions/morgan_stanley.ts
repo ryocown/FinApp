@@ -74,7 +74,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
     if (type === TransactionType.Transfer) {
       return new TransferTransaction(
         this.accountId,
-        'unknown_destination', // TODO: Parse destination from description
+        'unknown_linked_tx', // We don't know the linked transaction yet
         this.userId,
 
         parseFloat(record[this.mapping.amountColumn]),
@@ -96,7 +96,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
       false,
       false,
       null,
-      CategoryType.Unknown,
+      CategoryType.Other,
       [],
       this.mapping.categoryColumn ? record[this.mapping.categoryColumn] : undefined,
     );

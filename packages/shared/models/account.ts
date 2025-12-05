@@ -1,6 +1,5 @@
 import { Currency, type ICurrency } from "./currency";
 import { v4 } from "uuid";
-import { type IFinancialInstrument } from "./financial_instrument";
 import { type ILot } from "./lot";
 
 export interface IAccount {
@@ -13,6 +12,7 @@ export interface IAccount {
   currency: ICurrency;
   name: string;
   AccountType: AccountType;
+  isTaxable: boolean;
 }
 
 export interface IPosition {

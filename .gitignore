@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+**/node_modules
 /.pnp
 .pnp.js
 
@@ -52,3 +52,5 @@ Thumbs.db
 .env
 firebase-debug.log
 firestore-debug.log
+
+critique.md
