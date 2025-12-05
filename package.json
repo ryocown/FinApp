@@ -5,9 +5,9 @@
   "main": "general_transaction.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:import": "tsx packages/shared/importer/example/test_import.ts",
-    "data:import": "tsx packages/shared/importer/example/import_to_firebase.ts",
-    "data:verify": "tsx packages/shared/importer/example/verify_firebase_data.ts"
+    "test:import": "tsx packages/shared/tests/import.test.ts",
+    "data:import": "tsx packages/shared/lib/import_to_firebase.ts",
+    "data:verify": "tsx packages/shared/lib/verify_firebase_data.ts"
   },
   "repository": {
     "type": "git",

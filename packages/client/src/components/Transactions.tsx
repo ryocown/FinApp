@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Search, Filter, Download, ArrowUpDown } from 'lucide-react'
+import { Search, Filter, Download, ArrowUpDown, CheckCircle } from 'lucide-react'
 import { useTransactions, useAccounts } from '../lib/hooks'
+import { ReconcileModal } from './ReconcileModal'
 
 interface TransactionsProps {
   userId: string
@@ -9,11 +10,19 @@ interface TransactionsProps {
 export function Transactions({ userId }: TransactionsProps) {
   const [limitCount, setLimitCount] = useState(50)
   const [pageToken, setPageToken] = useState<string | null>(null)
-  const [pageHistory, setPageHistory] = useState<(string | null)[]>([null])
+  const [pageHistory, setPageHistory] = useState<{ token: string | null; balanceOffset: number }[]>([{ token: null, balanceOffset: 0 }])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
+  const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false)
   const { transactions, nextPageToken } = useTransactions(userId, limitCount, pageToken, selectedAccountId)
   const { accounts } = useAccounts(userId)
+
+  // Reset pagination when filters change
+  const handleFilterChange = (newAccountId: string) => {
+    setSelectedAccountId(newAccountId)
+    setPageToken(null)
+    setPageHistory([{ token: null, balanceOffset: 0 }])
+  }
 
   const getAccountName = (accountId: string, accountName?: string) => {
     if (accountId) {
@@ -34,7 +43,15 @@ export function Transactions({ userId }: TransactionsProps) {
 
   const handleNextPage = () => {
     if (nextPageToken) {
-      setPageHistory([...pageHistory, nextPageToken])
+      // Calculate offset for the next page (sum of current page amounts)
+      // Note: We are walking backwards in time, so we subtract the amounts?
+      // No, to get the starting balance of the NEXT page (older), 
+      // we need to subtract all amounts of the CURRENT page from the current start balance.
+      // Offset tracks how much we have subtracted from the Anchor.
+      const currentPageSum = transactions.reduce((sum, t) => sum + t.amount, 0);
+      const currentOffset = pageHistory[pageHistory.length - 1].balanceOffset;
+
+      setPageHistory([...pageHistory, { token: nextPageToken, balanceOffset: currentOffset + currentPageSum }])
       setPageToken(nextPageToken)
     }
   }
@@ -43,9 +60,9 @@ export function Transactions({ userId }: TransactionsProps) {
     if (pageHistory.length > 1) {
       const newHistory = [...pageHistory]
       newHistory.pop() // Remove current page
-      const prevToken = newHistory[newHistory.length - 1]
+      const prevPage = newHistory[newHistory.length - 1]
       setPageHistory(newHistory)
-      setPageToken(prevToken)
+      setPageToken(prevPage.token)
     }
   }
 
@@ -53,7 +70,8 @@ export function Transactions({ userId }: TransactionsProps) {
     date: 140,
     category: 150,
     account: 180,
-    amount: 120
+    amount: 120,
+    balance: 120
   });
 
   const handleMouseDown = (column: keyof typeof columnWidths, e: React.MouseEvent) => {
@@ -82,6 +100,15 @@ export function Transactions({ userId }: TransactionsProps) {
           <p className="text-zinc-400 text-sm">View and manage your financial transactions</p>
         </div>
         <div className="flex items-center gap-2">
+          {selectedAccountId !== 'all' && (
+            <button
+              onClick={() => setIsReconcileModalOpen(true)}
+              className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-md text-sm font-medium text-zinc-200 transition-colors flex items-center gap-2"
+            >
+              <CheckCircle size={18} />
+              Reconcile
+            </button>
+          )}
           <button className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-md text-zinc-200 transition-colors" title="Export">
             <Download size={20} />
           </button>
@@ -91,6 +118,21 @@ export function Transactions({ userId }: TransactionsProps) {
           </button>
         </div>
       </header>
+
+      {selectedAccountId !== 'all' && (
+        <ReconcileModal
+          isOpen={isReconcileModalOpen}
+          onClose={() => setIsReconcileModalOpen(false)}
+          accountId={selectedAccountId}
+          userId={userId}
+          currentBalance={accounts.find(a => a.accountId === selectedAccountId)?.balance || 0}
+          onSuccess={() => {
+            // Ideally refresh accounts here, but for MVP a reload or just updated balance is fine
+            // We can force a refresh if we exposed a refresh function from useAccounts
+            window.location.reload()
+          }}
+        />
+      )}
 
       <div className="p-6 space-y-6">
         {/* Search and Filter Bar */}
@@ -112,7 +154,7 @@ export function Transactions({ userId }: TransactionsProps) {
             onChange={(e) => {
               setLimitCount(Number(e.target.value))
               setPageToken(null)
-              setPageHistory([null])
+              setPageHistory([{ token: null, balanceOffset: 0 }])
             }}
           >
             <option value={50}>50 per page</option>
@@ -125,9 +167,7 @@ export function Transactions({ userId }: TransactionsProps) {
             className="bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
             value={selectedAccountId}
             onChange={(e) => {
-              setSelectedAccountId(e.target.value)
-              setPageToken(null)
-              setPageHistory([null])
+              handleFilterChange(e.target.value)
             }}
           >
             <option value="all">All Accounts</option>
@@ -162,11 +202,17 @@ export function Transactions({ userId }: TransactionsProps) {
                     Amount
                     <div className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('amount', e)} />
                   </th>
+                  {selectedAccountId !== 'all' && (
+                    <th className="px-6 py-4 text-sm font-medium text-zinc-400 text-right relative group" style={{ width: columnWidths.balance }}>
+                      Balance
+                      <div className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('balance', e)} />
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {filteredTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-zinc-800/50 transition-colors group">
+                  <tr key={transaction.transactionId} className="hover:bg-zinc-800/50 transition-colors group">
                     <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">
                       {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
@@ -184,11 +230,41 @@ export function Transactions({ userId }: TransactionsProps) {
                     <td className={`px-6 py-4 text-sm font-medium text-right whitespace-nowrap ${transaction.amount >= 0 ? 'text-emerald-400' : 'text-zinc-100'}`}>
                       {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                     </td>
+                    {selectedAccountId !== 'all' && (() => {
+                      // Calculate running balance for this row
+                      // Start with Account Balance (Anchor)
+                      const account = accounts.find(a => a.accountId === selectedAccountId);
+                      const anchorBalance = account?.balance || 0;
+
+                      // Subtract offset from previous pages
+                      const pageOffset = pageHistory[pageHistory.length - 1].balanceOffset;
+                      const startBalance = anchorBalance - pageOffset;
+
+                      // Calculate balance for this specific row
+                      // We need the sum of all transactions in THIS page BEFORE this row
+                      // filteredTransactions is the current page list
+                      const index = filteredTransactions.findIndex(t => t.transactionId === transaction.transactionId);
+                      // Sum of amounts from 0 to index-1
+                      const previousRowsSum = filteredTransactions.slice(0, index).reduce((sum, t) => sum + t.amount, 0);
+
+                      // Balance at this row = StartBalance - PreviousRowsSum
+                      // Wait, logic check:
+                      // Row 0 Balance = StartBalance.
+                      // Row 1 Balance = Row 0 Balance - Row 0 Amount = StartBalance - Row 0 Amount.
+                      // Row i Balance = StartBalance - Sum(0 to i-1).
+                      const rowBalance = startBalance - previousRowsSum;
+
+                      return (
+                        <td className="px-6 py-4 text-sm text-zinc-400 text-right whitespace-nowrap">
+                          {rowBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                        </td>
+                      );
+                    })()}
                   </tr>
                 ))}
                 {filteredTransactions.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+                    <td colSpan={selectedAccountId !== 'all' ? 6 : 5} className="px-6 py-12 text-center text-zinc-500">
                       No transactions found matching your search.
                     </td>
                   </tr>

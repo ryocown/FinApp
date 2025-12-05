@@ -7,6 +7,7 @@ export interface IStatement {
 
   startDate: Date;
   endDate: Date;
+  endingBalance?: number;
   transactions: ITransaction[];
 }
 
@@ -16,14 +17,16 @@ export class Statement implements IStatement {
 
   startDate: Date;
   endDate: Date;
+  endingBalance?: number;
   transactions: ITransaction[];
 
-  constructor(accountId: string, startDate: Date, endDate: Date, transactions: ITransaction[]) {
+  constructor(accountId: string, startDate: Date, endDate: Date, transactions: ITransaction[], endingBalance?: number) {
     this.statementId = v4();
     this.accountId = accountId;
 
     this.startDate = startDate;
     this.endDate = endDate;
+    this.endingBalance = endingBalance;
     this.transactions = transactions;
   }
 
@@ -45,7 +48,8 @@ export class Statement implements IStatement {
       json.accountId,
       new Date(json.startDate),
       new Date(json.endDate),
-      transactions
+      transactions,
+      json.endingBalance
     );
     statement.statementId = json.statementId;
     return statement;

@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../importer/institutions/chase';
 import dotenv from 'dotenv';
@@ -9,6 +10,7 @@ import { Account, AccountType, type IAccount } from '../models/account';
 import { Currency } from '../models/currency';
 import { Institute } from '../models/institute';
 import { type IStatementImporter } from "../importer/importer";
+import { type IBalanceCheckpoint } from '../models/balance_checkpoint';
 import { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { MorganStanleyStatementImporter } from '../importer/institutions/morgan_stanley';
 import { fromExcelToCsv } from './from_excel_to_csv';
@@ -38,21 +40,74 @@ async function processTransactionsBatch(
   instituteId: string,
   accountRef: DocumentReference,
   transactions: any[]
-) {
+): Promise<number> {
   const BATCH_SIZE = 400;
+  let totalDuplicates = 0;
+  let totalImported = 0;
+  let totalAmount = 0;
+
   for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
     const chunk = transactions.slice(i, i + BATCH_SIZE);
-    const batch = db.batch();
 
-    for (const t of chunk) {
-      const deepRef = accountRef.collection('transactions').doc(t.transactionId);
-      batch.set(deepRef, JSON.parse(JSON.stringify(t)));
+    // Deduplicate within the chunk first
+    const uniqueChunkMap = new Map();
+    chunk.forEach(t => {
+      if (!uniqueChunkMap.has(t.transactionId)) {
+        uniqueChunkMap.set(t.transactionId, t);
+      } else {
+        // Count as duplicate if it's already in the batch
+        totalDuplicates++;
+      }
+    });
+    const uniqueChunk = Array.from(uniqueChunkMap.values());
 
-      const refDocRef = db.collection('users').doc(userId).collection('transactions').doc(t.transactionId);
-      batch.set(refDocRef, { RefTxId: deepRef });
+    if (uniqueChunk.length === 0) continue;
+
+    // Check for duplicates in Firestore
+    const refs = uniqueChunk.map(t => accountRef.collection('transactions').doc(t.transactionId));
+
+    // db.getAll() supports reading multiple documents efficiently
+    const snapshots = await db.getAll(...refs);
+
+    const newTransactions: any[] = [];
+    let duplicatesInBatch = 0;
+
+    snapshots.forEach((snap, index) => {
+      if (snap.exists) {
+        duplicatesInBatch++;
+      } else {
+        newTransactions.push(uniqueChunk[index]);
+      }
+    });
+
+    totalDuplicates += duplicatesInBatch;
+
+    if (newTransactions.length > 0) {
+      const batch = db.batch();
+
+      for (const t of newTransactions) {
+        const deepRef = accountRef.collection('transactions').doc(t.transactionId);
+        // Use create() to ensure we don't overwrite if it somehow appeared since the check
+        batch.create(deepRef, JSON.parse(JSON.stringify(t)));
+
+        const refDocRef = db.collection('users').doc(userId).collection('transactions').doc(t.transactionId);
+        // We use set() for the reference to ensure it exists/updates, 
+        // though typically if deepRef didn't exist, this shouldn't either.
+        batch.set(refDocRef, { RefTxId: deepRef });
+
+        totalAmount += t.amount;
+      }
+      await batch.commit();
+      totalImported += newTransactions.length;
     }
-    await batch.commit();
   }
+
+  if (totalDuplicates > 0) {
+    console.log(`    Skipped ${totalDuplicates} duplicate transactions.`);
+  }
+  console.log(`    Imported ${totalImported} new transactions.`);
+
+  return totalAmount;
 }
 
 async function importAccountWithBatch(
@@ -61,7 +116,8 @@ async function importAccountWithBatch(
   instituteId: string,
   account: IAccount,
   importerCtor: new (accountId: string, userId: string) => IStatementImporter,
-  csvFileName: string
+  csvFileName: string,
+  forcedEndingBalance?: number
 ) {
   const accountId = account.accountId;
   console.log(`  Processing account ${account.name} (${accountId})...`);
@@ -84,19 +140,48 @@ async function importAccountWithBatch(
 
   const csvData = fs.readFileSync(csvPath, 'utf-8');
   const statement = await importerInstance.import(csvData);
+  if (forcedEndingBalance !== undefined) {
+    statement.endingBalance = forcedEndingBalance;
+  }
 
   console.log(`    Importing ${statement.transactions.length} transactions...`);
 
-  let delta = 0;
-  statement.transactions.forEach(t => delta += t.amount);
+  // We don't calculate delta here anymore, we get it from what was actually inserted
+  const insertedAmount = await processTransactionsBatch(db, userId, instituteId, accountRef, statement.transactions);
 
-  await processTransactionsBatch(db, userId, instituteId, accountRef, statement.transactions);
+  // 3. Update account balance using Checkpoint if available
+  if (statement.endingBalance !== undefined) {
+    const checkpoint: IBalanceCheckpoint = {
+      id: v4(),
+      accountId: accountId,
+      date: statement.endDate,
+      balance: statement.endingBalance,
+      type: 'statement',
+      createdAt: new Date()
+    };
 
-  // 3. Update account balance
-  console.log(`    Delta: ${delta}`);
-  await accountRef.update({
-    balance: admin.firestore.FieldValue.increment(delta)
-  });
+    // Save checkpoint
+    await accountRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
+    console.log(`    Created balance checkpoint: ${checkpoint.balance} at ${checkpoint.date.toISOString()}`);
+
+    // Update Account if this checkpoint is newer
+    // For simplicity in this script, we assume the imported statement is the "latest" we want to sync to
+    // or we check against current balanceDate.
+    // Since we are overwriting/seeding, we can just update.
+    await accountRef.update({
+      balance: statement.endingBalance,
+      balanceDate: statement.endDate
+    });
+  } else {
+    // Fallback or just log
+    console.log(`    No ending balance in statement. Account balance not updated (Legacy delta: ${insertedAmount})`);
+    // Optional: Keep legacy delta if needed, but User wants Anchor approach.
+    // if (insertedAmount !== 0) {
+    //   await accountRef.update({
+    //     balance: admin.firestore.FieldValue.increment(insertedAmount)
+    //   });
+    // }
+  }
 
   console.log(`  Account ${account.name} processed successfully.`);
 }
@@ -133,7 +218,7 @@ async function importToFirebase() {
 
   // 4. Import Data
   for (const institute of institutes) {
-    const instituteId = institute.name.replace(/\s+/g, '').toLowerCase();
+    const instituteId = institute.instituteId;
     console.log(`Processing institute ${institute.name} (${instituteId})...`);
 
     // Create Institute Doc
@@ -181,7 +266,10 @@ async function importToFirebase() {
       // }
 
       if (importer && csvFile) {
-        await importAccountWithBatch(db, userId, instituteId, account, importer, csvFile);
+        let forcedBalance: number | undefined;
+        if (account === chase8829) forcedBalance = 5000;
+        if (account === chase6459) forcedBalance = -1000;
+        await importAccountWithBatch(db, userId, instituteId, account, importer, csvFile, forcedBalance);
       }
     }
   }

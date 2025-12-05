@@ -3,6 +3,7 @@ import admin from 'firebase-admin';
 import { AlpacaQuoteProvider } from '../provider/quote_providers/alpaca';
 import { GeminiAIProvider } from '../provider/ai_providers/gemini';
 import { InstrumentType } from '@finapp/shared/models/financial_instrument';
+import { getInstrumentsRef } from '../firebase';
 
 const router = Router();
 
@@ -34,8 +35,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   try {
-    const db = admin.firestore();
-    const snapshot = await db.collection('instruments').where('cusip', '==', cusip).limit(1).get();
+    const snapshot = await getInstrumentsRef().where('cusip', '==', cusip).limit(1).get();
 
     if (snapshot.empty) {
       res.status(404).json({ error: 'Instrument not found' });
@@ -80,10 +80,8 @@ router.post('/', async (req: Request, res: Response) => {
   }
 
   try {
-    const db = admin.firestore();
-
     // Check if instrument already exists
-    const snapshot = await db.collection('instruments').where('cusip', '==', cusip).limit(1).get();
+    const snapshot = await getInstrumentsRef().where('cusip', '==', cusip).limit(1).get();
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       if (!doc) {
@@ -141,7 +139,7 @@ router.post('/', async (req: Request, res: Response) => {
       ...enrichedData, // Override with enriched data (e.g. type, ticker, better name, sector)
     };
 
-    const docRef = await db.collection('instruments').add(newInstrument);
+    const docRef = await getInstrumentsRef().add(newInstrument);
 
     res.status(201).json({
       id: docRef.id,

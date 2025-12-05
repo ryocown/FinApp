@@ -20,3 +20,8 @@ export const CategorySchema = z.object({
   type: z.enum(['income', 'expense']),
   parentId: z.string().optional(),
 });
+
+export const InstituteSchema = z.object({
+  name: z.string().min(1),
+  userId: z.string().min(1),
+});

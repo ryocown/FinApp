@@ -7,7 +7,7 @@ import { Transactions } from './components/Transactions'
 
 function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const userId = 'fake-user-id-yxt06l'
+  const userId = '7aa82b6b-3f5c-4ce1-ae82-92d7601f8d53'
   const location = useLocation()
   const navigate = useNavigate()
 

@@ -19,3 +19,24 @@ if (!admin.apps.length) {
 
 export const db = admin.firestore();
 export const auth: admin.auth.Auth = admin.auth();
+
+export const getUserRef = (userId: string) => db.collection('users').doc(userId);
+
+export const getInstituteRef = (userId: string, instituteId: string) =>
+  getUserRef(userId).collection('institutes').doc(instituteId);
+
+export const getAccountRef = async (userId: string, accountId: string) => {
+  const institutesSnapshot = await getUserRef(userId).collection('institutes').get();
+
+  for (const doc of institutesSnapshot.docs) {
+    const ref = doc.ref.collection('accounts').doc(accountId);
+    const accountDoc = await ref.get();
+    if (accountDoc.exists) {
+      return { ref, instituteId: doc.id };
+    }
+  }
+  return null;
+};
+
+export const getInstrumentsRef = () => db.collection('instruments');
+export const getCategoriesRef = () => db.collection('categories');

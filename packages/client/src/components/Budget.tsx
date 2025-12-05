@@ -80,7 +80,7 @@ export function Budget({ userId }: BudgetProps) {
                     itemStyle={{ color: '#f4f4f5' }}
                     formatter={(value: number) => [`$${value}`, 'Budget']}
                   />
-                  <Legend formatter={(value, entry: any) => <span className="text-zinc-300">{entry.payload.name}</span>} />
+                  <Legend formatter={(_value, entry: any) => <span className="text-zinc-300">{entry.payload.name}</span>} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

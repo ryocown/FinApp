@@ -1,13 +1,23 @@
+import { v4 } from "uuid";
 import type { IAccount } from "./account";
 
-export class Institute {
+export interface IInstitute {
+    instituteId: string;
     name: string;
-    accounts: IAccount[];
-    owner: string; // UserId
+    userId: string;
+    accounts?: IAccount[];
+}
 
-    constructor(name: string, owner: string, accounts: IAccount[]) {
+export class Institute implements IInstitute {
+    instituteId: string;
+    name: string;
+    userId: string;
+    accounts: IAccount[];
+
+    constructor(name: string, userId: string, accounts: IAccount[]) {
+        this.instituteId = v4();
         this.name = name;
-        this.owner = owner;
+        this.userId = userId;
         this.accounts = accounts;
     }
 }

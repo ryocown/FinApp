@@ -1,6 +1,15 @@
 import { Currency } from "./currency";
 import { Merchant } from "./merchant";
-import { v4 } from 'uuid';
+import { v5 } from 'uuid';
+
+const TRANSACTION_SALT = '1b671a64-40d5-491e-99b0-da01ff1f3341';
+
+function generateTransactionId(parts: (string | number | boolean | null | undefined)[]): string {
+  // Filter out undefined/null to keep it clean, or just stringify everything.
+  // Stringifying everything ensures position matters (e.g. null vs empty string).
+  const data = parts.map(p => p === undefined || p === null ? '' : String(p)).join('|');
+  return v5(data, TRANSACTION_SALT);
+}
 
 /**
  * I don't think we are going to do double entry bookkeeping,
@@ -84,7 +93,17 @@ export class GeneralTransaction implements ITransaction {
   transactionType: TransactionType;
 
   constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
-    this.transactionId = v4();
+    // Hash: accountId, userId, amount, currency, date, description, transactionType, merchantName
+    this.transactionId = generateTransactionId([
+      accountId,
+      userId,
+      amount,
+      currency.code,
+      date.toISOString(),
+      description,
+      transactionType,
+      merchant?.name
+    ]);
     this.accountId = accountId;
     this.userId = userId;
 
@@ -142,7 +161,19 @@ export class TradeTransaction implements ITransaction {
     description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean,
     instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
 
-    this.transactionId = v4();
+    // Hash: accountId, userId, amount, currency, date, description, instrumentId, quantity, price
+    this.transactionId = generateTransactionId([
+      accountId,
+      userId,
+      amount,
+      currency.code,
+      date.toISOString(),
+      description,
+      TransactionType.Trade,
+      instrumentId,
+      quantity,
+      price
+    ]);
     this.accountId = accountId;
     this.userId = userId;
 
@@ -199,7 +230,17 @@ export class TransferTransaction implements ITransaction {
   exchangeRate?: number;
 
   constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = [], exchangeRate?: number) {
-    this.transactionId = v4();
+    // Hash: accountId, userId, amount, currency, date, description, transactionType
+    // EXCLUDING linkedTransactionId to avoid circular dependency and allow linking later without ID change
+    this.transactionId = generateTransactionId([
+      accountId,
+      userId,
+      amount,
+      currency.code,
+      date.toISOString(),
+      description,
+      TransactionType.Transfer
+    ]);
     this.accountId = accountId;
     this.linkedTransactionId = linkedTransactionId;
     this.userId = userId;
@@ -257,17 +298,13 @@ export class TransferTransaction implements ITransaction {
     date: Date,
     description: string | null
   ): [TransferTransaction, TransferTransaction] {
-    // Pre-generate IDs so we can link them
-    const sourceTxId = v4();
-    const destTxId = v4();
-
     // Calculate implied exchange rate (Source -> Dest)
     // Rate = DestAmount / Abs(SourceAmount)
     const rate = Math.abs(destinationAmount / sourceAmount);
 
     const sourceTx = new TransferTransaction(
       sourceAccountId,
-      destTxId,
+      'placeholder', // Will be updated
       userId,
       sourceAmount,
       sourceCurrency,
@@ -277,11 +314,10 @@ export class TransferTransaction implements ITransaction {
       [],
       rate
     );
-    sourceTx.transactionId = sourceTxId; // Override with pre-generated ID
 
     const destTx = new TransferTransaction(
       destinationAccountId,
-      sourceTxId,
+      'placeholder', // Will be updated
       userId,
       destinationAmount,
       destinationCurrency,
@@ -291,7 +327,10 @@ export class TransferTransaction implements ITransaction {
       [],
       rate
     );
-    destTx.transactionId = destTxId; // Override with pre-generated ID
+
+    // Now link them
+    sourceTx.linkedTransactionId = destTx.transactionId;
+    destTx.linkedTransactionId = sourceTx.transactionId;
 
     return [sourceTx, destTx];
   }

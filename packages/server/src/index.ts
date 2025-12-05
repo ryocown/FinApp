@@ -15,6 +15,7 @@ import accountRoutes from './routes/accounts';
 import transactionRoutes from './routes/transactions';
 import categoryRoutes from './routes/categories';
 import instrumentRoutes from './routes/instruments';
+import instituteRoutes from './routes/institutes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,6 +27,7 @@ app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/instruments', instrumentRoutes);
+app.use('/api/institutes', instituteRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello from the FinApp server!');

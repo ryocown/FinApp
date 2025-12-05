@@ -1,7 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
-import { db } from '../firebase';
+import { db, getUserRef, getAccountRef } from '../firebase';
 import { type ITransaction } from '../../../shared/models/transaction';
+import { v4 } from 'uuid';
 
 import { TransactionSchema } from '../schemas';
 import { validate } from '../middleware/validate';
@@ -19,17 +20,42 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
       return;
     }
 
-    let query: admin.firestore.Query = db.collection('users').doc(userId).collection('transactions');
+    let query: admin.firestore.Query;
+    let collectionRef: admin.firestore.CollectionReference;
 
+    // If accountId is provided, we query the specific account's nested collection
+    // This allows us to filter and sort by date efficiently
     if (accountId) {
-      query = query.where('accountId', '==', accountId);
+      // 1. Find the institute for this account
+      const result = await getAccountRef(userId, accountId as string);
+
+      if (!result) {
+        // If account not found, return empty list or 404.
+        // Returning empty list is safer for a filter.
+        res.json({ transactions: [], nextPageToken: null });
+        return;
+      }
+
+      const { ref: accountRef } = result;
+
+      collectionRef = accountRef.collection('transactions');
+
+      query = collectionRef;
+
+      // We can sort by date here because it's the real collection
+      query = query.orderBy('date', 'desc');
+
+    } else {
+      // Global list: query the pointers
+      // Note: We cannot efficiently sort by date here yet
+      collectionRef = getUserRef(userId).collection('transactions');
+      query = collectionRef;
     }
 
-    // Always order by date for consistent pagination
-    query = query.orderBy('date', 'desc');
-
     if (pageToken) {
-      const lastDoc = await db.collection('users').doc(userId).collection('transactions').doc(pageToken as string).get();
+      // For both nested and global collections, pageToken is the document ID.
+      // We use the determined collectionRef to get the last document.
+      const lastDoc = await collectionRef.doc(pageToken as string).get();
       if (lastDoc.exists) {
         query = query.startAfter(lastDoc);
       }
@@ -40,7 +66,21 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
     }
 
     const snapshot = await query.get();
-    const transactions = snapshot.docs.map(doc => Object.assign({}, doc.data(), { transactionId: doc.id }));
+
+    // Resolve references
+    const transactionPromises = snapshot.docs.map(async doc => {
+      const data = doc.data();
+      if (data.RefTxId && data.RefTxId instanceof admin.firestore.DocumentReference) {
+        const realDoc = await data.RefTxId.get();
+        if (realDoc.exists) {
+          return Object.assign({}, realDoc.data(), { transactionId: realDoc.id });
+        }
+      }
+      // Fallback if it's not a reference (legacy data?) or reference broken
+      return Object.assign({}, data, { transactionId: doc.id });
+    });
+
+    const transactions = (await Promise.all(transactionPromises)).filter(t => t !== null);
 
     const lastVisible = snapshot.docs[snapshot.docs.length - 1];
     const nextPageToken = lastVisible ? lastVisible.id : null;
@@ -64,8 +104,31 @@ router.post('/users/:userId/transactions', validate(TransactionSchema), async (r
       return;
     }
     const transaction: ITransaction = req.body;
-    const docRef = await db.collection('users').doc(userId).collection('transactions').add(transaction);
-    res.status(201).json(Object.assign({}, transaction, { transactionId: docRef.id }));
+
+    // 1. Find the institute for this account
+    const result = await getAccountRef(userId, transaction.accountId);
+
+    if (!result) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+
+    const { ref: accountRef } = result;
+
+    // 2. Create in nested collection
+    // Use transactionId if provided, or auto-generate?
+    // The model usually generates it. If the client sends it, we use it.
+    // If not, we should probably generate it or let Firestore do it (but we prefer deterministic IDs).
+    // For now, let's assume client sends it or we let Firestore generate if missing (though model requires it).
+
+    const nestedRef = accountRef.collection('transactions').doc(transaction.transactionId || v4());
+    await nestedRef.set(transaction);
+
+    // 3. Create reference in global collection
+    const globalRef = getUserRef(userId).collection('transactions').doc(nestedRef.id);
+    await globalRef.set({ RefTxId: nestedRef });
+
+    res.status(201).json(Object.assign({}, transaction, { transactionId: nestedRef.id }));
   } catch (error) {
     console.error('Error creating transaction:', error);
     res.status(500).json({ error: 'Failed to create transaction' });

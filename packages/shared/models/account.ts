@@ -8,6 +8,7 @@ export interface IAccount {
 
   accountNumber: string;
   balance: number;
+  balanceDate: Date;
   country: string;
   currency: ICurrency;
   name: string;
@@ -71,6 +72,7 @@ export class Account implements IAccount {
 
   accountNumber: string;
   balance: number;
+  balanceDate: Date;
   country: string;
   currency: Currency;
   name: string;
@@ -84,6 +86,7 @@ export class Account implements IAccount {
 
     this.accountNumber = accountNumber;
     this.balance = balance;
+    this.balanceDate = new Date(); // Default to now if not specified
     this.country = country;
     this.currency = currency;
     this.name = name;
@@ -113,6 +116,7 @@ export class InvestmentAccount implements IInvestmentAccount {
 
   accountNumber: string;
   balance: number;
+  balanceDate: Date;
   country: string;
   currency: ICurrency;
   name: string;
@@ -127,6 +131,7 @@ export class InvestmentAccount implements IInvestmentAccount {
 
     this.accountNumber = accountNumber;
     this.balance = balance;
+    this.balanceDate = new Date(); // Default to now if not specified
     this.country = country;
     this.currency = currency;
     this.name = name;
