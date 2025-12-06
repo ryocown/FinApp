@@ -4,10 +4,11 @@ import { Sidebar } from './components/Sidebar'
 import { Dashboard } from './components/Dashboard'
 import { Budget } from './components/Budget'
 import { Transactions } from './components/Transactions'
+import { Accounts } from './components/Accounts'
 
 function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const userId = '7aa82b6b-3f5c-4ce1-ae82-92d7601f8d53'
+  const userId = 'c9ec4d95-e7b9-43f5-9ce8-85dd4c735b6c'
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -30,6 +31,7 @@ function AppContent() {
         <Route path="/dashboard" element={<Dashboard userId={userId} />} />
         <Route path="/budget" element={<Budget userId={userId} />} />
         <Route path="/transactions" element={<Transactions userId={userId} />} />
+        <Route path="/accounts" element={<Accounts userId={userId} />} />
         {/* Add more routes as needed */}
       </Routes>
     </div>

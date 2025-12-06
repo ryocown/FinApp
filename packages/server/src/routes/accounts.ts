@@ -32,7 +32,7 @@ router.get('/users/:userId/accounts', async (req: Request, res: Response) => {
 
     const accountPromises = institutesSnapshot.docs.map(async instituteDoc => {
       const accountsSnapshot = await instituteDoc.ref.collection('accounts').get();
-      return accountsSnapshot.docs.map(doc => Object.assign({}, doc.data(), { accountId: doc.id }));
+      return accountsSnapshot.docs.map(doc => Object.assign({}, doc.data(), { accountId: doc.id, instituteId: instituteDoc.id }));
     });
 
     const nestedAccounts = await Promise.all(accountPromises);
@@ -53,9 +53,53 @@ router.post('/users/:userId/accounts', validate(AccountSchema), async (req: Requ
       res.status(400).json({ error: 'Missing userId' });
       return;
     }
-    const account: IAccount = req.body;
-    const docRef = await getUserRef(userId).collection('accounts').add(account);
-    res.status(201).json(Object.assign({}, account, { accountId: docRef.id }));
+
+    // Extract initial balance/date from body if present, separate from account object
+    const { initialBalance, initialDate, ...accountData } = req.body;
+    const account: IAccount = accountData;
+
+    console.log('Creating account:', { body: req.body, account });
+
+    if (!account.instituteId) {
+      res.status(400).json({ error: 'Missing instituteId' });
+      return;
+    }
+
+    // Create the account document nested under the institute
+    const docRef = await getUserRef(userId)
+      .collection('institutes')
+      .doc(account.instituteId)
+      .collection('accounts')
+      .add(account);
+
+    const accountId = docRef.id;
+
+    // Handle initial reconciliation if provided
+    if (initialBalance !== undefined && initialDate) {
+      const checkpoint: IBalanceCheckpoint = {
+        id: v4(),
+        accountId,
+        date: new Date(initialDate),
+        balance: Number(initialBalance),
+        type: 'manual',
+        createdAt: new Date()
+      };
+
+      // Save checkpoint
+      await docRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
+
+      // Update Account with initial balance
+      await docRef.update({
+        balance: checkpoint.balance,
+        balanceDate: checkpoint.date
+      });
+
+      // Update returned account object
+      account.balance = checkpoint.balance;
+      account.balanceDate = checkpoint.date;
+    }
+
+    res.status(201).json(Object.assign({}, account, { accountId }));
   } catch (error) {
     console.error('Error creating account:', error);
     res.status(500).json({ error: 'Failed to create account' });
@@ -172,10 +216,25 @@ router.post('/users/:userId/accounts/:accountId/reconcile', async (req: Request,
     const accountDoc = await accountRef.get();
     const accountData = accountDoc.data() as IAccount;
 
-    // If no existing balanceDate, or new date is >= existing
-    const existingDate = accountData.balanceDate ? new Date(accountData.balanceDate) : new Date(0);
+    // Helper to handle Firestore Timestamps or Dates
+    const getDate = (d: any): Date => {
+      if (!d) return new Date(0);
+      if (typeof d.toDate === 'function') return d.toDate();
+      if (d instanceof Date) return d;
+      return new Date(d);
+    };
 
-    if (checkpoint.date >= existingDate) {
+    const existingDate = getDate(accountData.balanceDate);
+    const newDate = getDate(checkpoint.date);
+
+    const isSameDay = (d1: Date, d2: Date) => {
+      return d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+    };
+
+    // Compare timestamps: Allow if newer OR same day
+    if (newDate.getTime() > existingDate.getTime() || isSameDay(newDate, existingDate)) {
       await accountRef.update({
         balance: checkpoint.balance,
         balanceDate: checkpoint.date
@@ -215,6 +274,38 @@ router.get('/users/:userId/accounts/:accountId/checkpoints', async (req: Request
   } catch (error) {
     console.error('Error fetching checkpoints:', error);
     res.status(500).json({ error: 'Failed to fetch checkpoints' });
+  }
+});
+
+// Delete an account
+router.delete('/users/:userId/accounts/:accountId', async (req: Request, res: Response) => {
+  try {
+    const { userId, accountId } = req.params;
+    if (!userId || !accountId) {
+      res.status(400).json({ error: 'Missing userId or accountId' });
+      return;
+    }
+
+    // Find the account
+    const result = await getAccountRef(userId, accountId);
+
+    if (!result) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+
+    const { ref: accountRef } = result;
+
+    // Delete the account document
+    // Note: This does NOT delete subcollections (transactions, checkpoints) automatically in Firestore.
+    // For a production app, we'd need a recursive delete or a cloud function.
+    // For this prototype, deleting the parent doc is sufficient to hide it from the UI.
+    await accountRef.delete();
+
+    res.status(200).json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 

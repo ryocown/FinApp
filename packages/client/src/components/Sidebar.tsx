@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Wallet, CreditCard, Plus, Menu, PieChart } from 'lucide-react'
+import { LayoutDashboard, Wallet, CreditCard, Plus, Menu, PieChart, Building } from 'lucide-react'
 
 interface NavItemProps {
   icon: React.ReactNode
@@ -24,8 +24,8 @@ function NavItem({ icon, label, isOpen, active = false, onClick }: NavItemProps)
 interface SidebarProps {
   isOpen: boolean
   setIsOpen: (isOpen: boolean) => void
-  currentView: 'dashboard' | 'budget' | 'transactions'
-  setCurrentView: (view: 'dashboard' | 'budget' | 'transactions') => void
+  currentView: 'dashboard' | 'budget' | 'transactions' | 'accounts'
+  setCurrentView: (view: 'dashboard' | 'budget' | 'transactions' | 'accounts') => void
 }
 
 export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView }: SidebarProps) {
@@ -59,6 +59,13 @@ export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView }: Side
           isOpen={isOpen}
           active={currentView === 'transactions'}
           onClick={() => setCurrentView('transactions')}
+        />
+        <NavItem
+          icon={<Building size={20} />}
+          label="Accounts"
+          isOpen={isOpen}
+          active={currentView === 'accounts'}
+          onClick={() => setCurrentView('accounts')}
         />
         <NavItem icon={<Wallet size={20} />} label="Assets" isOpen={isOpen} />
         <NavItem icon={<CreditCard size={20} />} label="Debts" isOpen={isOpen} />

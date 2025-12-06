@@ -4,6 +4,7 @@ import { type ILot } from "./lot";
 
 export interface IAccount {
   accountId: string;
+  instituteId?: string;
   userId: string;
 
   accountNumber: string;
