@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { db } from '../firebase';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/rates', async (req: Request, res: Response) => {
 
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data();
-        if (data) {
+        if (data && typeof data.rate === 'number') {
           rates[pairId] = data.rate;
         }
       }
@@ -32,7 +33,7 @@ router.get('/rates', async (req: Request, res: Response) => {
 
     res.json(rates);
   } catch (error) {
-    console.error('Error fetching rates:', error);
+    logger.error('Error fetching rates:', error);
     res.status(500).json({ error: 'Failed to fetch rates' });
   }
 });

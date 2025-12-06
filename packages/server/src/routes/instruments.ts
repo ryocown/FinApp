@@ -4,6 +4,7 @@ import { AlpacaQuoteProvider } from '../provider/quote_providers/alpaca';
 import { GeminiAIProvider } from '../provider/ai_providers/gemini';
 import { InstrumentType } from '@finapp/shared/models/financial_instrument';
 import { getInstrumentsRef } from '../firebase';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.get('/', async (req: Request, res: Response) => {
       ...doc.data()
     });
   } catch (error) {
-    console.error('Error fetching instrument:', error);
+    logger.error('Error fetching instrument:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -113,7 +114,7 @@ router.post('/', async (req: Request, res: Response) => {
           }
         }
       } catch (err) {
-        console.warn(`Failed to enrich instrument ${cusip}:`, err);
+        logger.warn(`Failed to enrich instrument ${cusip}:`, err);
       }
     }
 
@@ -126,7 +127,7 @@ router.post('/', async (req: Request, res: Response) => {
           enrichedData.sector = sector;
         }
       } catch (err) {
-        console.warn(`Failed to categorize sector for ${instrumentName}:`, err);
+        logger.warn(`Failed to categorize sector for ${instrumentName}:`, err);
       }
     }
 
@@ -146,7 +147,7 @@ router.post('/', async (req: Request, res: Response) => {
       ...newInstrument
     });
   } catch (error) {
-    console.error('Error creating instrument:', error);
+    logger.error('Error creating instrument:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

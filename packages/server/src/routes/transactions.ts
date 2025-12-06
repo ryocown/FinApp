@@ -6,6 +6,7 @@ import { v4 } from 'uuid';
 
 import { TransactionSchema } from '../schemas';
 import { validate } from '../middleware/validate';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
     }
 
     let query: admin.firestore.Query;
-    let collectionRef: admin.firestore.CollectionReference;
+    let collectionRef: admin.firestore.CollectionReference | undefined;
 
     // If accountId is provided, we query the specific account's nested collection
     // This allows us to filter and sort by date efficiently
@@ -46,17 +47,35 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
       query = query.orderBy('date', 'desc');
 
     } else {
-      // Global list: query the pointers
-      // Note: We cannot efficiently sort by date here yet
-      collectionRef = getUserRef(userId).collection('transactions');
-      query = collectionRef;
+      // Global list: query using collection group to allow sorting by date
+      // We filter by userId to ensure we only get this user's transactions
+      // and exclude the global reference documents (which don't have userId)
+      query = db.collectionGroup('transactions')
+        .where('userId', '==', userId)
+        .orderBy('date', 'desc');
     }
 
     if (pageToken) {
       // For both nested and global collections, pageToken is the document ID.
-      // We use the determined collectionRef to get the last document.
-      const lastDoc = await collectionRef.doc(pageToken as string).get();
-      if (lastDoc.exists) {
+      let lastDoc: admin.firestore.DocumentSnapshot | null = null;
+
+      if (collectionRef!) {
+        // Account scope: direct lookup
+        lastDoc = await collectionRef.doc(pageToken as string).get();
+      } else {
+        // Global scope: find by transactionId in collection group
+        const cursorSnap = await db.collectionGroup('transactions')
+          .where('userId', '==', userId)
+          .where('transactionId', '==', pageToken)
+          .limit(1)
+          .get();
+
+        if (!cursorSnap.empty) {
+          lastDoc = cursorSnap.docs[0] as admin.firestore.DocumentSnapshot;
+        }
+      }
+
+      if (lastDoc && lastDoc.exists) {
         query = query.startAfter(lastDoc);
       }
     }
@@ -89,9 +108,9 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
       transactions,
       nextPageToken
     });
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
+  } catch (error: any) {
+    logger.error('Error fetching transactions:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch transactions' });
   }
 });
 
@@ -130,7 +149,7 @@ router.post('/users/:userId/transactions', validate(TransactionSchema), async (r
 
     res.status(201).json(Object.assign({}, transaction, { transactionId: nestedRef.id }));
   } catch (error) {
-    console.error('Error creating transaction:', error);
+    logger.error('Error creating transaction:', error);
     res.status(500).json({ error: 'Failed to create transaction' });
   }
 });

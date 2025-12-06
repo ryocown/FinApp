@@ -29,11 +29,13 @@ export function useTransactions(userId: string, limitCount: number = 50, pageTok
   const [transactions, setTransactions] = useState<any[]>([])
   const [nextPageToken, setNextPageToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) return
 
     setLoading(true)
+    setError(null)
     let url = ''
     if (accountId && accountId !== 'all') {
       url = `${API_BASE_URL}/accounts/users/${userId}/accounts/${accountId}/transactions?limit=${limitCount}`
@@ -46,7 +48,18 @@ export function useTransactions(userId: string, limitCount: number = 50, pageTok
     }
 
     fetch(url)
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) {
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            throw new Error(json.error || `Server error: ${res.status}`);
+          } catch (e) {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`);
+          }
+        }
+        return res.json();
+      })
       .then(data => {
         // Data is now { transactions: [], nextPageToken: string | null }
         setTransactions(data.transactions || [])
@@ -55,11 +68,12 @@ export function useTransactions(userId: string, limitCount: number = 50, pageTok
       })
       .catch(err => {
         console.error('Error fetching transactions:', err)
+        setError(err.message)
         setLoading(false)
       })
   }, [userId, limitCount, pageToken, accountId])
 
-  return { transactions, nextPageToken, loading }
+  return { transactions, nextPageToken, loading, error }
 }
 
 export function useBudget(userId: string) {

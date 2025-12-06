@@ -13,7 +13,14 @@ jest.unstable_mockModule('../src/firebase', () => {
   mockDb.doc.mockReturnValue(mockDb);
   mockDb.get.mockResolvedValue({ docs: [] });
   mockDb.add.mockResolvedValue({ id: 'mock-id' });
-  return { db: mockDb };
+  mockDb.add.mockResolvedValue({ id: 'mock-id' });
+  return {
+    db: mockDb,
+    getUserRef: jest.fn().mockReturnValue(mockDb),
+    getAccountRef: jest.fn().mockReturnValue({ ref: mockDb, instituteId: 'mock-institute-id' }),
+    getInstrumentsRef: jest.fn().mockReturnValue(mockDb),
+    getCategoriesRef: jest.fn().mockReturnValue(mockDb),
+  };
 });
 
 const { default: accountRoutes } = await import('../src/routes/accounts');
@@ -34,9 +41,9 @@ describe('API Endpoints', () => {
   });
 
   it('GET /api/transactions should return 200', async () => {
-    const res = await request(app).get('/api/transactions');
+    const res = await request(app).get('/api/transactions/users/mock-user/transactions');
     expect(res.statusCode).toEqual(200);
-    expect(res.body).toEqual([]);
+    expect(res.body).toEqual({ transactions: [], nextPageToken: null });
   });
 
   it('GET /api/categories should return 200', async () => {

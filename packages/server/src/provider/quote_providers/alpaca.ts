@@ -1,6 +1,7 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
 import { InstrumentType, type IFinancialInstrument, type StockInstrument } from "@finapp/shared/models/financial_instrument";
 import type { IQuoteProvider } from "../quote_provider";
+import { logger } from "../../logger";
 
 export class AlpacaQuoteProvider implements IQuoteProvider {
   private alpaca: Alpaca;
@@ -49,7 +50,7 @@ export class AlpacaQuoteProvider implements IQuoteProvider {
         type: InstrumentType.Unknown,
       };
     } catch (error) {
-      console.error(`Error fetching instrument for CUSIP ${cusip} from Alpaca:`, error);
+      logger.error(`Error fetching instrument for CUSIP ${cusip} from Alpaca:`, error);
       return null;
     }
   }

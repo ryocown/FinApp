@@ -23,10 +23,10 @@ const USER_ID = "c9ec4d95-e7b9-43f5-9ce8-85dd4c735b6c";
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // Initialize Firebase Admin to connect to emulator
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+delete process.env.FIRESTORE_EMULATOR_HOST;
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'demo-project',
+    projectId: process.env.FIREBASE_PROJECT_ID || 'hirico-internal-project-1',
   });
 }
 

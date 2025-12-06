@@ -26,14 +26,16 @@ function AppContent() {
         currentView={currentView as any}
         setCurrentView={setCurrentView}
       />
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard userId={userId} />} />
-        <Route path="/budget" element={<Budget userId={userId} />} />
-        <Route path="/transactions" element={<Transactions userId={userId} />} />
-        <Route path="/accounts" element={<Accounts userId={userId} />} />
-        {/* Add more routes as needed */}
-      </Routes>
+      <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-16'}`}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard userId={userId} />} />
+          <Route path="/budget" element={<Budget userId={userId} />} />
+          <Route path="/transactions" element={<Transactions userId={userId} />} />
+          <Route path="/accounts" element={<Accounts userId={userId} />} />
+          {/* Add more routes as needed */}
+        </Routes>
+      </main>
     </div>
   )
 }

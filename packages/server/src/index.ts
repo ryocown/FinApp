@@ -18,6 +18,7 @@ import instrumentRoutes from './routes/instruments';
 import instituteRoutes from './routes/institutes';
 import analyticsRoutes from './routes/analytics';
 import currencyRoutes from './routes/currencies';
+import { logger } from './logger';
 
 // Server entry point (restarted)
 const app = express();
@@ -26,23 +27,28 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/api/accounts', accountRoutes);
+app.use('/api/transactions', transactionRoutes);
 app.use('/api/institutes', instituteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/instruments', instrumentRoutes);
-app.use('/api/institutes', instituteRoutes);
-app.use('/api/analytics', analyticsRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello from the FinApp server!');
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-  console.log(`FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
-  console.log(`FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID}`);
-  console.log(`Alpaca API Key ID: ${process.env.APCA_API_KEY_ID}`);
-  console.log(`Alpaca API Secret Key: ${process.env.APCA_API_SECRET_KEY}`);
+  logger.info(`Server is running on http://localhost:${port}`);
+  logger.info(`FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
+  logger.info(`FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID}`);
+  logger.info(`Alpaca API Key ID: ${process.env.APCA_API_KEY_ID ? 'Set' : 'Not Set'}`);
+  logger.info(`Alpaca API Secret Key: ${process.env.APCA_API_SECRET_KEY ? 'Set' : 'Not Set'}`);
 });

@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { db, getUserRef } from '../firebase';
 import { type IBalanceCheckpoint } from '../../../shared/models/balance_checkpoint';
 import { type IAccount } from '../../../shared/models/account';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -105,8 +106,6 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
       // Let's attach currency to accountsData in step 2 first.
     });
 
-    console.log('Accounts found:', accountsWithCurrency.map(a => ({ id: a.accountId, currency: a.currency })));
-
     // Identify needed pairs
     const neededPairs = new Set<string>();
     accountsWithCurrency.forEach(acc => {
@@ -120,7 +119,7 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
     // Fetch rates for needed pairs
     const ratesMap: Record<string, Record<string, number>> = {}; // pairId -> date(YYYY-MM-DD) -> rate
 
-    console.log(`Fetching rates for range: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+    logger.info(`Fetching rates for range: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
 
     await Promise.all(Array.from(neededPairs).map(async (pairId) => {
       const ratesSnap = await db.collection('currencies').doc(pairId).collection('prices')
@@ -144,7 +143,7 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
       // Use local date string to avoid UTC shift
       const offset = date.getTimezoneOffset() * 60000;
       const localDate = new Date(date.getTime() - offset);
-      const dateStr = localDate.toISOString().split('T')[0];
+      const dateStr = localDate.toISOString().split('T')[0] as string;
 
       // Compare against end of day to include all transactions from that day
       const endOfDay = new Date(date);
@@ -164,13 +163,13 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
         if (account.currency !== 'USD') {
           const pairId = account.currency < 'USD' ? `${account.currency}USD` : `USD${account.currency}`;
           const pairRates = ratesMap[pairId];
-          const rate = pairRates ? pairRates[dateStr] : undefined;
+          const rate = pairRates?.[dateStr];
 
           if (rate !== undefined) {
             const converted = lastCheckpointBalance * rate;
             totalNetWorth += converted;
           } else {
-            // console.log(`Missing rate for ${pairId} on ${dateStr}`);
+            // logger.warn(`Missing rate for ${pairId} on ${dateStr}`);
             totalNetWorth += 0;
           }
         } else {
@@ -187,7 +186,7 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
     res.json(result);
 
   } catch (error) {
-    console.error('Error calculating net worth:', error);
+    logger.error('Error calculating net worth:', error);
     res.status(500).json({ error: 'Failed to calculate net worth' });
   }
 });

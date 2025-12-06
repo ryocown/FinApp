@@ -30,7 +30,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView }: SidebarProps) {
   return (
-    <aside className={`${isOpen ? 'w-64' : 'w-16'} bg-[#18181b] border-r border-zinc-800 transition-all duration-300 flex flex-col h-full`}>
+    <aside className={`${isOpen ? 'w-64' : 'w-16'} bg-[#18181b] border-r border-zinc-800 transition-all duration-300 flex flex-col h-screen fixed left-0 top-0 z-40`}>
       <div className="p-4 flex items-center justify-between border-b border-zinc-800">
         {isOpen && <span className="font-bold text-xl tracking-tight">FinApp</span>}
         <button onClick={() => setIsOpen(!isOpen)} className="p-2 hover:bg-zinc-800 rounded-md text-zinc-400">

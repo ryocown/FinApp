@@ -7,6 +7,7 @@ import { v4 } from 'uuid';
 
 import { AccountSchema } from '../schemas';
 import { validate } from '../middleware/validate';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
     const accounts = snapshot.docs.map(doc => Object.assign({}, doc.data(), { accountId: doc.id }));
     res.json(accounts);
   } catch (error) {
-    console.error('Error fetching accounts:', error);
+    logger.error('Error fetching accounts:', error);
     res.status(500).json({ error: 'Failed to fetch accounts' });
   }
 });
@@ -40,7 +41,7 @@ router.get('/users/:userId/accounts', async (req: Request, res: Response) => {
 
     res.json(accounts);
   } catch (error) {
-    console.error('Error fetching user accounts:', error);
+    logger.error('Error fetching user accounts:', error);
     res.status(500).json({ error: 'Failed to fetch user accounts' });
   }
 });
@@ -58,7 +59,7 @@ router.post('/users/:userId/accounts', validate(AccountSchema), async (req: Requ
     const { initialBalance, initialDate, ...accountData } = req.body;
     const account: IAccount = accountData;
 
-    console.log('Creating account:', { body: req.body, account });
+    logger.info('Creating account:', { body: req.body, account });
 
     if (!account.instituteId) {
       res.status(400).json({ error: 'Missing instituteId' });
@@ -101,7 +102,7 @@ router.post('/users/:userId/accounts', validate(AccountSchema), async (req: Requ
 
     res.status(201).json(Object.assign({}, account, { accountId }));
   } catch (error) {
-    console.error('Error creating account:', error);
+    logger.error('Error creating account:', error);
     res.status(500).json({ error: 'Failed to create account' });
   }
 });
@@ -118,7 +119,7 @@ router.get('/users/:userId/budget', async (req: Request, res: Response) => {
     const budget = snapshot.docs.map(doc => Object.assign({}, doc.data(), { budgetId: doc.id }));
     res.json(budget);
   } catch (error) {
-    console.error('Error fetching budget:', error);
+    logger.error('Error fetching budget:', error);
     res.status(500).json({ error: 'Failed to fetch budget' });
   }
 });
@@ -174,7 +175,7 @@ router.get('/users/:userId/accounts/:accountId/transactions', async (req: Reques
       nextPageToken
     });
   } catch (error) {
-    console.error('Error fetching account transactions:', error);
+    logger.error('Error fetching account transactions:', error);
     res.status(500).json({ error: 'Failed to fetch account transactions' });
   }
 });
@@ -243,7 +244,7 @@ router.post('/users/:userId/accounts/:accountId/reconcile', async (req: Request,
 
     res.status(201).json(checkpoint);
   } catch (error) {
-    console.error('Error reconciling account:', error);
+    logger.error('Error reconciling account:', error);
     res.status(500).json({ error: 'Failed to reconcile account' });
   }
 });
@@ -272,7 +273,7 @@ router.get('/users/:userId/accounts/:accountId/checkpoints', async (req: Request
 
     res.json(checkpoints);
   } catch (error) {
-    console.error('Error fetching checkpoints:', error);
+    logger.error('Error fetching checkpoints:', error);
     res.status(500).json({ error: 'Failed to fetch checkpoints' });
   }
 });
@@ -296,15 +297,12 @@ router.delete('/users/:userId/accounts/:accountId', async (req: Request, res: Re
 
     const { ref: accountRef } = result;
 
-    // Delete the account document
-    // Note: This does NOT delete subcollections (transactions, checkpoints) automatically in Firestore.
-    // For a production app, we'd need a recursive delete or a cloud function.
-    // For this prototype, deleting the parent doc is sufficient to hide it from the UI.
-    await accountRef.delete();
+    // Recursive delete to remove account AND all subcollections (transactions, checkpoints)
+    await db.recursiveDelete(accountRef);
 
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
-    console.error('Error deleting account:', error);
+    logger.error('Error deleting account:', error);
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Search, Filter, Download, ArrowUpDown, CheckCircle } from 'lucide-react'
 import { useTransactions, useAccounts } from '../lib/hooks'
 import { ReconcileModal } from './ReconcileModal'
+import { TransactionDetailModal } from './TransactionDetailModal'
+import type { ITransaction } from '@finapp/shared/models/transaction'
 
 interface TransactionsProps {
   userId: string
@@ -14,7 +16,12 @@ export function Transactions({ userId }: TransactionsProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
   const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false)
-  const { transactions, nextPageToken } = useTransactions(userId, limitCount, pageToken, selectedAccountId)
+
+  // Detail Modal State
+  const [selectedTransaction, setSelectedTransaction] = useState<ITransaction | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+
+  const { transactions, nextPageToken, error } = useTransactions(userId, limitCount, pageToken, selectedAccountId)
   const { accounts } = useAccounts(userId)
 
   // Reset pagination when filters change
@@ -92,8 +99,16 @@ export function Transactions({ userId }: TransactionsProps) {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleRowClick = (transaction: ITransaction) => {
+    setSelectedTransaction(transaction)
+    setIsDetailModalOpen(true)
+  }
+
+  const [isErrorExpanded, setIsErrorExpanded] = useState(false)
+
   return (
     <main className="flex-1 overflow-auto">
+      {/* ... header ... */}
       <header className="p-6 border-b border-zinc-800 flex justify-between items-center bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-10">
         <div>
           <h1 className="text-2xl font-bold text-zinc-100">Transactions</h1>
@@ -134,7 +149,31 @@ export function Transactions({ userId }: TransactionsProps) {
         />
       )}
 
+      <TransactionDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        transaction={selectedTransaction}
+      />
+
       <div className="p-6 space-y-6">
+        {error && (
+          <div
+            className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors"
+            onClick={() => setIsErrorExpanded(!isErrorExpanded)}
+          >
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Error loading transactions (click to see details)</span>
+            </div>
+            {isErrorExpanded && (
+              <pre className="mt-2 text-xs bg-black/30 p-2 rounded overflow-x-auto whitespace-pre-wrap font-mono">
+                {error}
+              </pre>
+            )}
+          </div>
+        )}
         {/* Search and Filter Bar */}
         <div className="flex gap-4">
           <div className="relative flex-1">
@@ -212,11 +251,15 @@ export function Transactions({ userId }: TransactionsProps) {
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {filteredTransactions.map((transaction) => (
-                  <tr key={transaction.transactionId} className="hover:bg-zinc-800/50 transition-colors group">
+                  <tr
+                    key={transaction.transactionId}
+                    className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
+                    onClick={() => handleRowClick(transaction)}
+                  >
                     <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">
                       {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-zinc-100 truncate" title={transaction.description}>
+                    <td className="px-6 py-4 text-sm font-medium text-zinc-100 truncate" title={transaction.description || ''}>
                       {transaction.description}
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -248,10 +291,6 @@ export function Transactions({ userId }: TransactionsProps) {
                       const previousRowsSum = filteredTransactions.slice(0, index).reduce((sum, t) => sum + t.amount, 0);
 
                       // Balance at this row = StartBalance - PreviousRowsSum
-                      // Wait, logic check:
-                      // Row 0 Balance = StartBalance.
-                      // Row 1 Balance = Row 0 Balance - Row 0 Amount = StartBalance - Row 0 Amount.
-                      // Row i Balance = StartBalance - Sum(0 to i-1).
                       const rowBalance = startBalance - previousRowsSum;
 
                       return (

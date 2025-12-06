@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Sector } from "@finapp/shared/models/financial_instrument";
 import type { IAIProvider } from "../ai_provider";
+import { logger } from "../../logger";
 
 export class GeminiAIProvider implements IAIProvider {
   private genAI: GoogleGenerativeAI;
@@ -9,7 +10,7 @@ export class GeminiAIProvider implements IAIProvider {
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not set. GeminiAIProvider will not work.");
+      logger.warn("GEMINI_API_KEY is not set. GeminiAIProvider will not work.");
       // We can still instantiate but methods should handle missing key
     }
     this.genAI = new GoogleGenerativeAI(apiKey || "");
@@ -36,7 +37,7 @@ export class GeminiAIProvider implements IAIProvider {
 
       return null;
     } catch (error) {
-      console.error(`Error categorizing company '${companyName}' with Gemini:`, error);
+      logger.error(`Error categorizing company '${companyName}' with Gemini:`, error);
       return null;
     }
   }

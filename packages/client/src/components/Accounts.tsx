@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Building2, Wallet, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { Plus, Building2, Wallet, ChevronDown, Trash2 } from 'lucide-react'
 import type { IInstitute } from '@finapp/shared/models/institute'
 import type { IAccount } from '@finapp/shared/models/account'
 import { ReconcileModal } from './ReconcileModal'
 import { CreateInstituteModal } from './CreateInstituteModal'
 import { CreateAccountModal } from './CreateAccountModal'
+import { DeleteConfirmationModal } from './DeleteConfirmationModal'
 
 interface AccountsProps {
   userId: string
@@ -24,6 +25,11 @@ export function Accounts({ userId }: AccountsProps) {
   // Creation Modals State
   const [isCreateInstituteOpen, setIsCreateInstituteOpen] = useState(false)
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false)
+
+  // Deletion State
+  const [deleteInstitute, setDeleteInstitute] = useState<IInstitute | null>(null)
+  const [deleteAccount, setDeleteAccount] = useState<IAccount | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -88,6 +94,48 @@ export function Accounts({ userId }: AccountsProps) {
       newExpanded.add(instituteId)
     }
     setExpandedInstitutes(newExpanded)
+  }
+
+  const handleDeleteInstitute = async () => {
+    if (!deleteInstitute) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`http://localhost:3001/api/institutes/users/${userId}/institutes/${deleteInstitute.instituteId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        await fetchData()
+        setDeleteInstitute(null)
+      } else {
+        alert('Failed to delete institute')
+      }
+    } catch (error) {
+      console.error('Error deleting institute:', error)
+      alert('Error deleting institute')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!deleteAccount) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`http://localhost:3001/api/accounts/users/${userId}/accounts/${deleteAccount.accountId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        await fetchData()
+        setDeleteAccount(null)
+      } else {
+        alert('Failed to delete account')
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error)
+      alert('Error deleting account')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
@@ -158,6 +206,18 @@ export function Accounts({ userId }: AccountsProps) {
                       {formatCurrency(institute.totalValue)}
                     </p>
                   </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDeleteInstitute(institute)
+                    }}
+                    className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors z-10"
+                    title="Delete Institute"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+
                   <div className={`text-zinc-500 transition-transform duration-200 ${expandedInstitutes.has(institute.instituteId) ? 'rotate-180' : ''}`}>
                     <ChevronDown size={20} />
                   </div>
@@ -179,7 +239,7 @@ export function Accounts({ userId }: AccountsProps) {
                             </div>
                             <div>
                               <p className="font-medium text-zinc-200">{account.name}</p>
-                              <p className="text-xs text-zinc-500 font-mono capitalize">{account.type}</p>
+                              <p className="text-xs text-zinc-500 font-mono capitalize">{account.AccountType}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -200,18 +260,7 @@ export function Accounts({ userId }: AccountsProps) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  if (account.accountId) {
-                                    // handleDeleteAccount(account.accountId) 
-                                    // We need to define handleDeleteAccount inside component or move logic here
-                                    if (confirm('Are you sure you want to delete this account?')) {
-                                      fetch(`http://localhost:3001/api/accounts/users/${userId}/accounts/${account.accountId}`, {
-                                        method: 'DELETE'
-                                      }).then(res => {
-                                        if (res.ok) fetchData()
-                                        else alert('Failed to delete')
-                                      })
-                                    }
-                                  }
+                                  setDeleteAccount(account)
                                 }}
                                 className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                 title="Delete Account"
@@ -261,6 +310,26 @@ export function Accounts({ userId }: AccountsProps) {
         userId={userId}
         institutes={institutes}
         onSuccess={fetchData}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!deleteInstitute}
+        onClose={() => setDeleteInstitute(null)}
+        onConfirm={handleDeleteInstitute}
+        title="Delete Institute"
+        message="Are you sure you want to delete this institute? This will permanently delete all associated accounts and transactions. This action cannot be undone."
+        itemName={deleteInstitute?.name}
+        loading={isDeleting}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!deleteAccount}
+        onClose={() => setDeleteAccount(null)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        message="Are you sure you want to delete this account? This will permanently delete all associated transactions and history. This action cannot be undone."
+        itemName={deleteAccount?.name}
+        loading={isDeleting}
       />
     </div>
   )
