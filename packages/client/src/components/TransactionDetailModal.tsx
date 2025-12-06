@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { X, Copy, Check } from 'lucide-react'
+import { X, Copy, Check, Trash2 } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import type { ITransaction } from '@finapp/shared/models/transaction'
+import { deleteTransaction } from '../lib/api'
 
 // Extend ITransaction to include fields that might be enriched by the API or present in specific subtypes
 interface EnrichedTransaction extends ITransaction {
@@ -15,11 +16,14 @@ interface TransactionDetailModalProps {
   isOpen: boolean
   onClose: () => void
   transaction: EnrichedTransaction | null
+  userId: string
+  onDelete?: () => void
 }
 
-export function TransactionDetailModal({ isOpen, onClose, transaction }: TransactionDetailModalProps) {
+export function TransactionDetailModal({ isOpen, onClose, transaction, userId, onDelete }: TransactionDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'normal' | 'raw'>('normal')
   const [copied, setCopied] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   if (!isOpen || !transaction) return null
 
@@ -27,6 +31,24 @@ export function TransactionDetailModal({ isOpen, onClose, transaction }: Transac
     navigator.clipboard.writeText(JSON.stringify(transaction, null, 2))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await deleteTransaction(userId, transaction.transactionId)
+      onDelete?.()
+      onClose()
+    } catch (error) {
+      console.error('Failed to delete transaction:', error)
+      alert('Failed to delete transaction. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -158,6 +180,18 @@ export function TransactionDetailModal({ isOpen, onClose, transaction }: Transac
               </SyntaxHighlighter>
             </div>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-zinc-800 bg-[#18181b] flex justify-end">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <Trash2 size={18} />
+            {isDeleting ? 'Deleting...' : 'Delete Transaction'}
+          </button>
         </div>
       </div>
     </div>

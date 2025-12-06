@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getCategoryColor } from '../lib/utils'
 import { Search, Filter, Download, ArrowUpDown, CheckCircle } from 'lucide-react'
 import { useTransactions, useAccounts } from '../lib/hooks'
 import { ReconcileModal } from './ReconcileModal'
@@ -153,6 +154,25 @@ export function Transactions({ userId }: TransactionsProps) {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         transaction={selectedTransaction}
+        userId={userId}
+        onDelete={() => {
+          // Refresh transactions
+          // We can do this by resetting the page token or invalidating the cache
+          // For now, let's just reload the current view by toggling a refresh trigger or similar
+          // But since useTransactions depends on [userId, limitCount, pageToken, accountId], 
+          // we can just force a re-fetch if we had a way.
+          // A simple way is to reload the page or reset pagination.
+          // Let's reset pagination to the start.
+          setPageToken(null)
+          setPageHistory([{ token: null, balanceOffset: 0 }])
+          // We might need to toggle a dummy state to force re-fetch if params didn't change,
+          // but setPageToken(null) usually triggers it if we were not on the first page.
+          // If we were on the first page, we need another way.
+          // Actually, useTransactions runs on dependency change.
+          // Let's add a refresh key to useTransactions?
+          // For now, let's just reload the window as a simple MVP solution, similar to ReconcileModal
+          window.location.reload()
+        }}
       />
 
       <div className="p-6 space-y-6">
@@ -263,8 +283,8 @@ export function Transactions({ userId }: TransactionsProps) {
                       {transaction.description}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700 whitespace-nowrap">
-                        {transaction.category}
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getCategoryColor(transaction.category || transaction.categoryId)}`}>
+                        {transaction.category || transaction.categoryId || 'Uncategorized'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-zinc-400 truncate">

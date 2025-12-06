@@ -154,4 +154,43 @@ router.post('/users/:userId/transactions', validate(TransactionSchema), async (r
   }
 });
 
+// Delete a transaction
+router.delete('/users/:userId/transactions/:transactionId', async (req: Request, res: Response) => {
+  try {
+    const { userId, transactionId } = req.params;
+
+    if (!userId || !transactionId) {
+      res.status(400).json({ error: 'Missing userId or transactionId' });
+      return;
+    }
+
+    // 1. Find the global reference to get the nested path
+    const globalRef = getUserRef(userId).collection('transactions').doc(transactionId);
+    const globalDoc = await globalRef.get();
+
+    if (!globalDoc.exists) {
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
+    }
+
+    const data = globalDoc.data();
+    const nestedRef = data?.RefTxId as admin.firestore.DocumentReference | undefined;
+
+    // 2. Delete nested document if it exists
+    if (nestedRef) {
+      await nestedRef.delete();
+    } else {
+      logger.warn(`Global transaction ${transactionId} has no RefTxId`);
+    }
+
+    // 3. Delete global reference
+    await globalRef.delete();
+
+    res.status(200).json({ message: 'Transaction deleted successfully' });
+  } catch (error) {
+    logger.error('Error deleting transaction:', error);
+    res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+});
+
 export default router;

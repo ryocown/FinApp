@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
 import { db, getUserRef, getAccountRef } from '../firebase';
 import { type IAccount } from '../../../shared/models/account';
-import { type IBalanceCheckpoint } from '../../../shared/models/balance_checkpoint';
+import { type IBalanceCheckpoint, BalanceCheckpointType } from '../../../shared/models/balance_checkpoint';
 import { v4 } from 'uuid';
 
 import { AccountSchema } from '../schemas';
@@ -82,7 +82,7 @@ router.post('/users/:userId/accounts', validate(AccountSchema), async (req: Requ
         accountId,
         date: new Date(initialDate),
         balance: Number(initialBalance),
-        type: 'manual',
+        type: BalanceCheckpointType.MANUAL,
         createdAt: new Date()
       };
 
@@ -206,7 +206,7 @@ router.post('/users/:userId/accounts/:accountId/reconcile', async (req: Request,
       accountId,
       date: new Date(date),
       balance: Number(balance),
-      type: 'manual',
+      type: BalanceCheckpointType.MANUAL,
       createdAt: new Date()
     };
 

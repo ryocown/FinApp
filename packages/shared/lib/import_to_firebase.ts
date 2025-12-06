@@ -10,7 +10,7 @@ import { Account, AccountType, type IAccount } from '../models/account';
 import { Currency } from '../models/currency';
 import { Institute } from '../models/institute';
 import { type IStatementImporter } from "../importer/importer";
-import { type IBalanceCheckpoint } from '../models/balance_checkpoint';
+import { type IBalanceCheckpoint, BalanceCheckpointType } from '../models/balance_checkpoint';
 import { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { MorganStanleyStatementImporter } from '../importer/institutions/morgan_stanley';
 import { fromExcelToCsv } from './from_excel_to_csv';
@@ -156,7 +156,7 @@ async function importAccountWithBatch(
       accountId: accountId,
       date: statement.endDate,
       balance: statement.endingBalance,
-      type: 'statement',
+      type: BalanceCheckpointType.STATEMENT,
       createdAt: new Date()
     };
 
