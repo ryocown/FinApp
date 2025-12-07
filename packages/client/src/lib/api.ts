@@ -10,12 +10,16 @@ export async function deleteTransaction(userId: string, transactionId: string): 
 
   if (!response.ok) {
     const text = await response.text();
+    let errorMessage = `Server error: ${response.status} ${response.statusText}`;
     try {
       const json = JSON.parse(text);
-      throw new Error(json.error || `Server error: ${response.status}`);
-    } catch (e) {
-      throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      if (json.error) {
+        errorMessage = json.error;
+      }
+    } catch {
+      // JSON parse failed, use default error message
     }
+    throw new Error(errorMessage);
   }
 }
 
@@ -30,12 +34,16 @@ export async function createTransaction(userId: string, transaction: Partial<ITr
 
   if (!response.ok) {
     const text = await response.text();
+    let errorMessage = `Server error: ${response.status} ${response.statusText}`;
     try {
       const json = JSON.parse(text);
-      throw new Error(json.error || `Server error: ${response.status}`);
-    } catch (e) {
-      throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      if (json.error) {
+        errorMessage = json.error;
+      }
+    } catch {
+      // JSON parse failed, use default error message
     }
+    throw new Error(errorMessage);
   }
   return response.json();
 }
@@ -51,12 +59,16 @@ export async function updateTransaction(userId: string, transactionId: string, u
 
   if (!response.ok) {
     const text = await response.text();
+    let errorMessage = `Server error: ${response.status} ${response.statusText}`;
     try {
       const json = JSON.parse(text);
-      throw new Error(json.error || `Server error: ${response.status}`);
-    } catch (e) {
-      throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      if (json.error) {
+        errorMessage = json.error;
+      }
+    } catch {
+      // JSON parse failed, use default error message
     }
+    throw new Error(errorMessage);
   }
 }
 
