@@ -20,6 +20,13 @@ export const TransactionSchema = z.object({
   date: z.string(), // ISO date string
   description: z.string(),
   categoryId: z.string().optional(),
+  transactionType: z.string().optional(),
+  currency: z.object({
+    code: z.string().length(3),
+    symbol: z.string(),
+    name: z.string().optional(),
+  }).optional(),
+  tagIds: z.array(z.string()).optional(),
 });
 
 export const CategorySchema = z.object({

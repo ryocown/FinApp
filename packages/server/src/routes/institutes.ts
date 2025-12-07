@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
-import { db, getUserRef } from '../firebase';
+import { v4 } from 'uuid';
+import { db, getUserRef, getCollectionData } from '../firebase';
 import { type IInstitute } from '../../../shared/models/institute';
 
 import { InstituteSchema } from '../schemas';
@@ -18,7 +19,7 @@ router.get('/users/:userId/institutes', async (req: Request, res: Response) => {
     }
 
     const snapshot = await getUserRef(userId).collection('institutes').get();
-    const institutes = snapshot.docs.map(doc => Object.assign({}, doc.data(), { instituteId: doc.id }));
+    const institutes = getCollectionData(snapshot, 'instituteId');
     res.json(institutes);
   } catch (error) {
     logger.error('Error fetching institutes:', error);
@@ -35,15 +36,23 @@ router.post('/users/:userId/institutes', validate(InstituteSchema), async (req: 
       return;
     }
 
-    const institute: IInstitute = req.body;
+    const instituteData = req.body;
     // Ensure userId matches
-    if (institute.userId !== userId) {
+    if (instituteData.userId !== userId) {
       res.status(400).json({ error: 'UserId mismatch' });
       return;
     }
 
-    const docRef = await getUserRef(userId).collection('institutes').add(institute);
-    res.status(201).json(Object.assign({}, institute, { instituteId: docRef.id }));
+    // Generate UUID v4 for the institute
+    const instituteId = v4();
+    const newInstitute: IInstitute = {
+      ...instituteData,
+      instituteId,
+      accounts: [] // Initialize with empty accounts
+    };
+
+    await getUserRef(userId).collection('institutes').doc(instituteId).set(newInstitute);
+    res.status(201).json(newInstitute);
   } catch (error) {
     logger.error('Error creating institute:', error);
     res.status(500).json({ error: 'Failed to create institute' });

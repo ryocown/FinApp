@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
-import { db, getUserRef, getAccountRef } from '../firebase';
+import { db, getUserRef, getAccountRef, resolveTransactionReferences } from '../firebase';
 import { type ITransaction } from '../../../shared/models/transaction';
 import { v4 } from 'uuid';
 
@@ -87,19 +87,7 @@ router.get('/users/:userId/transactions', async (req: Request, res: Response) =>
     const snapshot = await query.get();
 
     // Resolve references
-    const transactionPromises = snapshot.docs.map(async doc => {
-      const data = doc.data();
-      if (data.RefTxId && data.RefTxId instanceof admin.firestore.DocumentReference) {
-        const realDoc = await data.RefTxId.get();
-        if (realDoc.exists) {
-          return Object.assign({}, realDoc.data(), { transactionId: realDoc.id });
-        }
-      }
-      // Fallback if it's not a reference (legacy data?) or reference broken
-      return Object.assign({}, data, { transactionId: doc.id });
-    });
-
-    const transactions = (await Promise.all(transactionPromises)).filter(t => t !== null);
+    const transactions = await resolveTransactionReferences(snapshot.docs);
 
     const lastVisible = snapshot.docs[snapshot.docs.length - 1];
     const nextPageToken = lastVisible ? lastVisible.id : null;
@@ -151,6 +139,73 @@ router.post('/users/:userId/transactions', validate(TransactionSchema), async (r
   } catch (error) {
     logger.error('Error creating transaction:', error);
     res.status(500).json({ error: 'Failed to create transaction' });
+  }
+});
+
+// Batch create transactions
+router.post('/users/:userId/accounts/:accountId/transactions/batch', async (req: Request, res: Response) => {
+  try {
+    const { userId, accountId } = req.params;
+    const { transactions } = req.body; // Expecting array of transactions
+
+    if (!userId || !accountId || !Array.isArray(transactions)) {
+      res.status(400).json({ error: 'Missing required fields or invalid transactions format' });
+      return;
+    }
+
+    const result = await getAccountRef(userId, accountId);
+    if (!result) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+    const { ref: accountRef } = result;
+
+    const batch = db.batch();
+    let minDate: Date | null = null;
+    let importedCount = 0;
+
+    for (const txData of transactions) {
+      // Basic validation or use schema?
+      // For now assume valid or minimal validation
+      const txId = txData.transactionId || v4();
+      const txDate = new Date(txData.date);
+
+      const tx: ITransaction = {
+        ...txData,
+        transactionId: txId,
+        accountId,
+        userId,
+        date: txDate
+      };
+
+      const nestedRef = accountRef.collection('transactions').doc(txId);
+      batch.set(nestedRef, tx);
+
+      const globalRef = getUserRef(userId).collection('transactions').doc(txId);
+      batch.set(globalRef, { RefTxId: nestedRef });
+
+      if (!minDate || txDate < minDate) {
+        minDate = txDate;
+      }
+      importedCount++;
+    }
+
+    await batch.commit();
+
+    // Trigger Reconciliation Refresh
+    if (minDate) {
+      // We import ReconciliationService dynamically or at top level if possible
+      // But we need to import it. I'll add the import at the top.
+      const { ReconciliationService } = await import('../services/reconciliation');
+      // Run asynchronously to not block response? Or synchronously?
+      // For now synchronously to ensure consistency for the user
+      await ReconciliationService.refreshCheckpoints(userId, accountId, minDate);
+    }
+
+    res.status(201).json({ importedCount, minDate });
+  } catch (error: any) {
+    logger.error('Error batch creating transactions:', error);
+    res.status(500).json({ error: error.message || 'Failed to batch create transactions' });
   }
 });
 

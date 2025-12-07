@@ -1,9 +1,6 @@
 import { v4 } from "uuid";
 
-interface ExpenseCategory {
-  name: string;
-  category: ExpenseTypes;
-}
+
 
 export enum CategoryType {
   Income = 'INCOME',

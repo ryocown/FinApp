@@ -53,7 +53,8 @@ export enum TransactionType {
   Deposit = 'DEPOSIT',
   Withdrawal = 'WITHDRAWAL',
   Fees = 'FEES',
-  Other = 'OTHER'
+  Other = 'OTHER',
+  Reconciliation = 'RECONCILIATION'
 }
 
 export interface IGeneralTransaction extends ITransaction {

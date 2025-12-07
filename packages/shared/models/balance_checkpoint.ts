@@ -5,6 +5,10 @@ export interface IBalanceCheckpoint {
   balance: number; // The accurate CASH balance at this date
   type: BalanceCheckpointType;
   createdAt: Date;
+  validation?: {
+    isValid: boolean;
+    difference: number;
+  };
 }
 
 export enum BalanceCheckpointType {

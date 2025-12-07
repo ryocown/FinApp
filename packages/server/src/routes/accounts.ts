@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
-import { db, getUserRef, getAccountRef } from '../firebase';
+import { db, getUserRef, getAccountRef, getAllUserAccounts, getCollectionData, resolveTransactionReferences } from '../firebase';
 import { type IAccount } from '../../../shared/models/account';
 import { type IBalanceCheckpoint, BalanceCheckpointType } from '../../../shared/models/balance_checkpoint';
 import { v4 } from 'uuid';
@@ -8,6 +8,7 @@ import { v4 } from 'uuid';
 import { AccountSchema } from '../schemas';
 import { validate } from '../middleware/validate';
 import { logger } from '../logger';
+import { ReconciliationService } from '../services/reconciliation';
 
 const router = Router();
 
@@ -28,16 +29,7 @@ router.get('/users/:userId/accounts', async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId as string;
 
-    // Accounts are nested under institutes: users/{userId}/institutes/{instituteId}/accounts/{accountId}
-    const institutesSnapshot = await getUserRef(userId).collection('institutes').get();
-
-    const accountPromises = institutesSnapshot.docs.map(async instituteDoc => {
-      const accountsSnapshot = await instituteDoc.ref.collection('accounts').get();
-      return accountsSnapshot.docs.map(doc => Object.assign({}, doc.data(), { accountId: doc.id, instituteId: instituteDoc.id }));
-    });
-
-    const nestedAccounts = await Promise.all(accountPromises);
-    const accounts = nestedAccounts.flat();
+    const accounts = await getAllUserAccounts(userId);
 
     res.json(accounts);
   } catch (error) {
@@ -66,14 +58,21 @@ router.post('/users/:userId/accounts', validate(AccountSchema), async (req: Requ
       return;
     }
 
+    // Generate UUID v4 for the account
+    const accountId = v4();
+    const newAccount: IAccount = {
+      ...account,
+      accountId
+    };
+
     // Create the account document nested under the institute
-    const docRef = await getUserRef(userId)
+    const docRef = getUserRef(userId)
       .collection('institutes')
       .doc(account.instituteId)
       .collection('accounts')
-      .add(account);
+      .doc(accountId);
 
-    const accountId = docRef.id;
+    await docRef.set(newAccount);
 
     // Handle initial reconciliation if provided
     if (initialBalance !== undefined && initialDate) {
@@ -116,7 +115,7 @@ router.get('/users/:userId/budget', async (req: Request, res: Response) => {
       return;
     }
     const snapshot = await getUserRef(userId).collection('budget').get();
-    const budget = snapshot.docs.map(doc => Object.assign({}, doc.data(), { budgetId: doc.id }));
+    const budget = getCollectionData(snapshot, 'budgetId');
     res.json(budget);
   } catch (error) {
     logger.error('Error fetching budget:', error);
@@ -165,7 +164,7 @@ router.get('/users/:userId/accounts/:accountId/transactions', async (req: Reques
     }
 
     const snapshot = await query.get();
-    const transactions = snapshot.docs.map(doc => Object.assign({}, doc.data(), { transactionId: doc.id }));
+    const transactions = await resolveTransactionReferences(snapshot.docs);
 
     const lastVisible = snapshot.docs[snapshot.docs.length - 1];
     const nextPageToken = lastVisible ? lastVisible.id : null;
@@ -191,61 +190,17 @@ router.post('/users/:userId/accounts/:accountId/reconcile', async (req: Request,
       return;
     }
 
-    // Find the account
-    const result = await getAccountRef(userId, accountId);
-
-    if (!result) {
-      res.status(404).json({ error: 'Account not found' });
-      return;
-    }
-
-    const { ref: accountRef } = result;
-
-    const checkpoint: IBalanceCheckpoint = {
-      id: v4(),
+    const checkpoint = await ReconciliationService.reconcileAccount(
+      userId,
       accountId,
-      date: new Date(date),
-      balance: Number(balance),
-      type: BalanceCheckpointType.MANUAL,
-      createdAt: new Date()
-    };
-
-    // Save checkpoint
-    await accountRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
-
-    // Update Account if this checkpoint is newer than current balanceDate
-    const accountDoc = await accountRef.get();
-    const accountData = accountDoc.data() as IAccount;
-
-    // Helper to handle Firestore Timestamps or Dates
-    const getDate = (d: any): Date => {
-      if (!d) return new Date(0);
-      if (typeof d.toDate === 'function') return d.toDate();
-      if (d instanceof Date) return d;
-      return new Date(d);
-    };
-
-    const existingDate = getDate(accountData.balanceDate);
-    const newDate = getDate(checkpoint.date);
-
-    const isSameDay = (d1: Date, d2: Date) => {
-      return d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
-    };
-
-    // Compare timestamps: Allow if newer OR same day
-    if (newDate.getTime() > existingDate.getTime() || isSameDay(newDate, existingDate)) {
-      await accountRef.update({
-        balance: checkpoint.balance,
-        balanceDate: checkpoint.date
-      });
-    }
+      new Date(date),
+      Number(balance)
+    );
 
     res.status(201).json(checkpoint);
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error reconciling account:', error);
-    res.status(500).json({ error: 'Failed to reconcile account' });
+    res.status(500).json({ error: error.message || 'Failed to reconcile account' });
   }
 });
 
@@ -269,12 +224,67 @@ router.get('/users/:userId/accounts/:accountId/checkpoints', async (req: Request
     const { ref: accountRef } = result;
 
     const snapshot = await accountRef.collection('balance_checkpoints').orderBy('date', 'desc').get();
-    const checkpoints = snapshot.docs.map(doc => doc.data());
+    let checkpoints = snapshot.docs.map(doc => {
+      const data = doc.data();
+      // Convert dates
+      if (data.date) {
+        if (typeof data.date.toDate === 'function') {
+          data.date = data.date.toDate().toISOString();
+        } else if (typeof data.date === 'object' && '_seconds' in data.date) {
+          const seconds = (data.date as any)._seconds;
+          const nanoseconds = (data.date as any)._nanoseconds || 0;
+          data.date = new Date(seconds * 1000 + nanoseconds / 1000000).toISOString();
+        }
+      }
+
+      if (data.createdAt) {
+        if (typeof data.createdAt.toDate === 'function') {
+          data.createdAt = data.createdAt.toDate().toISOString();
+        } else if (typeof data.createdAt === 'object' && '_seconds' in data.createdAt) {
+          const seconds = (data.createdAt as any)._seconds;
+          const nanoseconds = (data.createdAt as any)._nanoseconds || 0;
+          data.createdAt = new Date(seconds * 1000 + nanoseconds / 1000000).toISOString();
+        }
+      }
+      return data as IBalanceCheckpoint;
+    });
+
+    // Validate the last 12 checkpoints
+    // We only validate if there are checkpoints
+    if (checkpoints.length > 0) {
+      // Take the top 12 (most recent)
+      const recentCheckpoints = checkpoints.slice(0, 12);
+      const olderCheckpoints = checkpoints.slice(12);
+
+      // Validate them
+      const validatedRecent = await ReconciliationService.validateCheckpoints(userId, accountId, recentCheckpoints);
+
+      // Merge back
+      checkpoints = [...validatedRecent, ...olderCheckpoints];
+    }
 
     res.json(checkpoints);
   } catch (error) {
     logger.error('Error fetching checkpoints:', error);
     res.status(500).json({ error: 'Failed to fetch checkpoints' });
+  }
+});
+
+// Delete a checkpoint
+router.delete('/users/:userId/accounts/:accountId/checkpoints/:checkpointId', async (req: Request, res: Response) => {
+  try {
+    const { userId, accountId, checkpointId } = req.params;
+    if (!userId || !accountId || !checkpointId) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    await ReconciliationService.deleteCheckpoint(userId, accountId, checkpointId);
+
+    res.status(200).json({ message: 'Checkpoint deleted successfully' });
+  } catch (error: any) {
+    logger.error('Error deleting checkpoint:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete checkpoint' });
   }
 });
 

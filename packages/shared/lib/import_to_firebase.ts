@@ -22,11 +22,11 @@ const USER_ID = "c9ec4d95-e7b9-43f5-9ce8-85dd4c735b6c";
 // Load .env from project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// Initialize Firebase Admin to connect to emulator
+// Initialize Firebase Admin to connect to REMOTE
 delete process.env.FIRESTORE_EMULATOR_HOST;
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'hirico-internal-project-1',
+    projectId: 'hirico-internal-project-1',
   });
 }
 
@@ -149,38 +149,22 @@ async function importAccountWithBatch(
   // We don't calculate delta here anymore, we get it from what was actually inserted
   const insertedAmount = await processTransactionsBatch(db, userId, accountRef, statement.transactions);
 
-  // 3. Update account balance using Checkpoint if available
+  // 3. Update account balance using ReconciliationService
   if (statement.endingBalance !== undefined) {
-    const checkpoint: IBalanceCheckpoint = {
-      id: v4(),
-      accountId: accountId,
-      date: statement.endDate,
-      balance: statement.endingBalance,
-      type: BalanceCheckpointType.STATEMENT,
-      createdAt: new Date()
-    };
+    console.log(`    Reconciling to ending balance: ${statement.endingBalance} at ${statement.endDate.toISOString()}`);
 
-    // Save checkpoint
-    await accountRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
-    console.log(`    Created balance checkpoint: ${checkpoint.balance} at ${checkpoint.date.toISOString()}`);
+    // Dynamic import to ensure env vars are set
+    const { ReconciliationService } = await import('../../server/src/services/reconciliation');
 
-    // Update Account if this checkpoint is newer
-    // For simplicity in this script, we assume the imported statement is the "latest" we want to sync to
-    // or we check against current balanceDate.
-    // Since we are overwriting/seeding, we can just update.
-    await accountRef.update({
-      balance: statement.endingBalance,
-      balanceDate: statement.endDate
-    });
+    await ReconciliationService.reconcileAccount(
+      userId,
+      accountId,
+      statement.endDate,
+      statement.endingBalance
+    );
+    console.log(`    Reconciliation complete.`);
   } else {
-    // Fallback or just log
-    console.log(`    No ending balance in statement. Account balance not updated (Legacy delta: ${insertedAmount})`);
-    // Optional: Keep legacy delta if needed, but User wants Anchor approach.
-    // if (insertedAmount !== 0) {
-    //   await accountRef.update({
-    //     balance: admin.firestore.FieldValue.increment(insertedAmount)
-    //   });
-    // }
+    console.log(`    No ending balance in statement. Skipping reconciliation.`);
   }
 
   console.log(`  Account ${account.name} processed successfully.`);

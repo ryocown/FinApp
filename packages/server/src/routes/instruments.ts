@@ -26,6 +26,63 @@ function getAiProvider() {
   return _aiProvider;
 }
 
+// Search instruments by query (ticker or name)
+router.get('/search', async (req: Request, res: Response) => {
+  const { q } = req.query;
+
+  if (!q || typeof q !== 'string') {
+    res.status(400).json({ error: 'Query parameter "q" is required' });
+    return;
+  }
+
+  try {
+    // Simple search: check ticker or name
+    // Firestore doesn't support OR queries natively across different fields easily without multiple queries or Algolia/Typesense.
+    // For now, we'll do two queries and merge, or just search by ticker if it looks like a ticker, or name if longer.
+    // Actually, let's try to find by ticker first (exact match or prefix?), then name.
+    // Since we don't have a full search engine, we'll just do a simple prefix match on 'symbol' (ticker) and 'name'.
+    // Wait, the model uses 'symbol' or 'ticker'? The model says 'ticker' in ITradeTransaction?
+    // Let's check the instrument model.
+    // The previous code used 'cusip' and 'name'. It didn't explicitly mention 'ticker' in the create payload, but enriched data might have it.
+    // Let's assume 'ticker' or 'symbol' is stored.
+    // We'll search 'name' and 'ticker' (if it exists).
+
+    const instrumentsRef = getInstrumentsRef();
+    const results = new Map<string, any>();
+
+    // 1. Search by Ticker (exact or prefix)
+    const tickerSnapshot = await instrumentsRef
+      .where('ticker', '>=', q.toUpperCase())
+      .where('ticker', '<=', q.toUpperCase() + '\uf8ff')
+      .limit(5)
+      .get();
+
+    tickerSnapshot.docs.forEach(doc => {
+      results.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    // 2. Search by Name (prefix) - only if we don't have enough results
+    if (results.size < 5) {
+      const nameSnapshot = await instrumentsRef
+        .where('name', '>=', q)
+        .where('name', '<=', q + '\uf8ff')
+        .limit(5)
+        .get();
+
+      nameSnapshot.docs.forEach(doc => {
+        if (!results.has(doc.id)) {
+          results.set(doc.id, { id: doc.id, ...doc.data() });
+        }
+      });
+    }
+
+    res.json(Array.from(results.values()));
+  } catch (error) {
+    logger.error('Error searching instruments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get instrument by CUSIP
 router.get('/', async (req: Request, res: Response) => {
   const { cusip } = req.query;

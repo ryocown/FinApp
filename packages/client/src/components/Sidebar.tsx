@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Wallet, CreditCard, Plus, Menu, PieChart, Building } from 'lucide-react'
+import { LayoutDashboard, Wallet, CreditCard, Menu, PieChart, Building } from 'lucide-react'
 
 interface NavItemProps {
   icon: React.ReactNode
@@ -71,12 +71,7 @@ export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView }: Side
         <NavItem icon={<CreditCard size={20} />} label="Debts" isOpen={isOpen} />
       </nav>
 
-      <div className="p-4 border-t border-zinc-800">
-        <button className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md transition-colors">
-          <Plus size={18} />
-          {isOpen && <span>New Transaction</span>}
-        </button>
-      </div>
+
     </aside>
   )
 }
