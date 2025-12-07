@@ -81,7 +81,7 @@ export class AccountService {
     static async getAccountTransactions(
         userId: string,
         accountId: string,
-        options: { limit?: number; pageToken?: string } = {}
+        options: { limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {}
     ): Promise<{ transactions: ITransaction[]; nextPageToken: string | null }> {
         const result = await getAccountRef(userId, accountId);
 
@@ -90,9 +90,10 @@ export class AccountService {
         }
 
         const { ref: accountRef } = result;
+        const sortOrder = options.sortOrder || 'desc';
 
         let query: admin.firestore.Query = accountRef.collection('transactions');
-        query = query.orderBy('date', 'desc');
+        query = query.orderBy('date', sortOrder);
 
         if (options.pageToken) {
             const lastDoc = await accountRef.collection('transactions').doc(options.pageToken).get();
@@ -186,5 +187,30 @@ export class AccountService {
     static async getUserBudget(userId: string): Promise<unknown[]> {
         const snapshot = await getUserRef(userId).collection('budget').get();
         return getCollectionData(snapshot, 'budgetId');
+    }
+
+    /**
+     * Update an account.
+     */
+    static async updateAccount(
+        userId: string,
+        accountId: string,
+        updates: Partial<IAccount>
+    ): Promise<void> {
+        const result = await getAccountRef(userId, accountId);
+
+        if (!result) {
+            throw ApiError.notFound('Account');
+        }
+
+        const { ref: accountRef } = result;
+
+        // Prevent updating immutable fields
+        delete updates.accountId;
+        delete updates.userId;
+        delete updates.instituteId;
+        delete updates.balance; // Balance should only be updated via reconciliation or transactions
+
+        await accountRef.update(updates);
     }
 }

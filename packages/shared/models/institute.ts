@@ -1,6 +1,11 @@
 import { v4 } from "uuid";
 import type { IAccount } from "./account";
 
+export enum SupportedInstitute {
+    CHASE = 'Chase',
+    MORGAN_STANLEY = 'Morgan Stanley'
+}
+
 export interface IInstitute {
     instituteId: string;
     name: string;

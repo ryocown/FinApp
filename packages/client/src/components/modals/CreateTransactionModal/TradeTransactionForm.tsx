@@ -66,7 +66,7 @@ export function TradeTransactionForm({
     }
 
     const handleSelectInstrument = (result: IFinancialInstrument) => {
-        setTicker(result.ticker || result.name)
+        setTicker((result as any).ticker || result.name)
         setSelectedInstrument(result)
         setSearchResults([])
     }
@@ -117,12 +117,12 @@ export function TradeTransactionForm({
                         {isSearching && <div className="p-3 text-center text-zinc-500 text-sm">Searching...</div>}
                         {!isSearching && searchResults.map(result => (
                             <div
-                                key={result.id}
+                                key={result.instrumentId}
                                 className="px-4 py-2 hover:bg-zinc-800 cursor-pointer flex justify-between items-center"
                                 onClick={() => handleSelectInstrument(result)}
                             >
                                 <div>
-                                    <div className="font-medium text-white">{result.ticker}</div>
+                                    <div className="font-medium text-white">{(result as any).ticker}</div>
                                     <div className="text-xs text-zinc-500">{result.name}</div>
                                 </div>
                                 <div className="text-xs text-zinc-400">{result.type}</div>

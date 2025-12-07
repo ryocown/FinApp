@@ -17,10 +17,11 @@ export class TransactionService {
      */
     static async getUserTransactions(
         userId: string,
-        options: { accountId?: string; limit?: number; pageToken?: string } = {}
+        options: { accountId?: string; limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {}
     ): Promise<{ transactions: ITransaction[]; nextPageToken: string | null }> {
         let query: admin.firestore.Query;
         let collectionRef: admin.firestore.CollectionReference | undefined;
+        const sortOrder = options.sortOrder || 'desc';
 
         if (options.accountId) {
             const result = await getAccountRef(userId, options.accountId);
@@ -31,11 +32,11 @@ export class TransactionService {
 
             const { ref: accountRef } = result;
             collectionRef = accountRef.collection('transactions');
-            query = collectionRef.orderBy('date', 'desc');
+            query = collectionRef.orderBy('date', sortOrder);
         } else {
             query = db.collectionGroup('transactions')
                 .where('userId', '==', userId)
-                .orderBy('date', 'desc');
+                .orderBy('date', sortOrder);
         }
 
         if (options.pageToken) {
@@ -110,8 +111,9 @@ export class TransactionService {
     static async batchCreateTransactions(
         userId: string,
         accountId: string,
-        transactions: Partial<ITransaction>[]
-    ): Promise<{ importedCount: number; minDate: Date | null }> {
+        transactions: Partial<ITransaction>[],
+        options: { skipDuplicates?: boolean } = {}
+    ): Promise<{ importedCount: number; duplicateCount: number; minDate: Date | null }> {
         const result = await getAccountRef(userId, accountId);
 
         if (!result) {
@@ -122,8 +124,54 @@ export class TransactionService {
         const batch = db.batch();
         let minDate: Date | null = null;
         let importedCount = 0;
+        let duplicateCount = 0;
 
-        for (const txData of transactions) {
+        // If skipDuplicates is true, we need to check for existence
+        // We can optimize this by checking all IDs in parallel if the batch is small enough
+        // or just check one by one if we want to be safe. 
+        // For Firestore, we can use getAll() for up to 100 documents usually, or just loop.
+        // Given BATCH_SIZE is usually small (e.g. 400 in script, but Firestore batch limit is 500),
+        // we should be careful.
+
+        const txsToImport: Partial<ITransaction>[] = [];
+
+        if (options.skipDuplicates) {
+            // Deduplicate by ID first within the input
+            const uniqueInput = new Map<string, Partial<ITransaction>>();
+            for (const tx of transactions) {
+                if (tx.transactionId) {
+                    uniqueInput.set(tx.transactionId, tx);
+                } else {
+                    // If no ID, we can't really check for duplicates easily without generating one
+                    // But usually imports have deterministic IDs or we generate them before calling this
+                    // If we generate random IDs here, we can't detect duplicates from previous runs
+                    // So we assume caller provides deterministic IDs for duplicate detection to work effectively
+                    txsToImport.push(tx);
+                }
+            }
+
+            const uniqueTxs = Array.from(uniqueInput.values());
+
+            if (uniqueTxs.length > 0) {
+                const refs = uniqueTxs.map(tx => accountRef.collection('transactions').doc(tx.transactionId!));
+                const snapshots = await db.getAll(...refs);
+
+                snapshots.forEach((snap, index) => {
+                    if (snap.exists) {
+                        duplicateCount++;
+                    } else {
+                        const tx = uniqueTxs[index];
+                        if (tx) {
+                            txsToImport.push(tx);
+                        }
+                    }
+                });
+            }
+        } else {
+            txsToImport.push(...transactions);
+        }
+
+        for (const txData of txsToImport) {
             const txId = txData.transactionId || v4();
             const txDate = new Date(txData.date as Date | string);
 
@@ -147,14 +195,16 @@ export class TransactionService {
             importedCount++;
         }
 
-        await batch.commit();
+        if (importedCount > 0) {
+            await batch.commit();
+        }
 
         // Trigger Reconciliation Refresh
         if (minDate) {
             await ReconciliationService.refreshCheckpoints(userId, accountId, minDate);
         }
 
-        return { importedCount, minDate };
+        return { importedCount, duplicateCount, minDate };
     }
 
     /**

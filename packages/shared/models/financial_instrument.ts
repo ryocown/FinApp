@@ -1,4 +1,4 @@
-import { v4 } from "uuid";
+
 
 export enum InstrumentType {
   Unknown = 'UNKNOWN',
@@ -98,30 +98,7 @@ export interface OptionInstrument extends IFinancialInstrument, UnderlyingAsset 
  * examples
  */
 
-const appleCommonStock: StockInstrument = {
-  instrumentId: v4(),
-  accountId: "",
 
-  isin: 'US0378331005',
-  cusip: '037833100',
-  type: InstrumentType.Stock,
-  name: 'Apple Inc. Common Stock',
-  ticker: 'AAPL',
-};
-
-const appleBond: BondInstrument = {
-  instrumentId: v4(),
-  accountId: "",
-
-  isin: 'US037833AV20',
-  cusip: '037833AV2',
-  type: InstrumentType.Bond,
-  name: 'Apple Corporate Bond 2.4% 2027',
-  bondType: BondType.Corporate,
-  couponRate: 0.024,
-  maturityDate: new Date('2027-05-03'),
-  faceValue: 1000,
-};
 
 // const appleCallOption: OptionInstrument = {
 //   instrumentId: v4(),

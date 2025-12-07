@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Building2 } from 'lucide-react'
 import type { IInstitute } from '@finapp/shared/models/institute'
 import type { IAccount } from '@finapp/shared/models/account'
 import { ReconcileModal } from './ReconcileModal'
 import { CreateInstituteModal } from './CreateInstituteModal'
 import { CreateAccountModal } from './CreateAccountModal'
+import { ImportModal } from './modals/ImportModal'
 import { DeleteConfirmationModal } from './DeleteConfirmationModal'
+import { AccountDetailModal } from './AccountDetailModal'
 import { InstituteSection } from './account-components'
 
 interface AccountsProps {
@@ -18,10 +21,13 @@ interface InstituteWithAccounts extends IInstitute {
 }
 
 export function Accounts({ userId }: AccountsProps) {
+  const navigate = useNavigate()
   const [institutes, setInstitutes] = useState<InstituteWithAccounts[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedInstitutes, setExpandedInstitutes] = useState<Set<string>>(new Set())
   const [reconcileAccount, setReconcileAccount] = useState<IAccount | null>(null)
+  const [importAccount, setImportAccount] = useState<IAccount | null>(null)
+  const [detailAccount, setDetailAccount] = useState<IAccount | null>(null)
 
   // Creation Modals State
   const [isCreateInstituteOpen, setIsCreateInstituteOpen] = useState(false)
@@ -133,11 +139,34 @@ export function Accounts({ userId }: AccountsProps) {
     }
   }
 
+  const handleUpdateAccount = async (accountId: string, updates: Partial<IAccount>) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/accounts/users/${userId}/accounts/${accountId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+
+      if (res.ok) {
+        await fetchData()
+      } else {
+        alert('Failed to update account')
+      }
+    } catch (error) {
+      console.error('Error updating account:', error)
+      alert('Error updating account')
+    }
+  }
+
   const formatCurrency = (amount: number, currencyCode: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currencyCode,
     }).format(amount)
+  }
+
+  const handleAccountClick = (accountId: string) => {
+    navigate(`/transactions?account=${accountId}`)
   }
 
   if (loading) {
@@ -184,8 +213,11 @@ export function Accounts({ userId }: AccountsProps) {
               onToggle={toggleInstitute}
               onDeleteInstitute={setDeleteInstitute}
               onReconcileAccount={setReconcileAccount}
+              onImportAccount={setImportAccount}
               onDeleteAccount={setDeleteAccount}
+              onViewDetailsAccount={setDetailAccount}
               formatCurrency={formatCurrency}
+              onAccountClick={handleAccountClick}
             />
           ))}
         </div>
@@ -200,6 +232,32 @@ export function Accounts({ userId }: AccountsProps) {
           currentBalance={reconcileAccount.balance}
           onSuccess={() => {
             fetchData()
+          }}
+        />
+      )}
+
+      {importAccount && (
+        <ImportModal
+          isOpen={!!importAccount}
+          onClose={() => setImportAccount(null)}
+          account={importAccount}
+          instituteName={institutes.find(i => i.instituteId === importAccount.instituteId)?.name || ''}
+          userId={userId}
+          onSuccess={() => {
+            fetchData()
+          }}
+        />
+      )}
+
+      {detailAccount && (
+        <AccountDetailModal
+          isOpen={!!detailAccount}
+          onClose={() => setDetailAccount(null)}
+          account={detailAccount}
+          onUpdate={handleUpdateAccount}
+          onDelete={(account) => {
+            setDetailAccount(null)
+            setDeleteAccount(account)
           }}
         />
       )}

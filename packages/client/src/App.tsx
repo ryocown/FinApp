@@ -25,6 +25,7 @@ function AppContent() {
         setIsOpen={setIsSidebarOpen}
         currentView={currentView as any}
         setCurrentView={setCurrentView}
+        userId={userId}
       />
       <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-16'}`}>
         <Routes>

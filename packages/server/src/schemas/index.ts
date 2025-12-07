@@ -12,7 +12,10 @@ export const AccountSchema = z.object({
   balance: z.number(),
   initialBalance: z.number().optional(),
   initialDate: z.string().optional(),
+  accountNumber: z.string().optional(),
 });
+
+export const UpdateAccountSchema = AccountSchema.partial();
 
 export const TransactionSchema = z.object({
   accountId: z.string(),
@@ -61,4 +64,5 @@ export const BatchTransactionSchema = z.object({
     tagIds: z.array(z.string()).optional(),
     transactionId: z.string().optional(), // Optional - will be generated if not provided
   })).min(1, 'At least one transaction is required'),
+  skipDuplicates: z.boolean().optional(),
 });

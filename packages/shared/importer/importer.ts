@@ -1,5 +1,5 @@
 import { type IStatement, Statement } from "../models/statement";
-import { type ITransaction, GeneralTransaction, TransactionType, TradeTransaction, TransferTransaction } from "../models/transaction";
+import { type ITransaction, GeneralTransaction, TransactionType } from "../models/transaction";
 import { type ICurrency } from "../models/currency";
 import { parse } from 'csv-parse/sync';
 

@@ -39,13 +39,16 @@ export function TransactionRow({
             <td className="px-6 py-4 text-sm font-medium text-zinc-100 truncate" title={transaction.description || ''}>
                 {transaction.description}
             </td>
+            <td className="px-6 py-4 text-sm text-zinc-400 whitespace-nowrap">
+                {transaction.transactionType.charAt(0).toUpperCase() + transaction.transactionType.slice(1).toLowerCase()}
+            </td>
             <td className="px-6 py-4 text-sm">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getCategoryColor(transaction.category || transaction.categoryId)}`}>
-                    {transaction.category || transaction.categoryId || 'Uncategorized'}
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getCategoryColor(transaction.categoryId)}`}>
+                    {transaction.categoryId || 'Uncategorized'}
                 </span>
             </td>
             <td className="px-6 py-4 text-sm text-zinc-400 truncate">
-                {getAccountName(transaction.accountId, transaction.account)}
+                {getAccountName(transaction.accountId)}
             </td>
             <td className={`px-6 py-4 text-sm font-medium text-right whitespace-nowrap ${transaction.amount >= 0 ? 'text-emerald-400' : 'text-zinc-100'}`}>
                 {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}

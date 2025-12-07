@@ -37,7 +37,7 @@ export function Dashboard({ userId }: DashboardProps) {
 
   const totalLiabilities = accounts
     .filter(a => [AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.AccountType))
-    .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0)
+    .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0) * -1
 
   const netWorth = totalAssets - totalLiabilities
 

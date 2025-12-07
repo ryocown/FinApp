@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Filter, Download, ArrowUpDown, CheckCircle, Plus } from 'lucide-react'
 import { useTransactions, useAccounts } from '../lib/hooks'
 import { ReconcileModal } from './ReconcileModal'
@@ -18,14 +19,29 @@ export function Transactions({ userId }: TransactionsProps) {
   const [pageHistory, setPageHistory] = useState<{ token: string | null; balanceOffset: number }[]>([{ token: null, balanceOffset: 0 }])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    const accountParam = searchParams.get('account')
+    if (accountParam && accountParam !== selectedAccountId) {
+      setSelectedAccountId(accountParam)
+      setPageToken(null)
+      setPageHistory([{ token: null, balanceOffset: 0 }])
+    } else if (!accountParam && selectedAccountId !== 'all') {
+      setSelectedAccountId('all')
+      setPageToken(null)
+      setPageHistory([{ token: null, balanceOffset: 0 }])
+    }
+  }, [searchParams])
 
   // Detail Modal State
   const [selectedTransaction, setSelectedTransaction] = useState<ITransaction | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-  const { transactions, nextPageToken, error } = useTransactions(userId, limitCount, pageToken, selectedAccountId)
+  const { transactions, nextPageToken, error } = useTransactions(userId, limitCount, pageToken, selectedAccountId, sortOrder)
   const { accounts } = useAccounts(userId)
 
   // Reset pagination when filters change
@@ -33,6 +49,13 @@ export function Transactions({ userId }: TransactionsProps) {
     setSelectedAccountId(newAccountId)
     setPageToken(null)
     setPageHistory([{ token: null, balanceOffset: 0 }])
+
+    if (newAccountId === 'all') {
+      searchParams.delete('account')
+    } else {
+      searchParams.set('account', newAccountId)
+    }
+    setSearchParams(searchParams)
   }
 
   const handleLimitChange = (limit: number) => {
@@ -79,6 +102,8 @@ export function Transactions({ userId }: TransactionsProps) {
 
   const [columnWidths, setColumnWidths] = useState({
     date: 140,
+    description: 300,
+    type: 100,
     category: 150,
     account: 180,
     amount: 120,
@@ -195,12 +220,22 @@ export function Transactions({ userId }: TransactionsProps) {
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-900/50">
                     <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.date }}>
-                      <div className="flex items-center gap-1 cursor-pointer hover:text-zinc-200 transition-colors">
-                        Date <ArrowUpDown size={14} />
+                      <div
+                        className="flex items-center gap-1 cursor-pointer hover:text-zinc-200 transition-colors"
+                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                      >
+                        Date <ArrowUpDown size={14} className={sortOrder === 'asc' ? 'rotate-180 transition-transform' : 'transition-transform'} />
                       </div>
                       <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('date', e)} />
                     </th>
-                    <th className="px-6 py-4 text-sm font-medium text-zinc-400">Description</th>
+                    <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.description }}>
+                      Description
+                      <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('description', e)} />
+                    </th>
+                    <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.type }}>
+                      Type
+                      <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('type', e)} />
+                    </th>
                     <th className="px-6 py-4 text-sm font-medium text-zinc-400 relative group" style={{ width: columnWidths.category }}>
                       Category
                       <div className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 group-hover:bg-zinc-700 transition-colors" onMouseDown={(e) => handleMouseDown('category', e)} />
@@ -234,7 +269,7 @@ export function Transactions({ userId }: TransactionsProps) {
                   ))}
                   {filteredTransactions.length === 0 && (
                     <tr>
-                      <td colSpan={selectedAccountId !== 'all' ? 6 : 5} className="px-6 py-12 text-center text-zinc-500">
+                      <td colSpan={selectedAccountId !== 'all' ? 7 : 6} className="px-6 py-12 text-center text-zinc-500">
                         No transactions found matching your search.
                       </td>
                     </tr>

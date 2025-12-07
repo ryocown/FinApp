@@ -14,8 +14,11 @@ interface InstituteSectionProps {
     onToggle: (instituteId: string) => void
     onDeleteInstitute: (institute: IInstitute) => void
     onReconcileAccount: (account: IAccount) => void
+    onImportAccount: (account: IAccount) => void
     onDeleteAccount: (account: IAccount) => void
+    onViewDetailsAccount: (account: IAccount) => void
     formatCurrency: (amount: number, currencyCode?: string) => string
+    onAccountClick: (accountId: string) => void
 }
 
 /**
@@ -27,14 +30,25 @@ export function InstituteSection({
     onToggle,
     onDeleteInstitute,
     onReconcileAccount,
+    onImportAccount,
     onDeleteAccount,
-    formatCurrency
+    onViewDetailsAccount,
+    formatCurrency,
+    onAccountClick
 }: InstituteSectionProps) {
     return (
         <div className="bg-[#18181b] border border-zinc-800 rounded-xl overflow-hidden transition-all duration-200 hover:border-zinc-700">
-            <button
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={() => onToggle(institute.instituteId)}
-                className="w-full p-5 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onToggle(institute.instituteId)
+                    }
+                }}
+                className="w-full p-5 flex items-center justify-between hover:bg-zinc-800/50 transition-colors cursor-pointer outline-none focus:ring-1 focus:ring-inset focus:ring-indigo-500/50"
             >
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
@@ -69,7 +83,7 @@ export function InstituteSection({
                         <ChevronDown size={20} />
                     </div>
                 </div>
-            </button>
+            </div>
 
             {isExpanded && (
                 <div className="border-t border-zinc-800 bg-zinc-900/30">
@@ -80,8 +94,11 @@ export function InstituteSection({
                                     key={account.accountId}
                                     account={account}
                                     onReconcile={onReconcileAccount}
+                                    onImport={onImportAccount}
                                     onDelete={onDeleteAccount}
+                                    onViewDetails={onViewDetailsAccount}
                                     formatCurrency={formatCurrency}
+                                    onClick={() => onAccountClick(account.accountId)}
                                 />
                             ))}
                         </div>

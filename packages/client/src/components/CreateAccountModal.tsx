@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import type { IInstitute } from '@finapp/shared/models/institute'
+import { AccountType } from '@finapp/shared/models/account'
+import { INSTITUTE_SUPPORTED_ACCOUNTS } from '@finapp/shared/importer/capabilities'
 
 interface CreateAccountModalProps {
   isOpen: boolean
@@ -13,9 +15,22 @@ interface CreateAccountModalProps {
 export function CreateAccountModal({ isOpen, onClose, userId, institutes, onSuccess }: CreateAccountModalProps) {
   const [name, setName] = useState('')
   const [instituteId, setInstituteId] = useState(institutes[0]?.instituteId || '')
-  const [type, setType] = useState('checking')
+  const [type, setType] = useState<AccountType | ''>('')
   const [currency, setCurrency] = useState('USD')
   const [accountNumber, setAccountNumber] = useState('')
+
+  // Update type when institute changes
+  useEffect(() => {
+    const selectedInstitute = institutes.find(i => i.instituteId === instituteId)
+    if (selectedInstitute) {
+      const allowedTypes = INSTITUTE_SUPPORTED_ACCOUNTS[selectedInstitute.name]
+      if (allowedTypes && allowedTypes.length > 0) {
+        setType(allowedTypes[0])
+      } else {
+        setType('')
+      }
+    }
+  }, [instituteId, institutes])
 
   // Initial Reconciliation
   const [initialBalance, setInitialBalance] = useState('')
@@ -126,14 +141,25 @@ export function CreateAccountModal({ isOpen, onClose, userId, institutes, onSucc
               <label className="block text-sm font-medium text-zinc-400 mb-1">Type</label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value)}
+                onChange={(e) => setType(e.target.value as AccountType)}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors"
               >
-                <option value="checking">Checking</option>
-                <option value="savings">Savings</option>
-                <option value="credit_card">Credit Card</option>
-                <option value="investment">Investment</option>
-                <option value="loan">Loan</option>
+                {(() => {
+                  const selectedInstitute = institutes.find(i => i.instituteId === instituteId);
+                  const allowedTypes = selectedInstitute ? INSTITUTE_SUPPORTED_ACCOUNTS[selectedInstitute.name] : [];
+
+                  // Fallback to all types if no restriction found (or handle as empty)
+                  // But ideally we should have restrictions for all.
+                  // For now, if no allowedTypes, show allowedTypes if present.
+
+                  if (allowedTypes && allowedTypes.length > 0) {
+                    return allowedTypes.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ));
+                  }
+
+                  return <option disabled>No supported types</option>;
+                })()}
               </select>
             </div>
 

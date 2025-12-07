@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { AccountSchema } from '../schemas';
+import { AccountSchema, UpdateAccountSchema } from '../schemas';
 import { validate } from '../middleware/validate';
 import { logger } from '../logger';
 import { AccountService } from '../services/accounts';
@@ -41,6 +41,18 @@ router.post('/users/:userId/accounts', validate(AccountSchema), asyncHandler(asy
   res.status(201).json(account);
 }));
 
+// Update an account
+router.put('/users/:userId/accounts/:accountId', validate(UpdateAccountSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { userId, accountId } = req.params;
+
+  if (!userId || !accountId) {
+    throw ApiError.badRequest('Missing userId or accountId');
+  }
+
+  await AccountService.updateAccount(userId, accountId, req.body);
+  res.status(200).json({ message: 'Account updated successfully' });
+}));
+
 // Get budget for a user
 router.get('/users/:userId/budget', asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
@@ -54,15 +66,16 @@ router.get('/users/:userId/budget', asyncHandler(async (req: Request, res: Respo
 // Get transactions for a specific account
 router.get('/users/:userId/accounts/:accountId/transactions', asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
-  const { limit, pageToken } = req.query;
+  const { limit, pageToken, sortOrder } = req.query;
 
   if (!userId || !accountId) {
     throw ApiError.badRequest('Missing userId or accountId');
   }
 
-  const options: { limit?: number; pageToken?: string } = {};
+  const options: { limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {};
   if (limit) options.limit = Number(limit);
   if (pageToken) options.pageToken = pageToken as string;
+  if (sortOrder === 'asc' || sortOrder === 'desc') options.sortOrder = sortOrder;
 
   const result = await AccountService.getAccountTransactions(userId, accountId, options);
 

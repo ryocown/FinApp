@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Info } from 'lucide-react'
+import { SupportedInstitute } from '@finapp/shared/models/institute'
 
 interface CreateInstituteModalProps {
   isOpen: boolean
@@ -47,7 +48,7 @@ export function CreateInstituteModal({ isOpen, onClose, userId, onSuccess }: Cre
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-[#18181b] border border-zinc-800 rounded-xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-md bg-[#18181b] border border-zinc-800 rounded-xl shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-zinc-800">
           <h2 className="text-lg font-semibold text-white">Add New Institute</h2>
           <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
@@ -57,15 +58,27 @@ export function CreateInstituteModal({ isOpen, onClose, userId, onSuccess }: Cre
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1">Institute Name</label>
-            <input
-              type="text"
+            <div className="flex items-center gap-2 mb-1">
+              <label className="block text-sm font-medium text-zinc-400">Institute Name</label>
+              <div className="group relative flex items-center">
+                <Info size={14} className="text-zinc-500 hover:text-zinc-300 cursor-help transition-colors" />
+                <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 w-64 p-2 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl text-xs text-zinc-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                  im only currently allowing institutes with properly implemented importers. this is restrictive by design until i figure out a way to implement dynamic schemas for every new arbitrary institute.
+                  <div className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-700"></div>
+                </div>
+              </div>
+            </div>
+            <select
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors"
-              placeholder="e.g. Chase, Bank of America"
               required
-            />
+            >
+              <option value="" disabled>Select an institute</option>
+              {Object.values(SupportedInstitute).map((inst) => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
+            </select>
           </div>
 
           <div>

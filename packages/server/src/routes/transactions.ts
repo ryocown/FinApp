@@ -17,16 +17,17 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
 // Get all transactions for a user, optionally filtered by account
 router.get('/users/:userId/transactions', asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const { accountId, limit, pageToken } = req.query;
+  const { accountId, limit, pageToken, sortOrder } = req.query;
 
   if (!userId) {
     throw ApiError.badRequest('Missing userId');
   }
 
-  const options: { accountId?: string; limit?: number; pageToken?: string } = {};
+  const options: { accountId?: string; limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {};
   if (accountId) options.accountId = accountId as string;
   if (limit) options.limit = Number(limit);
   if (pageToken) options.pageToken = pageToken as string;
+  if (sortOrder === 'asc' || sortOrder === 'desc') options.sortOrder = sortOrder;
 
   const result = await TransactionService.getUserTransactions(userId, options);
 
@@ -48,13 +49,13 @@ router.post('/users/:userId/transactions', validate(TransactionSchema), asyncHan
 // Batch create transactions
 router.post('/users/:userId/accounts/:accountId/transactions/batch', validate(BatchTransactionSchema), asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
-  const { transactions } = req.body;
+  const { transactions, skipDuplicates } = req.body;
 
   if (!userId || !accountId) {
     throw ApiError.badRequest('Missing userId or accountId');
   }
 
-  const result = await TransactionService.batchCreateTransactions(userId, accountId, transactions);
+  const result = await TransactionService.batchCreateTransactions(userId, accountId, transactions, { skipDuplicates });
   res.status(201).json(result);
 }));
 

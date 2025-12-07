@@ -41,7 +41,7 @@ Thumbs.db
 
 # Misc
 .npm
-/coverage
+**/coverage
 /packages/client/dist
 /packages/client/node_modules
 /packages/server/dist

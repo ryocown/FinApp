@@ -4,7 +4,10 @@
   "description": "While being a very crowded space, I am still extreme frustrated with the current state of personal finance management apps. I am in an unique situation where I have financial presense in multiple countries and assets in multiple currencies. I have credit, checking, savings, brokerage, and retirement accounts in each of the countries and their respective currencies. On top of that, each of the investment accounts employ just different enough strategies to make analyzing my asset allocation and financial health a real pain.",
   "main": "general_transaction.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm test --workspaces --if-present",
+    "test:shared": "npm test -w @finapp/shared",
+    "test:server": "npm test -w server",
+    "test:client": "npm test -w client",
     "test:import": "tsx packages/shared/tests/import.test.ts",
     "data:import": "tsx packages/shared/lib/import_to_firebase.ts",
     "data:verify": "tsx packages/shared/lib/verify_firebase_data.ts"

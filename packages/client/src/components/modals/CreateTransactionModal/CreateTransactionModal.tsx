@@ -105,15 +105,15 @@ export function CreateTransactionModal({ isOpen, onClose, userId, onSuccess }: C
                 await createTransaction(userId, {
                     accountId,
                     date: new Date(date),
-                    description: description || `${tradeType} ${selectedInstrument.ticker || ticker}`,
+                    description: description || `${tradeType} ${(selectedInstrument as any).ticker || ticker}`,
                     amount: finalAmount,
                     currency: selectedAccount.currency,
                     transactionType: TransactionType.Trade,
-                    instrumentId: selectedInstrument.id,
+                    instrumentId: selectedInstrument.instrumentId,
                     quantity: numQty,
                     price: numPrice,
                     tagIds: []
-                })
+                } as any)
 
             } else if (activeTab === 'TRANSFER') {
                 if (!destAccountId) throw new Error('Please select a destination account')
