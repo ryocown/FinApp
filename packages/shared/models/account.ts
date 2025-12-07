@@ -140,4 +140,22 @@ export class InvestmentAccount implements IInvestmentAccount {
     this.isTaxable = true;
     this.positions = [];
   }
+
+  static fromJSON(json: any): InvestmentAccount {
+    const account = new InvestmentAccount(
+      json.accountNumber,
+      json.balance,
+      json.country,
+      Currency.fromJSON(json.currency),
+      json.name,
+      json.AccountType,
+      json.userId
+    );
+    account.accountId = json.accountId;
+    account.positions = json.positions || [];
+    if (json.balanceDate) {
+      account.balanceDate = new Date(json.balanceDate);
+    }
+    return account;
+  }
 }

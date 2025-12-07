@@ -2,6 +2,7 @@ import { CategoryType } from "../../models/category";
 import type { IStatement } from "../../models/statement";
 import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "../../models/transaction";
 import { StatementImporter } from "../importer";
+import { parsePSTDateToUTC } from "../../lib/date_utils";
 
 export class MorganStanleyStatementImporter extends StatementImporter {
   constructor(accountId: string, userId: string) {
@@ -59,7 +60,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
         this.userId,
         parseFloat(record[this.mapping.amountColumn]),
         this.currency,
-        new Date(record[this.mapping.dateColumn]),
+        parsePSTDateToUTC(record[this.mapping.dateColumn]),
         record[this.mapping.descriptionColumn],
         false,
         false,
@@ -79,7 +80,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
 
         parseFloat(record[this.mapping.amountColumn]),
         this.currency,
-        new Date(record[this.mapping.dateColumn]),
+        parsePSTDateToUTC(record[this.mapping.dateColumn]),
         record[this.mapping.descriptionColumn],
         undefined, // categoryId
         [] // tagIds
@@ -91,7 +92,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
       this.userId,
       parseFloat(record[this.mapping.amountColumn]),
       this.currency,
-      new Date(record[this.mapping.dateColumn]),
+      parsePSTDateToUTC(record[this.mapping.dateColumn]),
       record[this.mapping.descriptionColumn],
       false,
       false,

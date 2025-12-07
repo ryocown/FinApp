@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
+import type { IAccount } from '@finapp/shared/models/account'
+import type { ITransaction } from '@finapp/shared/models/transaction'
+import type { IBudget } from '@finapp/shared/models/budget'
 
 const API_BASE_URL = 'http://localhost:3001/api' // Server runs on 3001 with /api prefix
 
 export function useAccounts(userId: string) {
-  const [accounts, setAccounts] = useState<any[]>([])
+  const [accounts, setAccounts] = useState<IAccount[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export function useAccounts(userId: string) {
 }
 
 export function useTransactions(userId: string, limitCount: number = 50, pageToken: string | null = null, accountId: string | null = null) {
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<ITransaction[]>([])
   const [nextPageToken, setNextPageToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +80,7 @@ export function useTransactions(userId: string, limitCount: number = 50, pageTok
 }
 
 export function useBudget(userId: string) {
-  const [budget, setBudget] = useState<any[]>([])
+  const [budget, setBudget] = useState<IBudget[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

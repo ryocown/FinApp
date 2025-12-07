@@ -24,7 +24,7 @@ router.get('/rates', async (req: Request, res: Response) => {
         .get();
 
       if (!snapshot.empty) {
-        const data = snapshot.docs[0].data();
+        const data = snapshot.docs[0]?.data();
         if (data && typeof data.rate === 'number') {
           rates[pairId] = data.rate;
         }

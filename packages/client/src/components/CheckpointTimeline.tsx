@@ -95,7 +95,7 @@ export function CheckpointTimeline({ userId, accountId }: CheckpointTimelineProp
                 <div className={`border rounded p-3 transition-colors ${isInvalid ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'}`}>
                   <div className="flex justify-between items-start">
                     <div className={`text-xs font-medium mb-1 ${isInvalid ? 'text-yellow-500' : 'text-zinc-400'}`}>
-                      {new Date(checkpoint.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(checkpoint.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                     <button
                       onClick={() => handleDelete(checkpoint.id)}

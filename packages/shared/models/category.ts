@@ -5,11 +5,12 @@ import { v4 } from "uuid";
 export enum CategoryType {
   Income = 'INCOME',
   Expense = 'EXPENSE',
-  Widthdrawal = 'WIDTHDRAWAL',
+  Withdrawal = 'WITHDRAWAL',
   Deposit = 'DEPOSIT',
   Credit = 'CREDIT',
   Transfer = 'TRANSFER',
-  Other = 'OTHER'
+  Other = 'OTHER',
+  Reconciliation = 'RECONCILIATION'
 }
 
 export enum CategoryGroups {
@@ -25,7 +26,8 @@ export enum CategoryGroups {
   ProfessionalServices = 'Professional Services',
   Travel = 'Transport and Activites',  // Cost of transportation, hotels and activities.
   CashManagement = 'Cash Management',  // Tracking of the movement of cash within statements.
-  Unknown = 'Unknown'
+  Unknown = 'Unknown',
+  Reconciliation = 'Reconciliation'
 }
 
 export enum ExpenseTypes {
@@ -40,7 +42,7 @@ export enum ExpenseTypes {
   CreditCardPayment = 'Credit Card Payment',
   CreditBenefit = 'Credit Benefit',
   TransactionFees = 'Transaction Fees',
-  ForeignSurchage = 'Foreign Surchage',
+  ForeignSurcharge = 'Foreign Surcharge',
   ExchangeFees = 'Exchange Fees',
   BankFees = 'Bank Fees',
   DebitInterest = 'Debit Interest',
@@ -61,10 +63,10 @@ export enum ExpenseTypes {
   ClothesHomeware = 'Clothes & Homeware',
   MiscShopping = 'Misc Shopping',
   HomeOffice = 'Home Office',
-  ConvienceStore = 'Convience Store',
+  ConvenienceStore = 'Convenience Store',
   Insurance = 'Insurance',
   Furniture = 'Furniture',
-  PersoanlSubscriptions = 'Personal Subscriptions',
+  PersonalSubscriptions = 'Personal Subscriptions',
   PhoneInternet = 'Phone & Internet',
   RoamingInternet = 'Roaming Internet',
   TransportFoodSubscriptions = 'Transport & Food Subscriptions',
@@ -80,7 +82,8 @@ export enum ExpenseTypes {
   Unsorted = 'Unsorted',
   Utilities = 'Utilities',
   CreditCardFees = 'Credit Card Fees',
-  Unknown = 'Unknown'
+  Unknown = 'Unknown',
+  Reconciliation = 'Reconciliation'
 }
 
 export const ExpenseTree = {
@@ -99,7 +102,7 @@ export const ExpenseTree = {
 
     CreditCardFees: { name: ExpenseTypes.CreditCardFees, category: CategoryGroups.Fees },
     TransactionFees: { name: ExpenseTypes.TransactionFees, category: CategoryGroups.Fees },
-    ForeignSurchage: { name: ExpenseTypes.ForeignSurchage, category: CategoryGroups.Fees },
+    ForeignSurcharge: { name: ExpenseTypes.ForeignSurcharge, category: CategoryGroups.Fees },
     ExchangeFees: { name: ExpenseTypes.ExchangeFees, category: CategoryGroups.Fees },
     BankFees: { name: ExpenseTypes.BankFees, category: CategoryGroups.Fees },
     DebitInterest: { name: ExpenseTypes.DebitInterest, category: CategoryGroups.Fees },
@@ -126,10 +129,10 @@ export const ExpenseTree = {
     ClothesHomeware: { name: ExpenseTypes.ClothesHomeware, category: CategoryGroups.Shopping },
     MiscShopping: { name: ExpenseTypes.MiscShopping, category: CategoryGroups.Shopping },
     HomeOffice: { name: ExpenseTypes.HomeOffice, category: CategoryGroups.Shopping },
-    ConvienceStore: { name: ExpenseTypes.ConvienceStore, category: CategoryGroups.Shopping },
+    ConvienceStore: { name: ExpenseTypes.ConvenienceStore, category: CategoryGroups.Shopping },
     Furniture: { name: ExpenseTypes.Furniture, category: CategoryGroups.Shopping },
 
-    PersoanlSubscriptions: { name: ExpenseTypes.PersoanlSubscriptions, category: CategoryGroups.Subscriptions },
+    PersoanlSubscriptions: { name: ExpenseTypes.PersonalSubscriptions, category: CategoryGroups.Subscriptions },
     PhoneInternet: { name: ExpenseTypes.PhoneInternet, category: CategoryGroups.Subscriptions },
     RoamingInternet: { name: ExpenseTypes.RoamingInternet, category: CategoryGroups.Subscriptions },
     TransportFoodSubscriptions: { name: ExpenseTypes.TransportFoodSubscriptions, category: CategoryGroups.Subscriptions },
@@ -146,6 +149,7 @@ export const ExpenseTree = {
     Cruise: { name: ExpenseTypes.Cruise, category: CategoryGroups.Travel },
 
     Unsorted: { name: ExpenseTypes.Unknown, category: CategoryGroups.Unknown },
+    Reconciliation: { name: ExpenseTypes.Reconciliation, category: CategoryGroups.Reconciliation }
   }
 } as const;
 
@@ -160,7 +164,8 @@ export const StandardCategoryTree = {
     Entertainment: CategoryGroups.Entertainment,
     ProfessionalServices: CategoryGroups.ProfessionalServices,
     Travel: CategoryGroups.Travel,
-    Government: CategoryGroups.Government
+    Government: CategoryGroups.Government,
+    Reconciliation: CategoryGroups.Reconciliation
   }
 } as const;
 
@@ -189,9 +194,16 @@ export class Category implements ICategory {
 
   static createStandardCategories(): Category[] {
     const expense = new Category('Expense', CategoryType.Expense);
-    return [
-      expense,
-      ...Object.values(CategoryGroups).map(name => new Category(name, CategoryType.Expense, expense.categoryId))
-    ];
+    const categories = [expense];
+
+    Object.values(CategoryGroups).forEach(name => {
+      if (name === CategoryGroups.Reconciliation) {
+        categories.push(new Category(name, CategoryType.Reconciliation, null));
+      } else {
+        categories.push(new Category(name, CategoryType.Expense, expense.categoryId));
+      }
+    });
+
+    return categories;
   }
 }

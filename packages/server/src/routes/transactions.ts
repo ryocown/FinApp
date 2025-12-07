@@ -1,251 +1,102 @@
-import { Router, type Request, type Response } from 'express';
-import admin from 'firebase-admin';
-import { db, getUserRef, getAccountRef, resolveTransactionReferences } from '../firebase';
-import { type ITransaction } from '../../../shared/models/transaction';
-import { v4 } from 'uuid';
-
-import { TransactionSchema } from '../schemas';
+import { Router, type Request, type Response, type NextFunction } from 'express';
+import { TransactionSchema, BatchTransactionSchema, UpdateTransactionSchema } from '../schemas';
 import { validate } from '../middleware/validate';
-import { logger } from '../logger';
+import { TransactionService } from '../services/transactions';
+import { ApiError } from '../errors';
 
 const router = Router();
 
+/**
+ * Wrapper to catch async errors and pass them to the error handler.
+ */
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+
 // Get all transactions for a user, optionally filtered by account
-router.get('/users/:userId/transactions', async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { accountId, limit, pageToken } = req.query;
+router.get('/users/:userId/transactions', asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { accountId, limit, pageToken } = req.query;
 
-    if (!userId) {
-      res.status(400).json({ error: 'Missing userId' });
-      return;
-    }
-
-    let query: admin.firestore.Query;
-    let collectionRef: admin.firestore.CollectionReference | undefined;
-
-    // If accountId is provided, we query the specific account's nested collection
-    // This allows us to filter and sort by date efficiently
-    if (accountId) {
-      // 1. Find the institute for this account
-      const result = await getAccountRef(userId, accountId as string);
-
-      if (!result) {
-        // If account not found, return empty list or 404.
-        // Returning empty list is safer for a filter.
-        res.json({ transactions: [], nextPageToken: null });
-        return;
-      }
-
-      const { ref: accountRef } = result;
-
-      collectionRef = accountRef.collection('transactions');
-
-      query = collectionRef;
-
-      // We can sort by date here because it's the real collection
-      query = query.orderBy('date', 'desc');
-
-    } else {
-      // Global list: query using collection group to allow sorting by date
-      // We filter by userId to ensure we only get this user's transactions
-      // and exclude the global reference documents (which don't have userId)
-      query = db.collectionGroup('transactions')
-        .where('userId', '==', userId)
-        .orderBy('date', 'desc');
-    }
-
-    if (pageToken) {
-      // For both nested and global collections, pageToken is the document ID.
-      let lastDoc: admin.firestore.DocumentSnapshot | null = null;
-
-      if (collectionRef!) {
-        // Account scope: direct lookup
-        lastDoc = await collectionRef.doc(pageToken as string).get();
-      } else {
-        // Global scope: find by transactionId in collection group
-        const cursorSnap = await db.collectionGroup('transactions')
-          .where('userId', '==', userId)
-          .where('transactionId', '==', pageToken)
-          .limit(1)
-          .get();
-
-        if (!cursorSnap.empty) {
-          lastDoc = cursorSnap.docs[0] as admin.firestore.DocumentSnapshot;
-        }
-      }
-
-      if (lastDoc && lastDoc.exists) {
-        query = query.startAfter(lastDoc);
-      }
-    }
-
-    if (limit) {
-      query = query.limit(Number(limit));
-    }
-
-    const snapshot = await query.get();
-
-    // Resolve references
-    const transactions = await resolveTransactionReferences(snapshot.docs);
-
-    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-    const nextPageToken = lastVisible ? lastVisible.id : null;
-
-    res.json({
-      transactions,
-      nextPageToken
-    });
-  } catch (error: any) {
-    logger.error('Error fetching transactions:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch transactions' });
+  if (!userId) {
+    throw ApiError.badRequest('Missing userId');
   }
-});
+
+  const options: { accountId?: string; limit?: number; pageToken?: string } = {};
+  if (accountId) options.accountId = accountId as string;
+  if (limit) options.limit = Number(limit);
+  if (pageToken) options.pageToken = pageToken as string;
+
+  const result = await TransactionService.getUserTransactions(userId, options);
+
+  res.json(result);
+}));
 
 // Create a transaction for a user
-router.post('/users/:userId/transactions', validate(TransactionSchema), async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    if (!userId) {
-      res.status(400).json({ error: 'Missing userId' });
-      return;
-    }
-    const transaction: ITransaction = req.body;
+router.post('/users/:userId/transactions', validate(TransactionSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
 
-    // 1. Find the institute for this account
-    const result = await getAccountRef(userId, transaction.accountId);
-
-    if (!result) {
-      res.status(404).json({ error: 'Account not found' });
-      return;
-    }
-
-    const { ref: accountRef } = result;
-
-    // 2. Create in nested collection
-    // Use transactionId if provided, or auto-generate?
-    // The model usually generates it. If the client sends it, we use it.
-    // If not, we should probably generate it or let Firestore do it (but we prefer deterministic IDs).
-    // For now, let's assume client sends it or we let Firestore generate if missing (though model requires it).
-
-    const nestedRef = accountRef.collection('transactions').doc(transaction.transactionId || v4());
-    await nestedRef.set(transaction);
-
-    // 3. Create reference in global collection
-    const globalRef = getUserRef(userId).collection('transactions').doc(nestedRef.id);
-    await globalRef.set({ RefTxId: nestedRef });
-
-    res.status(201).json(Object.assign({}, transaction, { transactionId: nestedRef.id }));
-  } catch (error) {
-    logger.error('Error creating transaction:', error);
-    res.status(500).json({ error: 'Failed to create transaction' });
+  if (!userId) {
+    throw ApiError.badRequest('Missing userId');
   }
-});
+
+  const transaction = await TransactionService.createTransaction(userId, req.body);
+  res.status(201).json(transaction);
+}));
 
 // Batch create transactions
-router.post('/users/:userId/accounts/:accountId/transactions/batch', async (req: Request, res: Response) => {
-  try {
-    const { userId, accountId } = req.params;
-    const { transactions } = req.body; // Expecting array of transactions
+router.post('/users/:userId/accounts/:accountId/transactions/batch', validate(BatchTransactionSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { userId, accountId } = req.params;
+  const { transactions } = req.body;
 
-    if (!userId || !accountId || !Array.isArray(transactions)) {
-      res.status(400).json({ error: 'Missing required fields or invalid transactions format' });
-      return;
-    }
-
-    const result = await getAccountRef(userId, accountId);
-    if (!result) {
-      res.status(404).json({ error: 'Account not found' });
-      return;
-    }
-    const { ref: accountRef } = result;
-
-    const batch = db.batch();
-    let minDate: Date | null = null;
-    let importedCount = 0;
-
-    for (const txData of transactions) {
-      // Basic validation or use schema?
-      // For now assume valid or minimal validation
-      const txId = txData.transactionId || v4();
-      const txDate = new Date(txData.date);
-
-      const tx: ITransaction = {
-        ...txData,
-        transactionId: txId,
-        accountId,
-        userId,
-        date: txDate
-      };
-
-      const nestedRef = accountRef.collection('transactions').doc(txId);
-      batch.set(nestedRef, tx);
-
-      const globalRef = getUserRef(userId).collection('transactions').doc(txId);
-      batch.set(globalRef, { RefTxId: nestedRef });
-
-      if (!minDate || txDate < minDate) {
-        minDate = txDate;
-      }
-      importedCount++;
-    }
-
-    await batch.commit();
-
-    // Trigger Reconciliation Refresh
-    if (minDate) {
-      // We import ReconciliationService dynamically or at top level if possible
-      // But we need to import it. I'll add the import at the top.
-      const { ReconciliationService } = await import('../services/reconciliation');
-      // Run asynchronously to not block response? Or synchronously?
-      // For now synchronously to ensure consistency for the user
-      await ReconciliationService.refreshCheckpoints(userId, accountId, minDate);
-    }
-
-    res.status(201).json({ importedCount, minDate });
-  } catch (error: any) {
-    logger.error('Error batch creating transactions:', error);
-    res.status(500).json({ error: error.message || 'Failed to batch create transactions' });
+  if (!userId || !accountId) {
+    throw ApiError.badRequest('Missing userId or accountId');
   }
-});
+
+  const result = await TransactionService.batchCreateTransactions(userId, accountId, transactions);
+  res.status(201).json(result);
+}));
 
 // Delete a transaction
-router.delete('/users/:userId/transactions/:transactionId', async (req: Request, res: Response) => {
-  try {
-    const { userId, transactionId } = req.params;
+router.delete('/users/:userId/transactions/:transactionId', asyncHandler(async (req: Request, res: Response) => {
+  const { userId, transactionId } = req.params;
 
-    if (!userId || !transactionId) {
-      res.status(400).json({ error: 'Missing userId or transactionId' });
-      return;
-    }
-
-    // 1. Find the global reference to get the nested path
-    const globalRef = getUserRef(userId).collection('transactions').doc(transactionId);
-    const globalDoc = await globalRef.get();
-
-    if (!globalDoc.exists) {
-      res.status(404).json({ error: 'Transaction not found' });
-      return;
-    }
-
-    const data = globalDoc.data();
-    const nestedRef = data?.RefTxId as admin.firestore.DocumentReference | undefined;
-
-    // 2. Delete nested document if it exists
-    if (nestedRef) {
-      await nestedRef.delete();
-    } else {
-      logger.warn(`Global transaction ${transactionId} has no RefTxId`);
-    }
-
-    // 3. Delete global reference
-    await globalRef.delete();
-
-    res.status(200).json({ message: 'Transaction deleted successfully' });
-  } catch (error) {
-    logger.error('Error deleting transaction:', error);
-    res.status(500).json({ error: 'Failed to delete transaction' });
+  if (!userId || !transactionId) {
+    throw ApiError.badRequest('Missing userId or transactionId');
   }
-});
+
+  await TransactionService.deleteTransaction(userId, transactionId);
+  res.status(200).json({ message: 'Transaction deleted successfully' });
+}));
+
+// Update a transaction
+router.put('/users/:userId/transactions/:transactionId', validate(UpdateTransactionSchema), asyncHandler(async (req: Request, res: Response) => {
+  const { userId, transactionId } = req.params;
+
+  if (!userId || !transactionId) {
+    throw ApiError.badRequest('Missing userId or transactionId');
+  }
+
+  await TransactionService.updateTransaction(userId, transactionId, req.body);
+  res.status(200).json({ message: 'Transaction updated successfully' });
+}));
+
+// Create atomic transfer between two accounts
+router.post('/users/:userId/transfers', asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const { source, destination } = req.body;
+
+  if (!userId) {
+    throw ApiError.badRequest('Missing userId');
+  }
+
+  if (!source || !destination) {
+    throw ApiError.badRequest('Missing source or destination transaction');
+  }
+
+  const result = await TransactionService.createTransfer(userId, source, destination);
+  res.status(201).json(result);
+}));
 
 export default router;

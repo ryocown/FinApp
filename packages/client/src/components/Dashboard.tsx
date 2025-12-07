@@ -1,6 +1,8 @@
 import { NetWorthChart } from './NetWorthChart'
 import { useAccounts } from '../lib/hooks'
 import { useEffect, useState } from 'react'
+import { AccountType } from '@finapp/shared/models/account'
+import { AssetLiabilityCard } from './dashboard-components'
 
 interface DashboardProps {
   userId: string
@@ -18,24 +20,23 @@ export function Dashboard({ userId }: DashboardProps) {
       .catch(err => console.error('Failed to fetch rates:', err))
   }, [])
 
-  const getBalanceInUSD = (account: any) => {
+  const getBalanceInUSD = (account: { currency: { code: string }; balance: number }) => {
     if (account.currency.code === 'USD') return account.balance || 0;
 
-    // JPY -> USD: rate is JPYUSD
     const pairId = account.currency.code < 'USD' ? `${account.currency.code}USD` : `USD${account.currency.code}`;
     const rate = rates[pairId];
     if (rate) {
       return (account.balance || 0) * rate;
     }
-    return account.balance || 0; // Fallback to raw if no rate (shouldn't happen for supported currencies)
+    return account.balance || 0;
   }
 
   const totalAssets = accounts
-    .filter(a => !['liability', 'credit_card', 'loan'].includes(a.type))
+    .filter(a => ![AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.AccountType))
     .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0)
 
   const totalLiabilities = accounts
-    .filter(a => ['liability', 'credit_card', 'loan'].includes(a.type))
+    .filter(a => [AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.AccountType))
     .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0)
 
   const netWorth = totalAssets - totalLiabilities
@@ -72,14 +73,11 @@ export function Dashboard({ userId }: DashboardProps) {
               </h2>
               {(() => {
                 if (netWorthHistory.length < 2) return null;
-                // Find value ~30 days ago or oldest
                 const today = new Date();
                 const thirtyDaysAgo = new Date(today.setDate(today.getDate() - 30));
 
-                // Assuming history is sorted by date ascending (from API)
-                // Find first entry >= 30 days ago
                 let pastEntry = netWorthHistory.find(h => new Date(h.date) >= thirtyDaysAgo);
-                if (!pastEntry) pastEntry = netWorthHistory[0]; // Fallback to oldest
+                if (!pastEntry) pastEntry = netWorthHistory[0];
 
                 const diff = netWorth - pastEntry.value;
                 let percentDisplay = '0.0%';
@@ -129,38 +127,10 @@ export function Dashboard({ userId }: DashboardProps) {
           </div>
         </div>
 
-        {/* Assets & Liabilities Grid */}
+        {/* Assets & Liabilities Grid - Using extracted components */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-[#18181b] p-6 rounded-xl border border-zinc-800 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-100">Assets</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-400">Total Assets</span>
-                <span className="font-medium text-zinc-200">
-                  {loading ? '...' : `$${totalAssets.toLocaleString()}`}
-                </span>
-              </div>
-              <div className="w-full bg-zinc-800 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-              </div>
-              {/* Individual accounts could go here */}
-            </div>
-          </div>
-          <div className="bg-[#18181b] p-6 rounded-xl border border-zinc-800 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4 text-zinc-100">Liabilities</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-400">Total Liabilities</span>
-                <span className="font-medium text-zinc-200">
-                  {loading ? '...' : `$${totalLiabilities.toLocaleString()}`}
-                </span>
-              </div>
-              <div className="w-full bg-zinc-800 rounded-full h-2">
-                <div className="bg-red-500 h-2 rounded-full" style={{ width: '100%' }}></div>
-              </div>
-              {/* Individual accounts could go here */}
-            </div>
-          </div>
+          <AssetLiabilityCard title="Assets" total={totalAssets} loading={loading} color="blue" />
+          <AssetLiabilityCard title="Liabilities" total={totalLiabilities} loading={loading} color="red" />
         </div>
       </div>
     </main>

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { getCategoryColor } from '../lib/utils'
-import { Search, Filter, Download, ArrowUpDown, CheckCircle, Plus } from 'lucide-react'
+import { Filter, Download, ArrowUpDown, CheckCircle, Plus } from 'lucide-react'
 import { useTransactions, useAccounts } from '../lib/hooks'
 import { ReconcileModal } from './ReconcileModal'
 import { TransactionDetailModal } from './TransactionDetailModal'
 import { CheckpointTimeline } from './CheckpointTimeline'
 import { CreateTransactionModal } from './CreateTransactionModal'
+import { TransactionFilters, TransactionRow } from './transaction-components'
 import type { ITransaction } from '@finapp/shared/models/transaction'
 
 interface TransactionsProps {
@@ -35,6 +35,12 @@ export function Transactions({ userId }: TransactionsProps) {
     setPageHistory([{ token: null, balanceOffset: 0 }])
   }
 
+  const handleLimitChange = (limit: number) => {
+    setLimitCount(limit)
+    setPageToken(null)
+    setPageHistory([{ token: null, balanceOffset: 0 }])
+  }
+
   const getAccountName = (accountId: string, accountName?: string) => {
     if (accountId) {
       const account = accounts.find(a => a.accountId === accountId);
@@ -44,24 +50,18 @@ export function Transactions({ userId }: TransactionsProps) {
   };
 
   const filteredTransactions = transactions.filter(t => {
-    const accountName = getAccountName(t.accountId, t.account);
+    const txn = t as ITransaction & { account?: string; category?: string }
+    const accountName = getAccountName(t.accountId, txn.account);
     const matchesSearch = (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (txn.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (accountName || '').toLowerCase().includes(searchTerm.toLowerCase());
-    // Server already filters by account, but we keep this for search filtering and safety
     return matchesSearch;
   })
 
   const handleNextPage = () => {
     if (nextPageToken) {
-      // Calculate offset for the next page (sum of current page amounts)
-      // Note: We are walking backwards in time, so we subtract the amounts?
-      // No, to get the starting balance of the NEXT page (older), 
-      // we need to subtract all amounts of the CURRENT page from the current start balance.
-      // Offset tracks how much we have subtracted from the Anchor.
       const currentPageSum = transactions.reduce((sum, t) => sum + t.amount, 0);
       const currentOffset = pageHistory[pageHistory.length - 1].balanceOffset;
-
       setPageHistory([...pageHistory, { token: nextPageToken, balanceOffset: currentOffset + currentPageSum }])
       setPageToken(nextPageToken)
     }
@@ -70,7 +70,7 @@ export function Transactions({ userId }: TransactionsProps) {
   const handlePrevPage = () => {
     if (pageHistory.length > 1) {
       const newHistory = [...pageHistory]
-      newHistory.pop() // Remove current page
+      newHistory.pop()
       const prevPage = newHistory[newHistory.length - 1]
       setPageHistory(newHistory)
       setPageToken(prevPage.token)
@@ -106,6 +106,16 @@ export function Transactions({ userId }: TransactionsProps) {
   const handleRowClick = (transaction: ITransaction) => {
     setSelectedTransaction(transaction)
     setIsDetailModalOpen(true)
+  }
+
+  // Calculate running balance for a transaction
+  const calculateRunningBalance = (_transaction: ITransaction, index: number): number => {
+    const account = accounts.find(a => a.accountId === selectedAccountId);
+    const anchorBalance = account?.balance || 0;
+    const pageOffset = pageHistory[pageHistory.length - 1].balanceOffset;
+    const startBalance = anchorBalance - pageOffset;
+    const previousRowsSum = filteredTransactions.slice(0, index).reduce((sum, t) => sum + t.amount, 0);
+    return startBalance - previousRowsSum;
   }
 
   const [isErrorExpanded, setIsErrorExpanded] = useState(false)
@@ -166,47 +176,17 @@ export function Transactions({ userId }: TransactionsProps) {
               )}
             </div>
           )}
-          {/* Search and Filter Bar */}
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                className="w-full bg-[#18181b] border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <select
-              id="pagination-limit"
-              className="bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-              value={limitCount}
-              onChange={(e) => {
-                setLimitCount(Number(e.target.value))
-                setPageToken(null)
-                setPageHistory([{ token: null, balanceOffset: 0 }])
-              }}
-            >
-              <option value={50}>50 per page</option>
-              <option value={100}>100 per page</option>
-              <option value={150}>150 per page</option>
-              <option value={200}>200 per page</option>
-            </select>
-            <select
-              id="account-filter"
-              className="bg-[#18181b] border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
-              value={selectedAccountId}
-              onChange={(e) => {
-                handleFilterChange(e.target.value)
-              }}
-            >
-              <option value="all">All Accounts</option>
-              {accounts.map(account => (
-                <option key={account.accountId} value={account.accountId}>{account.name}</option>
-              ))}
-            </select>
-          </div>
+
+          {/* Search and Filter Bar - Using extracted component */}
+          <TransactionFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            limitCount={limitCount}
+            onLimitChange={handleLimitChange}
+            selectedAccountId={selectedAccountId}
+            onAccountChange={handleFilterChange}
+            accounts={accounts}
+          />
 
           {/* Transactions Table */}
           <div className="bg-[#18181b] rounded-xl border border-zinc-800 shadow-sm overflow-hidden">
@@ -242,56 +222,15 @@ export function Transactions({ userId }: TransactionsProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
-                  {filteredTransactions.map((transaction) => (
-                    <tr
+                  {filteredTransactions.map((transaction, index) => (
+                    <TransactionRow
                       key={transaction.transactionId}
-                      className="hover:bg-zinc-800/50 transition-colors group cursor-pointer"
-                      onClick={() => handleRowClick(transaction)}
-                    >
-                      <td className="px-6 py-4 text-sm text-zinc-300 whitespace-nowrap">
-                        {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-zinc-100 truncate" title={transaction.description || ''}>
-                        {transaction.description}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getCategoryColor(transaction.category || transaction.categoryId)}`}>
-                          {transaction.category || transaction.categoryId || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-zinc-400 truncate">
-                        {getAccountName(transaction.accountId, transaction.account)}
-                      </td>
-                      <td className={`px-6 py-4 text-sm font-medium text-right whitespace-nowrap ${transaction.amount >= 0 ? 'text-emerald-400' : 'text-zinc-100'}`}>
-                        {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                      </td>
-                      {selectedAccountId !== 'all' && (() => {
-                        // Calculate running balance for this row
-                        // Start with Account Balance (Anchor)
-                        const account = accounts.find(a => a.accountId === selectedAccountId);
-                        const anchorBalance = account?.balance || 0;
-
-                        // Subtract offset from previous pages
-                        const pageOffset = pageHistory[pageHistory.length - 1].balanceOffset;
-                        const startBalance = anchorBalance - pageOffset;
-
-                        // Calculate balance for this specific row
-                        // We need the sum of all transactions in THIS page BEFORE this row
-                        // filteredTransactions is the current page list
-                        const index = filteredTransactions.findIndex(t => t.transactionId === transaction.transactionId);
-                        // Sum of amounts from 0 to index-1
-                        const previousRowsSum = filteredTransactions.slice(0, index).reduce((sum, t) => sum + t.amount, 0);
-
-                        // Balance at this row = StartBalance - PreviousRowsSum
-                        const rowBalance = startBalance - previousRowsSum;
-
-                        return (
-                          <td className="px-6 py-4 text-sm text-zinc-400 text-right whitespace-nowrap">
-                            {rowBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                          </td>
-                        );
-                      })()}
-                    </tr>
+                      transaction={transaction}
+                      accounts={accounts}
+                      onClick={handleRowClick}
+                      showBalance={selectedAccountId !== 'all'}
+                      runningBalance={selectedAccountId !== 'all' ? calculateRunningBalance(transaction, index) : undefined}
+                    />
                   ))}
                   {filteredTransactions.length === 0 && (
                     <tr>
@@ -359,7 +298,6 @@ export function Transactions({ userId }: TransactionsProps) {
         onClose={() => setIsCreateModalOpen(false)}
         userId={userId}
         onSuccess={() => {
-          // Refresh transactions
           window.location.reload()
         }}
       />

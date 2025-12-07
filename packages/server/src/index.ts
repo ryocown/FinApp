@@ -19,6 +19,7 @@ import instituteRoutes from './routes/institutes';
 import analyticsRoutes from './routes/analytics';
 import currencyRoutes from './routes/currencies';
 import { logger } from './logger';
+import { errorHandler } from './middleware/errorHandler';
 
 // Server entry point (restarted)
 const app = express();
@@ -44,6 +45,9 @@ app.use('/api/instruments', instrumentRoutes);
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello from the FinApp server!');
 });
+
+// Global error handler (must be after all routes)
+app.use(errorHandler);
 
 app.listen(port, () => {
   logger.info(`Server is running on http://localhost:${port}`);

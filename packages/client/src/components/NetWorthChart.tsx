@@ -9,12 +9,12 @@ interface NetWorthChartProps {
 export function NetWorthChart({ data }: NetWorthChartProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   const formatTooltipDate = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   return (

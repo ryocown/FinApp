@@ -2,6 +2,7 @@ import { StatementImporter, type ICsvMapping } from '../importer';
 import { type ITransaction, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction';
 import { type ICurrency } from '../../models/currency';
 import { Category, CategoryType } from '../../models/category';
+import { parsePSTDateToUTC } from '../../lib/date_utils';
 
 /**
  * Checking account CSV format:
@@ -54,7 +55,7 @@ export class ChaseCsvStatementImporter extends StatementImporter {
   }
 
   protected override async processTransaction(record: any): Promise<ITransaction | null> {
-    const date = new Date(record[this.mapping.dateColumn]);
+    const date = parsePSTDateToUTC(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);
     const description = record[this.mapping.descriptionColumn];
 
@@ -142,7 +143,7 @@ export class ChaseCreditCsvStatementImporter extends StatementImporter {
 
   protected override async processTransaction(record: any): Promise<ITransaction | null> {
     const userId = this.userId;
-    const date = new Date(record[this.mapping.dateColumn]);
+    const date = parsePSTDateToUTC(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);
     const description = record[this.mapping.descriptionColumn];
     const category = this.mapping.categoryColumn ? record[this.mapping.categoryColumn] : undefined;

@@ -181,8 +181,8 @@ async function importToFirebase() {
   const usd = new Currency('US Dollar', '$', 'USD');
 
   // Chase Accounts
-  const chase6459 = new Account('6459', 1000, 'US', usd, 'Chase Credit 6459', AccountType.CREDIT_CARD, false, USER_ID);
-  const chase8829 = new Account('8829', 5000, 'US', usd, 'Chase Checking 8829', AccountType.BANK, false, USER_ID); // Assuming Checking is BANK or similar
+  const chase6459 = new Account('6459', -763.33, 'US', usd, 'Chase Credit 6459', AccountType.CREDIT_CARD, false, USER_ID);
+  const chase8829 = new Account('8829', 8829, 'US', usd, 'Chase Checking 8829', AccountType.BANK, false, USER_ID); // Assuming Checking is BANK or similar
   // Note: AccountType.CHECKING might not exist, using BANK or checking enum if available.
   // Checked AccountType: BANK, CREDIT_CARD, INVESTMENT, etc.
   // Checked AccountTag: CHECKING, SAVINGS.
@@ -198,7 +198,10 @@ async function importToFirebase() {
   const chaseInstitute = new Institute('Chase', USER_ID, [chase6459, chase8829]);
   const morganInstitute = new Institute('Morgan Stanley', USER_ID, [morgan3747, morgan3797, morgan5008, morgan6259]);
 
-  const institutes = [chaseInstitute, morganInstitute];
+  const institutes = [
+    chaseInstitute,
+    // morganInstitute
+  ];
 
   // 4. Import Data
   for (const institute of institutes) {
@@ -250,10 +253,10 @@ async function importToFirebase() {
       }
 
       if (importer && csvFile) {
-        let forcedBalance: number | undefined;
-        if (account === chase8829) forcedBalance = 5000;
-        if (account === chase6459) forcedBalance = -1000;
-        await importAccountWithBatch(db, USER_ID, instituteId, account, importer, csvFile, forcedBalance);
+        // let forcedBalance: number | undefined;
+        // if (account === chase8829) forcedBalance = 5000;
+        // if (account === chase6459) forcedBalance = -1000;
+        await importAccountWithBatch(db, USER_ID, instituteId, account, importer, csvFile, undefined);
       }
     }
   }
@@ -279,7 +282,7 @@ function convertMorganExcelToCsv() {
 }
 
 async function main() {
-  convertMorganExcelToCsv();
+  // convertMorganExcelToCsv();
   await importToFirebase();
 }
 
