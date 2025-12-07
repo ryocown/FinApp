@@ -247,9 +247,12 @@ export class ReconciliationService {
     let lastDate = new Date(0); // Epoch
 
     if (!prevCheckpointSnap.empty) {
-      const prev = prevCheckpointSnap.docs[0].data() as IBalanceCheckpoint;
-      runningBalance = prev.balance;
-      lastDate = prev.date instanceof Date ? prev.date : (prev.date as any).toDate();
+      const doc = prevCheckpointSnap.docs[0];
+      if (doc) {
+        const prev = doc.data() as IBalanceCheckpoint;
+        runningBalance = prev.balance;
+        lastDate = prev.date instanceof Date ? prev.date : (prev.date as any).toDate();
+      }
     }
 
     const validatedCheckpoints: IBalanceCheckpoint[] = [];

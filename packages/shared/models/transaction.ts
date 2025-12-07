@@ -93,7 +93,7 @@ export class GeneralTransaction implements ITransaction {
   merchant: Merchant | null;
   transactionType: TransactionType;
 
-  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General) {
+  constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General, seed?: string) {
     // Hash: accountId, userId, amount, currency, date, description, transactionType, merchantName
     this.transactionId = generateTransactionId([
       accountId,
@@ -103,7 +103,8 @@ export class GeneralTransaction implements ITransaction {
       date.toISOString(),
       description,
       transactionType,
-      merchant?.name
+      merchant?.name,
+      seed // edge case
     ]);
     this.accountId = accountId;
     this.userId = userId;
@@ -160,7 +161,7 @@ export class TradeTransaction implements ITransaction {
 
   constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date,
     description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean,
-    instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = []) {
+    instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds: string[] = [], seed?: string) {
 
     // Hash: accountId, userId, amount, currency, date, description, instrumentId, quantity, price
     this.transactionId = generateTransactionId([
@@ -173,7 +174,8 @@ export class TradeTransaction implements ITransaction {
       TransactionType.Trade,
       instrumentId,
       quantity,
-      price
+      price,
+      seed
     ]);
     this.accountId = accountId;
     this.userId = userId;
@@ -230,7 +232,7 @@ export class TransferTransaction implements ITransaction {
   transactionType: TransactionType;
   exchangeRate?: number;
 
-  constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = [], exchangeRate?: number) {
+  constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = [], exchangeRate?: number, seed?: string) {
     // Hash: accountId, userId, amount, currency, date, description, transactionType
     // EXCLUDING linkedTransactionId to avoid circular dependency and allow linking later without ID change
     this.transactionId = generateTransactionId([
@@ -240,7 +242,8 @@ export class TransferTransaction implements ITransaction {
       currency.code,
       date.toISOString(),
       description,
-      TransactionType.Transfer
+      TransactionType.Transfer,
+      seed // edge case
     ]);
     this.accountId = accountId;
     this.linkedTransactionId = linkedTransactionId;
