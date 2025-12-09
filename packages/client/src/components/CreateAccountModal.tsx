@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import type { IInstitute } from '@finapp/shared/models/institute'
+import { SupportedInstitute, type IInstitute } from '@finapp/shared/models/institute'
 import { AccountType } from '@finapp/shared/models/account'
-import { INSTITUTE_SUPPORTED_ACCOUNTS } from '@finapp/shared/importer/capabilities'
+import { getSupportedAccountTypes } from '@finapp/shared/importer/capabilities'
 
 interface CreateAccountModalProps {
   isOpen: boolean
@@ -23,7 +23,7 @@ export function CreateAccountModal({ isOpen, onClose, userId, institutes, onSucc
   useEffect(() => {
     const selectedInstitute = institutes.find(i => i.instituteId === instituteId)
     if (selectedInstitute) {
-      const allowedTypes = INSTITUTE_SUPPORTED_ACCOUNTS[selectedInstitute.name]
+      const allowedTypes = getSupportedAccountTypes(selectedInstitute.name as SupportedInstitute)
       if (allowedTypes && allowedTypes.length > 0) {
         setType(allowedTypes[0])
       } else {
@@ -146,7 +146,7 @@ export function CreateAccountModal({ isOpen, onClose, userId, institutes, onSucc
               >
                 {(() => {
                   const selectedInstitute = institutes.find(i => i.instituteId === instituteId);
-                  const allowedTypes = selectedInstitute ? INSTITUTE_SUPPORTED_ACCOUNTS[selectedInstitute.name] : [];
+                  const allowedTypes = selectedInstitute ? getSupportedAccountTypes(selectedInstitute.name as SupportedInstitute) : [];
 
                   // Fallback to all types if no restriction found (or handle as empty)
                   // But ideally we should have restrictions for all.

@@ -6,6 +6,8 @@ import type { ITransaction } from '@finapp/shared/models/transaction'
 import { getImporterForInstitute } from '@finapp/shared/importer/capabilities'
 import { format } from 'date-fns'
 
+import { fromExcelToCsv } from '@finapp/shared/lib/from_excel_to_csv'
+
 interface ImportModalProps {
   isOpen: boolean
   onClose: () => void
@@ -32,9 +34,22 @@ export function ImportModal({ isOpen, onClose, account, instituteName, userId, o
     setError(null)
 
     try {
-      const text = await file.text()
+      let text = ''
+
+      if (file.name.toLowerCase().endsWith('.xlsx')) {
+        const buffer = await file.arrayBuffer()
+        // Returns array of CSV strings (one per sheet). default to first sheet
+        const csvs = fromExcelToCsv(buffer)
+        if (csvs.length === 0) {
+          throw new Error('No sheets found in Excel file')
+        }
+        text = csvs[0]
+      } else {
+        text = await file.text()
+      }
+
       // Handle case where property might be 'type' (from DB) or 'AccountType' (from model)
-      let accountType = account.AccountType || (account as any).type;
+      let accountType = account.type;
 
       // Map legacy/DB types to AccountType enum
       const typeStr = String(accountType);
@@ -60,7 +75,10 @@ export function ImportModal({ isOpen, onClose, account, instituteName, userId, o
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'text/csv': ['.csv'] },
+    accept: {
+      'text/csv': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+    },
     maxFiles: 1
   })
 
@@ -181,7 +199,7 @@ export function ImportModal({ isOpen, onClose, account, instituteName, userId, o
                 <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
                   <p className="text-sm text-zinc-400 mb-1">Net Amount</p>
                   <p className={`text-2xl font-bold ${summary.totalAmount >= 0 ? 'text-emerald-400' : 'text-white'}`}>
-                    ${summary.totalAmount.toFixed(2)}
+                    {transactions[0]?.currency.symbol || account.currency.symbol || '$'}{summary.totalAmount.toFixed(2)}
                   </p>
                 </div>
                 <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
@@ -208,7 +226,7 @@ export function ImportModal({ isOpen, onClose, account, instituteName, userId, o
                         <td className="px-4 py-3 text-zinc-300">{format(t.date, 'MMM d, yyyy')}</td>
                         <td className="px-4 py-3 text-white">{t.description}</td>
                         <td className={`px-4 py-3 text-right font-medium ${t.amount > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                          ${t.amount.toFixed(2)}
+                          {t.currency.symbol}{t.amount.toFixed(2)}
                         </td>
                       </tr>
                     ))}

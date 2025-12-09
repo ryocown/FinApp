@@ -10,6 +10,7 @@ interface TransferTransactionFormProps {
     setTransferAmount: (amount: string) => void
     description: string
     setDescription: (description: string) => void
+    currencySymbol: string
 }
 
 /**
@@ -23,7 +24,8 @@ export function TransferTransactionForm({
     transferAmount,
     setTransferAmount,
     description,
-    setDescription
+    setDescription,
+    currencySymbol
 }: TransferTransactionFormProps) {
     return (
         <>
@@ -43,7 +45,7 @@ export function TransferTransactionForm({
             </FormField>
 
             <FormField label="Amount">
-                <AmountInput value={transferAmount} onChange={setTransferAmount} required />
+                <AmountInput value={transferAmount} onChange={setTransferAmount} required currencySymbol={currencySymbol} />
             </FormField>
 
             <FormField label="Description">

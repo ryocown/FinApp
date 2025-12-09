@@ -312,6 +312,7 @@ export function Transactions({ userId }: TransactionsProps) {
           accountId={selectedAccountId}
           userId={userId}
           currentBalance={accounts.find(a => a.accountId === selectedAccountId)?.balance || 0}
+          currencyCode={accounts.find(a => a.accountId === selectedAccountId)?.currency.code || 'USD'}
           onSuccess={() => {
             window.location.reload()
           }}

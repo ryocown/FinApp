@@ -1,31 +1,25 @@
-import xlsx from 'node-xlsx';
+import * as XLSX from 'xlsx';
 
 /**
- * Converts a spreadsheet file (XLSX, XLS, ODS) to CSV using node-xlsx.
- * Note: node-xlsx is designed for spreadsheet formats. It does NOT support PDF files directly.
- * If you need to extract tables from a PDF, you will need a library like 'pdf-parse' or 'pdf2json'.
+ * Converts a spreadsheet file (XLSX, XLS, ODS) to CSV using xlsx (SheetJS).
+ * Works in both Node.js and Browser environments.
  */
 export function fromExcelToCsv(input: any): string[] {
   // Parse the file
-  // node-xlsx (via xlsx) supports: xlsx, xlsm, xlsb, xls, ods, etc.
-  const workSheets = xlsx.parse(input);
+  // input can be:
+  // - Node: Buffer
+  // - Browser: ArrayBuffer, Uint8Array, etc.
+  const workbook = XLSX.read(input, { type: 'buffer' }); // 'buffer' works for Buffer, ArrayBuffer, Uint8Array often auto-detected or needs type hint
   const sheets: string[] = [];
 
-  if (workSheets.length === 0) {
+  if (workbook.SheetNames.length === 0) {
     return sheets;
   }
 
-  workSheets.forEach(sheet => {
-    const csvContent = sheet.data
-      .map(row => row.map(cell => {
-        // Handle commas and quotes in CSV
-        const cellStr = String(cell ?? '');
-        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-          return `"${cellStr.replace(/"/g, '""')}"`;
-        }
-        return cellStr;
-      }).join(','))
-      .join('\n');
+  workbook.SheetNames.forEach(sheetName => {
+    const sheet = workbook.Sheets[sheetName];
+    // sheet_to_csv generates CSV string
+    const csvContent = XLSX.utils.sheet_to_csv(sheet);
     sheets.push(csvContent);
   });
 

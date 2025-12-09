@@ -1,0 +1,34 @@
+{
+  "title": "FinApp Development Environment",
+  "summary": "Documentation for the local development environment and tooling setup for FinApp. Covers environment configuration using `dotenv` and `.env` to securely manage the Firebase Project ID (consolidated on `FIREBASE_PROJECT_ID`, defaulting to `demo-project` in scripts) and the critical `FIRESTORE_EMULATOR_HOST` for server connection, using robust directory-relative path resolution (`__dirname`) for loading environment variables in the monorepo structure. Includes configuration for the Firebase Emulator suite (Firestore, UI access), connecting the Admin SDK to emulators, local testing workflows, and data seeding patterns. Clarifies standalone execution context for scripts in `packages/shared/lib/` (e.g., `populate_data.ts`, `import_to_firebase.ts`, `verify_firebase_data.ts`, `aggregate_transactions.ts`, `firestore_shell.ts`, `seed_currency.ts`) using `tsx`. Documents the `packages/shared/tests/` directory structure and the `npm test` script for running tests with experimental VM modules. **New**: Includes the **Reconciliation Reproduction Script** (`reconciliation_repro.ts`) and **Direct Service Test Script** (`reconciliation_direct.ts`) for verifying transaction creation and balance updates. **Note**: `verify_firebase_data.ts` is deprecated; use direct API calls or simpler scripts for verification. Confirmed support for **Remote Firebase Connection** via Application Default Credentials (ADC) when `FIRESTORE_EMULATOR_HOST` is not set (or explicitly deleted), with specific support for project `hirico-internal-project-1`. Includes **Data Seeding Guide** emphasizing the strict `User -> Institute -> Account` hierarchy and **Currency Seeding** patterns, **Validation Workflows** (Wipe & Re-import), **Debugging Techniques** for verifying remote connections using dedicated server ports or direct service imports, **Common TypeScript Mocking Issues** (specifically `mockResolvedValue` type errors), and **Service Testing Patterns** (mocking `db.batch` and `db.getAll` with `jest.unstable_mockModule` for ESM).",
+  "references": [
+    {
+      "type": "file",
+      "value": "artifacts/scripts/tests/reconciliation_repro.ts"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/scripts/tests/reconciliation_direct.ts"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/scripts/tests/reconciliation_features_verification.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/scripts/wipe_users.ts"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/validation_workflows.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/testing_strategy.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "7ee077bf-2486-4770-a667-09d46102a378"
+    }
+  ]
+}

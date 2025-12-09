@@ -13,7 +13,7 @@ export interface IAccount {
   country: string;
   currency: ICurrency;
   name: string;
-  AccountType: AccountType;
+  type: AccountType;
   isTaxable: boolean;
 }
 
@@ -29,12 +29,17 @@ export interface IInvestmentAccount extends IAccount {
 
 
 export enum AccountType {
+  // total assets
   BANK = 'Bank',
-  CREDIT_CARD = 'Credit Card',
   INVESTMENT = 'Investment',
   SUPERANNUATION = 'Superannuation',
   EMPLOYER = 'Employer',
+
+  // total debt/liabilities
+  CREDIT_CARD = 'Credit Card',
   LOAN = 'Loan',
+
+  // should always be zero
   OTHER = 'Other',
   INVALID = 'Invalid'
 }
@@ -77,7 +82,7 @@ export class Account implements IAccount {
   country: string;
   currency: Currency;
   name: string;
-  AccountType: AccountType;
+  type: AccountType;
   isTaxable: boolean;
 
   constructor(accountNumber: string, balance: number, country: string, currency: Currency,
@@ -91,7 +96,7 @@ export class Account implements IAccount {
     this.country = country;
     this.currency = currency;
     this.name = name;
-    this.AccountType = AccountType;
+    this.type = AccountType;
     this.isTaxable = isTaxable;
   }
 
@@ -102,7 +107,7 @@ export class Account implements IAccount {
       json.country,
       Currency.fromJSON(json.currency),
       json.name,
-      json.AccountType,
+      json.type || json.AccountType,
       json.isTaxable,
       json.userId
     );
@@ -121,7 +126,7 @@ export class InvestmentAccount implements IInvestmentAccount {
   country: string;
   currency: ICurrency;
   name: string;
-  AccountType: AccountType;
+  type: AccountType;
   isTaxable: true;
   positions: IPosition[];
 
@@ -136,7 +141,7 @@ export class InvestmentAccount implements IInvestmentAccount {
     this.country = country;
     this.currency = currency;
     this.name = name;
-    this.AccountType = AccountType;
+    this.type = AccountType;
     this.isTaxable = true;
     this.positions = [];
   }
@@ -148,7 +153,7 @@ export class InvestmentAccount implements IInvestmentAccount {
       json.country,
       Currency.fromJSON(json.currency),
       json.name,
-      json.AccountType,
+      json.type || json.AccountType,
       json.userId
     );
     account.accountId = json.accountId;

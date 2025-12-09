@@ -17,6 +17,7 @@ interface TradeTransactionFormProps {
     setDescription: (description: string) => void
     selectedInstrument: IFinancialInstrument | null
     setSelectedInstrument: (instrument: IFinancialInstrument | null) => void
+    currencySymbol: string
 }
 
 /**
@@ -34,7 +35,8 @@ export function TradeTransactionForm({
     description,
     setDescription,
     selectedInstrument,
-    setSelectedInstrument
+    setSelectedInstrument,
+    currencySymbol
 }: TradeTransactionFormProps) {
     const [searchResults, setSearchResults] = useState<IFinancialInstrument[]>([])
     const [isSearching, setIsSearching] = useState(false)
@@ -145,7 +147,7 @@ export function TradeTransactionForm({
                     />
                 </FormField>
                 <FormField label="Price per Share">
-                    <AmountInput value={price} onChange={setPrice} required />
+                    <AmountInput value={price} onChange={setPrice} required currencySymbol={currencySymbol} />
                 </FormField>
             </div>
 

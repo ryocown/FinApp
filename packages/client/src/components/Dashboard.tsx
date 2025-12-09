@@ -2,7 +2,7 @@ import { NetWorthChart } from './NetWorthChart'
 import { useAccounts } from '../lib/hooks'
 import { useEffect, useState } from 'react'
 import { AccountType } from '@finapp/shared/models/account'
-import { AssetLiabilityCard } from './dashboard-components'
+import { NetWorthBar } from './dashboard-components/NetWorthBar'
 
 interface DashboardProps {
   userId: string
@@ -32,11 +32,13 @@ export function Dashboard({ userId }: DashboardProps) {
   }
 
   const totalAssets = accounts
-    .filter(a => ![AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.AccountType))
+    .filter(a => ![AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.type))
     .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0)
 
+  console.log(accounts)
+
   const totalLiabilities = accounts
-    .filter(a => [AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.AccountType))
+    .filter(a => [AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.type))
     .reduce((acc, curr) => acc + getBalanceInUSD(curr), 0) * -1
 
   const netWorth = totalAssets - totalLiabilities
@@ -68,7 +70,7 @@ export function Dashboard({ userId }: DashboardProps) {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-zinc-400 text-sm font-medium">Net Worth</p>
-              <h2 className="text-4xl font-bold mt-1 text-zinc-100">
+              <h2 id="dashboard-net-worth-value" className="text-4xl font-bold mt-1 text-zinc-100">
                 {loading ? 'Loading...' : `$${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </h2>
               {(() => {
@@ -127,10 +129,9 @@ export function Dashboard({ userId }: DashboardProps) {
           </div>
         </div>
 
-        {/* Assets & Liabilities Grid - Using extracted components */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AssetLiabilityCard title="Assets" total={totalAssets} loading={loading} color="blue" />
-          <AssetLiabilityCard title="Liabilities" total={totalLiabilities} loading={loading} color="red" />
+        {/* Assets & Liabilities Visualization */}
+        <div className="bg-[#18181b] p-6 rounded-xl border border-zinc-800 shadow-sm">
+          <NetWorthBar assets={totalAssets} liabilities={Math.abs(totalLiabilities)} />
         </div>
       </div>
     </main>

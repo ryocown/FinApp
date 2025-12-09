@@ -4,7 +4,8 @@ export default {
     // Only include formal Jest tests, exclude legacy script-style tests in tests/
     testMatch: [
         '**/lib/**/*.test.ts',
-        '**/models/**/*.test.ts'
+        '**/models/**/*.test.ts',
+        '**/importer/**/*.test.ts'
     ],
     testPathIgnorePatterns: [
         '/node_modules/',

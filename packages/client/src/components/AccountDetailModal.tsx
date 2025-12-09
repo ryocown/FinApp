@@ -81,7 +81,7 @@ export function AccountDetailModal({ isOpen, onClose, account, onUpdate, onDelet
               <div>
                 <label className="block text-sm font-medium text-zinc-400 mb-1">Type</label>
                 <div className="px-3 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-300 text-sm capitalize">
-                  {account.AccountType}
+                  {account.type}
                 </div>
               </div>
               <div>

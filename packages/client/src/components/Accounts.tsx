@@ -230,6 +230,7 @@ export function Accounts({ userId }: AccountsProps) {
           accountId={reconcileAccount.accountId!}
           userId={userId}
           currentBalance={reconcileAccount.balance}
+          currencyCode={reconcileAccount.currency.code}
           onSuccess={() => {
             fetchData()
           }}

@@ -51,11 +51,11 @@ export function TransactionRow({
                 {getAccountName(transaction.accountId)}
             </td>
             <td className={`px-6 py-4 text-sm font-medium text-right whitespace-nowrap ${transaction.amount >= 0 ? 'text-emerald-400' : 'text-zinc-100'}`}>
-                {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                {transaction.amount >= 0 ? '+' : ''}{transaction.amount.toLocaleString('en-US', { style: 'currency', currency: transaction.currency?.code || 'USD' })}
             </td>
             {showBalance && runningBalance !== undefined && (
                 <td className="px-6 py-4 text-sm text-zinc-400 text-right whitespace-nowrap">
-                    {runningBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                    {runningBalance.toLocaleString('en-US', { style: 'currency', currency: transaction.currency?.code || 'USD' })}
                 </td>
             )}
         </tr>

@@ -46,8 +46,8 @@ Thumbs.db
 /packages/client/node_modules
 /packages/server/dist
 /packages/server/node_modules
-*.csv
-*.CSV
+# *.csv
+# *.CSV
 *.xlsx
 .env
 firebase-debug.log

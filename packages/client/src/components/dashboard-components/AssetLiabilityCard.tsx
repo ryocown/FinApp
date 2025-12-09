@@ -3,14 +3,15 @@ interface AssetLiabilityCardProps {
     total: number
     loading: boolean
     color: 'blue' | 'red'
+    id?: string
 }
 
 /**
  * Summary card for assets or liabilities totals.
  */
-export function AssetLiabilityCard({ title, total, loading, color }: AssetLiabilityCardProps) {
+export function AssetLiabilityCard({ id, title, total, loading, color }: AssetLiabilityCardProps) {
     return (
-        <div className="bg-[#18181b] p-6 rounded-xl border border-zinc-800 shadow-sm">
+        <div id={id} className="bg-[#18181b] p-6 rounded-xl border border-zinc-800 shadow-sm">
             <h3 className="text-lg font-semibold mb-4 text-zinc-100">{title}</h3>
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
