@@ -1,10 +1,10 @@
 import { Building2, ChevronDown, Trash2 } from 'lucide-react'
 import type { IInstitute } from '@finapp/shared/models/institute'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 import { AccountCard } from './AccountCard'
 
 interface InstituteWithAccounts extends IInstitute {
-    accounts: IAccount[]
+    accounts: Account[]
     totalValue: number
 }
 
@@ -13,10 +13,10 @@ interface InstituteSectionProps {
     isExpanded: boolean
     onToggle: (instituteId: string) => void
     onDeleteInstitute: (institute: IInstitute) => void
-    onReconcileAccount: (account: IAccount) => void
-    onImportAccount: (account: IAccount) => void
-    onDeleteAccount: (account: IAccount) => void
-    onViewDetailsAccount: (account: IAccount) => void
+    onReconcileAccount: (account: Account) => void
+    onImportAccount: (account: Account) => void
+    onDeleteAccount: (account: Account) => void
+    onViewDetailsAccount: (account: Account) => void
     formatCurrency: (amount: number, currencyCode?: string) => string
     onAccountClick: (accountId: string) => void
 }

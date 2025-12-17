@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { X, Save, Trash2 } from 'lucide-react'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account, AccountProp } from '@finapp/shared/models/account'
 
 interface AccountDetailModalProps {
   isOpen: boolean
   onClose: () => void
-  account: IAccount
-  onUpdate: (accountId: string, updates: Partial<IAccount>) => Promise<void>
-  onDelete: (account: IAccount) => void
+  account: Account
+  onUpdate: (accountId: string, updates: Partial<AccountProp>) => Promise<void>
+  onDelete: (account: Account) => void
 }
 
 export function AccountDetailModal({ isOpen, onClose, account, onUpdate, onDelete }: AccountDetailModalProps) {

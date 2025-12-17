@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { X, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
-import { AccountType, type IAccount } from '@finapp/shared/models/account'
+import { AccountType, type Account } from '@finapp/shared/models/account'
 import type { ITransaction } from '@finapp/shared/models/transaction'
 import { getImporterForInstitute } from '@finapp/shared/importer/capabilities'
 import { format } from 'date-fns'
@@ -9,7 +9,7 @@ import { format } from 'date-fns'
 interface ImportModalProps {
   isOpen: boolean
   onClose: () => void
-  account: IAccount
+  account: Account
   instituteName: string
   userId: string
   onSuccess: () => void

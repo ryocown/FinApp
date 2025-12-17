@@ -1,8 +1,8 @@
 import { FormField, AmountInput } from '../../forms'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 
 interface TransferTransactionFormProps {
-    accounts: IAccount[]
+    accounts: Account[]
     sourceAccountId: string
     destAccountId: string
     setDestAccountId: (id: string) => void

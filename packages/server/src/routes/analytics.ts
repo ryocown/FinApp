@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { db, getUserRef } from '../firebase';
 import { type IBalanceCheckpoint } from '../../../shared/models/balance_checkpoint';
-import { type IAccount } from '../../../shared/models/account';
+import { Account } from '../../../shared/models/account';
 import { logger } from '../logger';
 
 const router = Router();
@@ -47,7 +47,7 @@ router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
 
     // RE-IMPLEMENTATION OF STEP 2 to include currency
     const accountsWithCurrency = await Promise.all(accountDocs.map(async (doc) => {
-      const accountData = doc.data() as IAccount;
+      const accountData = doc.data() as Account;
       const checkpointsSnap = await doc.ref.collection('balance_checkpoints')
         .orderBy('date', 'asc')
         .get();

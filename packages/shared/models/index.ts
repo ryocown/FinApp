@@ -1,8 +1,8 @@
 // Barrel exports for shared models
-// Enables cleaner imports: import { IAccount, ITransaction } from '@finapp/shared/models'
+// Enables cleaner imports: import { Account, ITransaction } from '@finapp/shared/models'
 
 // Accounts
-export { type IAccount, type IPosition, type IInvestmentAccount, Account, InvestmentAccount, AccountType, AccountTag } from './account';
+export { type AccountProp, Account, InvestmentAccount, AccountType, AccountTag } from './account';
 
 // Transactions
 export { type ITransaction, type IGeneralTransaction, type ITradeTransaction, type ITransferTransaction, GeneralTransaction, TradeTransaction, TransferTransaction, TransactionType, generateTransactionId } from './transaction';

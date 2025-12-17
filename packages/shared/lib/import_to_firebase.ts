@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../importer/institutions/chase';
 import dotenv from 'dotenv';
 import { User } from '../models/user';
-import { Account, AccountType, type IAccount } from '../models/account';
+import { Account, AccountType } from '../models/account';
 import { Currency } from '../models/currency';
 import { Institute } from '../models/institute';
 import { type IStatementImporter } from "../importer/importer";
@@ -114,7 +114,7 @@ async function importAccountWithBatch(
   db: Firestore,
   userId: string,
   instituteId: string,
-  account: IAccount,
+  account: Account,
   importerCtor: new (accountId: string, userId: string) => IStatementImporter,
   csvFileName: string,
   forcedEndingBalance?: number
@@ -210,7 +210,7 @@ async function importToFirebase() {
 
     // Create Institute Doc
     // Strip accounts from the doc to avoid duplication/bloat, or keep them if desired. 
-    // The user model has accounts: IAccount[]. 
+    // The user model has accounts: Account[]. 
     // I'll save the institute metadata.
     const { accounts, ...instituteData } = institute;
     await db.collection('users').doc(USER_ID)

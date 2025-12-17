@@ -2,7 +2,7 @@ import { Currency, type ICurrency } from "./currency";
 import { v4 } from "uuid";
 import { type ILot } from "./lot";
 
-export interface IAccount {
+export interface AccountProp {
   accountId: string;
   instituteId?: string;
   userId: string;
@@ -17,14 +17,14 @@ export interface IAccount {
   isTaxable: boolean;
 }
 
-export interface IPosition {
+export interface Position {
   instrumentId: string;
   lots: ILot[];
 }
 
-export interface IInvestmentAccount extends IAccount {
-  isTaxable: true;
-  positions: IPosition[];
+export interface InvestmentAccountProp extends AccountProp {
+  isTaxable: boolean;
+  positions: Position[];
 }
 
 
@@ -67,7 +67,13 @@ export enum AccountTag {
   INVALID = 'Invalid'
 }
 
-export class Account implements IAccount {
+
+export interface Interest {
+  rate: number;
+  effectiveDate: Date;
+}
+
+export class Account implements AccountProp {
   accountId: string;
   userId: string;
 
@@ -79,9 +85,11 @@ export class Account implements IAccount {
   name: string;
   AccountType: AccountType;
   isTaxable: boolean;
+  instituteId?: string | undefined;
+  interest: Interest[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: Currency,
-    name: string, AccountType: AccountType, isTaxable: boolean, userId: string) {
+    name: string, AccountType: AccountType, isTaxable: boolean = true, userId: string, instituteId?: string) {
     this.accountId = v4();
     this.userId = userId;
 
@@ -93,10 +101,28 @@ export class Account implements IAccount {
     this.name = name;
     this.AccountType = AccountType;
     this.isTaxable = isTaxable;
+    this.instituteId = instituteId;
+    this.interest = [];
   }
 
-  static fromJSON(json: any): Account {
-    const account = new Account(
+  withInterest(rate: number, effectiveDate: Date = new Date()): Account {
+    try {
+      if (!rate) throw 'Account: Unable to add Interest rate without rate or effective date';
+
+      this.interest.push({ rate, effectiveDate });
+      this.interest.sort((a, b) => b.effectiveDate.getTime() - a.effectiveDate.getTime()); // Sorts newest to oldest
+    } catch (error) {
+      console.error(error);
+    }
+    return this;
+  }
+
+  getInterest(): Interest {
+    return this.interest[0];
+  }
+
+  static fromJSON(json: any): AccountProp {
+    const account = new BankAccount(
       json.accountNumber,
       json.balance,
       json.country,
@@ -111,37 +137,25 @@ export class Account implements IAccount {
   }
 }
 
-export class InvestmentAccount implements IInvestmentAccount {
-  accountId: string;
-  userId: string;
+export class BankAccount extends Account {
+  constructor(accountNumber: string, balance: number, country: string, currency: Currency,
+    name: string, AccountType: AccountType, isTaxable: boolean = true, userId: string, instituteId?: string) {
+    super(accountNumber, balance, country, currency, name, AccountType, isTaxable, userId, instituteId);
+  }
 
-  accountNumber: string;
-  balance: number;
-  balanceDate: Date;
-  country: string;
-  currency: ICurrency;
-  name: string;
-  AccountType: AccountType;
-  isTaxable: true;
-  positions: IPosition[];
+
+}
+
+export class InvestmentAccount extends Account {
+  positions: Position[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: ICurrency,
-    name: string, AccountType: AccountType, userId: string) {
-    this.accountId = v4();
-    this.userId = userId;
-
-    this.accountNumber = accountNumber;
-    this.balance = balance;
-    this.balanceDate = new Date(); // Default to now if not specified
-    this.country = country;
-    this.currency = currency;
-    this.name = name;
-    this.AccountType = AccountType;
-    this.isTaxable = true;
+    name: string, AccountType: AccountType, isTaxable: boolean = true, userId: string, instituteId?: string) {
+    super(accountNumber, balance, country, currency, name, AccountType, isTaxable, userId, instituteId);
     this.positions = [];
   }
 
-  static fromJSON(json: any): InvestmentAccount {
+  static fromJSON(json: InvestmentAccountProp): InvestmentAccount {
     const account = new InvestmentAccount(
       json.accountNumber,
       json.balance,
@@ -149,6 +163,7 @@ export class InvestmentAccount implements IInvestmentAccount {
       Currency.fromJSON(json.currency),
       json.name,
       json.AccountType,
+      json.isTaxable,
       json.userId
     );
     account.accountId = json.accountId;
@@ -156,6 +171,7 @@ export class InvestmentAccount implements IInvestmentAccount {
     if (json.balanceDate) {
       account.balanceDate = new Date(json.balanceDate);
     }
+
     return account;
   }
 }

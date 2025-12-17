@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import path from 'path';
 import dotenv from 'dotenv';
 import { type ITransaction } from '../../shared/models/transaction';
-import { type IAccount } from '../../shared/models/account';
+import { type Account } from '../../shared/models/account';
 
 // Load .env from project root
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
@@ -55,7 +55,7 @@ export const getCollectionData = <T>(snapshot: admin.firestore.QuerySnapshot, id
   return snapshot.docs.map(doc => Object.assign({}, doc.data(), { [idField]: doc.id }) as T);
 };
 
-export const getAllUserAccounts = async (userId: string): Promise<IAccount[]> => {
+export const getAllUserAccounts = async (userId: string): Promise<Account[]> => {
   const institutesSnapshot = await getUserRef(userId).collection('institutes').get();
 
   const accountPromises = institutesSnapshot.docs.map(async instituteDoc => {
@@ -63,7 +63,7 @@ export const getAllUserAccounts = async (userId: string): Promise<IAccount[]> =>
     return accountsSnapshot.docs.map(doc => Object.assign({}, doc.data(), {
       accountId: doc.id,
       instituteId: instituteDoc.id
-    }) as IAccount);
+    }) as Account);
   });
 
   const nestedAccounts = await Promise.all(accountPromises);

@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 
 interface TransactionFiltersProps {
     searchTerm: string
@@ -8,7 +8,7 @@ interface TransactionFiltersProps {
     onLimitChange: (limit: number) => void
     selectedAccountId: string
     onAccountChange: (accountId: string) => void
-    accounts: IAccount[]
+    accounts: Account[]
 }
 
 /**

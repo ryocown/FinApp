@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Building2 } from 'lucide-react'
 import type { IInstitute } from '@finapp/shared/models/institute'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 import { ReconcileModal } from './ReconcileModal'
 import { CreateInstituteModal } from './CreateInstituteModal'
 import { CreateAccountModal } from './CreateAccountModal'
@@ -16,7 +16,7 @@ interface AccountsProps {
 }
 
 interface InstituteWithAccounts extends IInstitute {
-  accounts: IAccount[]
+  accounts: Account[]
   totalValue: number
 }
 
@@ -25,9 +25,9 @@ export function Accounts({ userId }: AccountsProps) {
   const [institutes, setInstitutes] = useState<InstituteWithAccounts[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedInstitutes, setExpandedInstitutes] = useState<Set<string>>(new Set())
-  const [reconcileAccount, setReconcileAccount] = useState<IAccount | null>(null)
-  const [importAccount, setImportAccount] = useState<IAccount | null>(null)
-  const [detailAccount, setDetailAccount] = useState<IAccount | null>(null)
+  const [reconcileAccount, setReconcileAccount] = useState<Account | null>(null)
+  const [importAccount, setImportAccount] = useState<Account | null>(null)
+  const [detailAccount, setDetailAccount] = useState<Account | null>(null)
 
   // Creation Modals State
   const [isCreateInstituteOpen, setIsCreateInstituteOpen] = useState(false)
@@ -35,7 +35,7 @@ export function Accounts({ userId }: AccountsProps) {
 
   // Deletion State
   const [deleteInstitute, setDeleteInstitute] = useState<IInstitute | null>(null)
-  const [deleteAccount, setDeleteAccount] = useState<IAccount | null>(null)
+  const [deleteAccount, setDeleteAccount] = useState<Account | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -51,7 +51,7 @@ export function Accounts({ userId }: AccountsProps) {
       }
 
       const institutesData: IInstitute[] = await institutesRes.json()
-      const accountsData: IAccount[] = await accountsRes.json()
+      const accountsData: Account[] = await accountsRes.json()
       const rates: Record<string, number> = ratesRes.ok ? await ratesRes.json() : {}
 
       const institutesWithAccounts = institutesData.map(institute => {
@@ -139,7 +139,7 @@ export function Accounts({ userId }: AccountsProps) {
     }
   }
 
-  const handleUpdateAccount = async (accountId: string, updates: Partial<IAccount>) => {
+  const handleUpdateAccount = async (accountId: string, updates: Partial<Account>) => {
     try {
       const res = await fetch(`http://localhost:3001/api/accounts/users/${userId}/accounts/${accountId}`, {
         method: 'PUT',

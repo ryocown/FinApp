@@ -1,10 +1,10 @@
 import { getCategoryColor } from '../../lib/utils'
 import type { ITransaction } from '@finapp/shared/models/transaction'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 
 interface TransactionRowProps {
     transaction: ITransaction
-    accounts: IAccount[]
+    accounts: Account[]
     onClick: (transaction: ITransaction) => void
     showBalance: boolean
     runningBalance?: number

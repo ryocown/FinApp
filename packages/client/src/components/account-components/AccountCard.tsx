@@ -1,12 +1,12 @@
 import { Wallet, Trash2, Pencil } from 'lucide-react'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 
 interface AccountCardProps {
-    account: IAccount
-    onReconcile: (account: IAccount) => void
-    onImport: (account: IAccount) => void
-    onDelete: (account: IAccount) => void
-    onViewDetails: (account: IAccount) => void
+    account: Account
+    onReconcile: (account: Account) => void
+    onImport: (account: Account) => void
+    onDelete: (account: Account) => void
+    onViewDetails: (account: Account) => void
     formatCurrency: (amount: number, currencyCode?: string) => string
     onClick: () => void
 }

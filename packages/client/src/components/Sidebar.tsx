@@ -2,7 +2,7 @@ import { LayoutDashboard, Wallet, CreditCard, Menu, PieChart, Building, ChevronD
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useInstitutes, useAccounts } from '../lib/hooks'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 import type { IInstitute } from '@finapp/shared/models/institute'
 
 interface NavItemProps {
@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView, userId
   // Group accounts by institute
   const institutesWithAccounts = institutes.map((inst: IInstitute) => ({
     ...inst,
-    accounts: accounts.filter((acc: IAccount) => acc.instituteId === inst.instituteId)
+    accounts: accounts.filter((acc: Account) => acc.instituteId === inst.instituteId)
   }))
 
   const toggleInstitute = (instituteId: string, e: React.MouseEvent) => {
@@ -140,8 +140,8 @@ export function Sidebar({ isOpen, setIsOpen, currentView, setCurrentView, userId
                               key={acc.accountId}
                               onClick={() => handleAccountClick(acc.accountId)}
                               className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-all truncate flex items-center gap-2 ${location.search.includes(`account=${acc.accountId}`)
-                                  ? 'text-indigo-400 bg-indigo-500/10 font-medium translate-x-1'
-                                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30 hover:translate-x-1'
+                                ? 'text-indigo-400 bg-indigo-500/10 font-medium translate-x-1'
+                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30 hover:translate-x-1'
                                 }`}
                             >
                               <div className={`w-1.5 h-1.5 rounded-full ${location.search.includes(`account=${acc.accountId}`) ? 'bg-indigo-500' : 'bg-zinc-600'}`} />

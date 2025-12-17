@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { v4 } from 'uuid';
 import { db, getUserRef, getAccountRef, getAllUserAccounts, getCollectionData, resolveTransactionReferences } from '../firebase';
-import type { IAccount } from '../../../shared/models/account';
+import type { AccountProps, Account } from '../../../shared/models/account';
 import { type IBalanceCheckpoint, BalanceCheckpointType } from '../../../shared/models/balance_checkpoint';
 import type { ITransaction } from '../../../shared/models/transaction';
 import { ApiError } from '../errors';
@@ -15,7 +15,7 @@ export class AccountService {
     /**
      * Get all accounts for a user.
      */
-    static async getUserAccounts(userId: string): Promise<IAccount[]> {
+    static async getUserAccounts(userId: string): Promise<Account[]> {
         return getAllUserAccounts(userId);
     }
 
@@ -24,20 +24,20 @@ export class AccountService {
      */
     static async createAccount(
         userId: string,
-        accountData: Partial<IAccount> & { instituteId: string },
+        accountData: Partial<AccountProps> & { instituteId: string },
         initialBalance?: number,
         initialDate?: string
-    ): Promise<IAccount> {
+    ): Promise<Account> {
         if (!accountData.instituteId) {
             throw ApiError.badRequest('Missing instituteId');
         }
 
         const accountId = v4();
-        const newAccount: IAccount = {
+        const newAccount: Account = {
             ...accountData,
             accountId,
             userId
-        } as IAccount;
+        } as Account;
 
         // Create the account document nested under the institute
         const docRef = getUserRef(userId)
@@ -195,7 +195,7 @@ export class AccountService {
     static async updateAccount(
         userId: string,
         accountId: string,
-        updates: Partial<IAccount>
+        updates: Partial<Account>
     ): Promise<void> {
         const result = await getAccountRef(userId, accountId);
 

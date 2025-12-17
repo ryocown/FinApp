@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import type { IAccount } from '@finapp/shared/models/account'
+import type { Account } from '@finapp/shared/models/account'
 import type { ITransaction } from '@finapp/shared/models/transaction'
 
 
 const API_BASE_URL = 'http://localhost:3001/api' // Server runs on 3001 with /api prefix
 
 export function useAccounts(userId: string) {
-  const [accounts, setAccounts] = useState<IAccount[]>([])
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
