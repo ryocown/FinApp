@@ -1,0 +1,22 @@
+{
+  "title": "FinApp Shared Codebase",
+  "summary": "Documentation for the shared workspace used by both Client and Server. Includes utility libraries (Date handling), shared domain models (Account, Institute, Transaction), and common types.",
+  "references": [
+    {
+      "type": "file",
+      "value": "artifacts/date_handling_standards.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "4070"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/domain_models.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "103"
+    }
+  ]
+}

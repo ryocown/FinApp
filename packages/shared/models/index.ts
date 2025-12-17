@@ -23,7 +23,7 @@ export { type IInstitute, Institute } from './institute';
 export { type IBalanceCheckpoint, BalanceCheckpointType } from './balance_checkpoint';
 
 // Budgets
-export { type IBudget, type IBudgetItem } from './budget';
+export { type IBudget } from './budget';
 
 // Merchants
 export { type Merchant } from './merchant';
@@ -38,10 +38,10 @@ export { type ITag, Tag } from './tag';
 export { type ILot, Lot } from './lot';
 
 // Price History
-export { type IPriceHistory, PriceHistory } from './price_history';
+export { type IPricePoint, PricePoint } from './price_history';
 
 // Recurring Transactions
-export { type IRecurringTransaction, type RecurringFrequency, RecurringTransaction } from './recurring_transaction';
+export { type IRecurringTransaction, type RecurrenceFrequency, RecurringTransaction } from './recurring_transaction';
 
 // Users
 export { type IUser, User } from './user';

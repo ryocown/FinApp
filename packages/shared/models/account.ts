@@ -13,7 +13,7 @@ export interface AccountProp {
   country: string;
   currency: ICurrency;
   name: string;
-  AccountType: AccountType;
+  type: AccountType;
   isTaxable: boolean;
 }
 
@@ -29,12 +29,17 @@ export interface InvestmentAccountProp extends AccountProp {
 
 
 export enum AccountType {
+  // total assets
   BANK = 'Bank',
-  CREDIT_CARD = 'Credit Card',
   INVESTMENT = 'Investment',
   SUPERANNUATION = 'Superannuation',
   EMPLOYER = 'Employer',
+
+  // total debt/liabilities
+  CREDIT_CARD = 'Credit Card',
   LOAN = 'Loan',
+
+  // should always be zero
   OTHER = 'Other',
   INVALID = 'Invalid'
 }
@@ -83,7 +88,7 @@ export class Account implements AccountProp {
   country: string;
   currency: Currency;
   name: string;
-  AccountType: AccountType;
+  type: AccountType;
   isTaxable: boolean;
   instituteId?: string | undefined;
   interest: Interest[];
@@ -99,7 +104,7 @@ export class Account implements AccountProp {
     this.country = country;
     this.currency = currency;
     this.name = name;
-    this.AccountType = AccountType;
+    this.type = AccountType;
     this.isTaxable = isTaxable;
     this.instituteId = instituteId;
     this.interest = [];
@@ -128,7 +133,7 @@ export class Account implements AccountProp {
       json.country,
       Currency.fromJSON(json.currency),
       json.name,
-      json.AccountType,
+      json.type || json.AccountType,
       json.isTaxable,
       json.userId
     );
@@ -162,7 +167,7 @@ export class InvestmentAccount extends Account {
       json.country,
       Currency.fromJSON(json.currency),
       json.name,
-      json.AccountType,
+      json.type,
       json.isTaxable,
       json.userId
     );

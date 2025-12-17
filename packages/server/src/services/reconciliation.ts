@@ -22,6 +22,12 @@ export class ReconciliationService {
       throw new Error('Account not found');
     }
     const { ref: accountRef } = result;
+    const initialAccountDoc = await accountRef.get();
+    if (!initialAccountDoc.exists) {
+      throw new Error('Account document does not exist');
+    }
+    const initialAccountData = initialAccountDoc.data();
+    const currency = initialAccountData?.currency || { code: 'USD', symbol: '$', name: 'US Dollar' };
 
     // 2. Find the last checkpoint BEFORE this reconciliation date
     const lastCheckpointSnap = await accountRef.collection('balance_checkpoints')
@@ -100,15 +106,17 @@ export class ReconciliationService {
         logger.info(`Updated reconciliation adjustment for ${accountId}: ${roundedAdjustment}`);
       } else {
         // Create new
+        const categoryId = await this.getReconciliationCategoryId(userId);
         const newTx: ITransaction = {
           transactionId: v4(),
           accountId,
           userId,
           date: date,
           amount: roundedAdjustment,
-          currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
+          currency,
           description: 'Reconciliation Adjustment',
           transactionType: TransactionType.Reconciliation,
+          ...(categoryId ? { categoryId } : {}),
           tagIds: []
         };
 
@@ -355,5 +363,18 @@ export class ReconciliationService {
       await batch.commit();
       logger.info(`Deleted ${adjustmentSnap.size} associated adjustment transactions`);
     }
+  }
+
+  private static async getReconciliationCategoryId(userId: string): Promise<string | undefined> {
+    const categoriesRef = getUserRef(userId).collection('categories');
+    const snapshot = await categoriesRef
+      .where('name', '==', 'Reconciliation')
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      return snapshot.docs[0]?.id;
+    }
+    return undefined;
   }
 }

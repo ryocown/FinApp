@@ -111,3 +111,38 @@ export function parsePSTDateToUTC(dateString: string): Date {
 
   return utcDate;
 }
+
+/**
+ * Parses a date string (e.g. "2025/12/07 13:02:19") assuming it is in Japan Standard Time (JST),
+ * and converts it to a UTC Date object.
+ * JST is UTC+9.
+ */
+export function parseJSTDateToUTC(dateString: string): Date {
+  if (!dateString) return new Date(0);
+
+  // Handle "YYYY/MM/DD HH:mm:ss" format
+  const match = dateString.trim().match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+
+  if (match) {
+    const [_, yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr] = match;
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    const second = parseInt(secondStr, 10);
+
+    // Create UTC date from components
+    // Date.UTC returns milliseconds
+    const utcMs = Date.UTC(year, month - 1, day, hour, minute, second);
+    const date = new Date(utcMs);
+
+    // Subtract 9 hours to convert JST to UTC
+    date.setUTCHours(date.getUTCHours() - 9);
+
+    return date;
+  }
+
+  // Fallback for other formats (try standard parsing)
+  return new Date(dateString);
+}

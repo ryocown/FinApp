@@ -7,10 +7,11 @@ interface ReconcileModalProps {
   accountId: string
   currentBalance: number
   userId: string
+  currencyCode: string
   onSuccess: () => void
 }
 
-export function ReconcileModal({ isOpen, onClose, accountId, currentBalance, userId, onSuccess }: ReconcileModalProps) {
+export function ReconcileModal({ isOpen, onClose, accountId, currentBalance, userId, currencyCode, onSuccess }: ReconcileModalProps) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [balance, setBalance] = useState(currentBalance.toString())
   const [loading, setLoading] = useState(false)
@@ -86,12 +87,12 @@ export function ReconcileModal({ isOpen, onClose, accountId, currentBalance, use
           <div className="p-4 bg-zinc-900/50 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">Current System Balance:</span>
-              <span className="text-zinc-200">{currentBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+              <span className="text-zinc-200">{currentBalance.toLocaleString('en-US', { style: 'currency', currency: currencyCode })}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">Difference:</span>
               <span className={`${diff === 0 ? 'text-zinc-200' : diff > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {diff > 0 ? '+' : ''}{diff.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                {diff > 0 ? '+' : ''}{diff.toLocaleString('en-US', { style: 'currency', currency: currencyCode })}
               </span>
             </div>
           </div>

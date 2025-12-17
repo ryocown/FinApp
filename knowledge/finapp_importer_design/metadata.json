@@ -1,0 +1,26 @@
+{
+  "title": "FinApp Importer Design",
+  "summary": "Design and architecture for the data import system in FinApp. Focuses on the strategy for transforming external data sources (like CSV or PDF statements) into the internal IStatement domain model using a unified IStatementImporter interface. Includes details on the abstract base CsvStatementImporter and bank-specific subclasses (organized in institutions/ folder) with comprehensive transaction type, category mapping, and documented CSV formats. Updated to reflect strict type-only import syntax, the requirement for explicit accountId assignment, testing workflows (now in `packages/shared/tests/`), the new Linked Transaction pattern for transfers, and duplicate handling strategy using deterministic IDs, in-batch deduplication, batch verification, and accurate balance reconciliation using the 'Anchor & Backdate' strategy (creating `BalanceCheckpointType.STATEMENT` checkpoints). Includes specific implementation details for Chase (Checking/Credit) and Morgan Stanley (Brokerage/Trades) importers. **New**: Includes the 'Batch Reconciliation Refresh' pattern for automatically updating reconciliation adjustments when importing past transactions. **Update**: Implemented a **Registry & Capabilities** pattern (`capabilities.ts`) to explicitly map Institutes to supported Account Types and their corresponding Importers, replacing heuristic-based selection and enabling UI restrictions.",
+  "references": [
+    {
+      "type": "conversation_id",
+      "value": "4a7b739c-4386-474d-aaa4-2f211d87d9ce"
+    },
+    {
+      "type": "conversation_id",
+      "value": "2f419d3c-9b21-4f2e-b818-ecb4f62ebc9"
+    },
+    {
+      "type": "conversation_id",
+      "value": "09dbcfd1-4992-499a-91b1-e22a41abffcd"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/importer_registry_pattern.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "7ee077bf-2486-4770-a667-09d46102a378"
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "title": "FinApp Frontend Design",
+  "summary": "Documentation of the frontend design and implementation plan for FinApp. Includes a detailed PRD based on a reference UI, covering sidebar navigation, dashboard widgets (Net Worth, Assets, Liabilities), and interaction patterns. Documents the chosen technology stack (Vite, React, Tailwind via Vite plugin, Recharts, Firebase SDK, React Router), initial project setup, and the modular component architecture (Sidebar, Dashboard, Budget, Transactions, Accounts) with REST API data integration, client-side routing, advanced filtering (including dedicated account-level fetching), resizable data tables, and cursor-based pagination patterns. Includes detailed implementation patterns for the Transaction List (Anchor & Backdate strategy, **Master-Detail Layout** with sidebar, **URL-Based Filtering** for deep linking), the Accounts page (Institute grouping with collapsible cards, 'Add Institute'/'Add Account' flows, 'Total Value' calculation with client-side FX conversion, and 'Delete Account'/'Delete Institute' functionality), the Dashboard (Client-side aggregation of current balances, Server-side snapshot aggregation for Net Worth History, Date Range Selector with pill-shaped tabs, and 'vs Last Month' comparison logic), the Reconciliation workflow (Modal accessible from Transactions and Accounts pages, and **Checkpoint Timeline Sidebar** for account-specific history, including **Visual Discrepancy Indicators** and **Checkpoint Deletion** interactions), **Create Transaction Modal** (Enhanced with **General, Trade, and Transfer tabs**, dynamic fields, **Searchable Category Combobox**, **Auto-sizing Layout**, and instrument search), and standardized Data Fetching & Error Handling patterns (custom hooks with explicit error states, UI alerts, and **Expandable Error Details** for debugging). **Update**: Transaction Detail Modal now supports **Edit Mode** with concrete implementation details (State Machine, Validation, Input Types) for mutable fields (amount, date, description, type), utilizing the reusable **CategoryPicker** component. Added **Transaction Type Column** to the transaction list with Title Case formatting for enum values. Implemented **Nested Sidebar Navigation** with **Split Button** interaction (separate navigation and toggle actions) and **CSS Grid Animations** for smooth expanding/collapsing. **Update**: Added **Import Transactions** workflow, integrating a client-side CSV parser and preview modal (`ImportModal`) directly into the Accounts page via the `InstituteSection` and `AccountCard` components. **Update**: Added **Relational Data Handling** section to `data_fetching_patterns.md`, documenting the pattern of parallel fetching and client-side lookups for flat entities (Transactions -> Accounts/Categories). **Update**: Documented **Browser Compatibility** for CSV parsing, specifically the requirement for a `Buffer` polyfill (via `buffer` package and `src/polyfills.ts`) when using `csv-parse` in a Vite environment. **Update**: Added **CSS-only Tooltip** pattern to `ui_patterns.md` and updated `import_workflow_ui.md` to reflect the enhanced \"Add Institute\" flow with an informational tooltip explaining institute restrictions. **Update**: Implemented **Server-Side Sorting** in Transaction List, documented in `transaction_list_patterns.md`, including state management and UI interaction patterns. **Update**: Replaced inline account renaming with a comprehensive **Account Detail Modal**, allowing updates to Name and Account Number, and displaying read-only details. Implemented **Restricted Account Creation** where users can only select account types supported by the chosen institute's importer.",
+  "references": [
+    {
+      "type": "conversation_id",
+      "value": "b30c9527-5f30-4492-93a7-06a82e3f2e50"
+    },
+    {
+      "type": "conversation_id",
+      "value": "1fca71c3-7f50-4fc9-97dd-a152491806d4"
+    },
+    {
+      "type": "conversation_id",
+      "value": "b584282a-9595-4478-a670-da4fdd6d92e6"
+    },
+    {
+      "type": "conversation_id",
+      "value": "b584282a-9595-4478-a670-da4fdd6d92e6"
+    },
+    {
+      "type": "conversation_id",
+      "value": "09dbcfd1-4992-499a-91b1-e22a41abffcd"
+    },
+    {
+      "type": "conversation_id",
+      "value": "09dbcfd1-4992-499a-91b1-e22a41abffcd"
+    },
+    {
+      "type": "url",
+      "value": "https://example.com/doc"
+    },
+    {
+      "type": "file",
+      "value": "packages/client/PRD.md"
+    },
+    {
+      "type": "file",
+      "value": "packages/client/PRD/budget.png"
+    },
+    {
+      "type": "file",
+      "value": "packages/client/PRD/home.png"
+    },
+    {
+      "type": "file",
+      "value": "packages/client/PRD/transactions.png"
+    },
+    {
+      "type": "file",
+      "value": "packages/client/PRD/transaction_per_account.png"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/ui_patterns.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/transaction_list_patterns.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/accounts_page_implementation.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/dashboard_implementation.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "e01f4697-7889-48e6-8279-ddf584287867"
+    },
+    {
+      "type": "conversation_id",
+      "value": "741eb881-6a73-4142-a5dc-4fde9ecf7b3e"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/layout_implementation.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/shared_components.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/transaction_detail_modal.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/data_fetching_patterns.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "415be6e0-996f-4a52-83d7-da3d430f48ca"
+    },
+    {
+      "type": "conversation_id",
+      "value": "f005ac79-da6c-4e12-a8c9-8712ea4c724a"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/create_transaction_modal.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "28639d25-50c9-438c-b1d3-438bdfdb4309"
+    },
+    {
+      "type": "conversation_id",
+      "value": "56"
+    },
+    {
+      "type": "conversation_id",
+      "value": "74"
+    },
+    {
+      "type": "conversation_id",
+      "value": "526bd9fc-1615-4c76-8838-2a35e480c38f"
+    },
+    {
+      "type": "conversation_id",
+      "value": "526bd9fc-1615-4c76-8838-2a35e480c38f"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/import_workflow_ui.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "7ee077bf-2486-4770-a667-09d46102a378"
+    },
+    {
+      "type": "conversation_id",
+      "value": "103"
+    }
+  ]
+}

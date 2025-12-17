@@ -1,0 +1,10 @@
+{
+  "title": "TypeScript UUID Usage",
+  "summary": "Correct usage of the uuid package in TypeScript, specifically addressing the error when using 'new' with v4(), how to use v5() for deterministic UUID generation, and troubleshooting Jest/ESM compatibility issues (SyntaxError: Unexpected token 'export').",
+  "references": [
+    {
+      "type": "conversation_id",
+      "value": "4a7b739c-4386-474d-aaa4-2f211d87d9ce"
+    }
+  ]
+}

@@ -45,7 +45,7 @@ export function AccountCard({
                             <Pencil size={12} />
                         </button>
                     </div>
-                    <p className="text-xs text-zinc-500 font-mono capitalize">{account.AccountType}</p>
+                    <p className="text-xs text-zinc-500 font-mono capitalize">{account.type}</p>
                 </div>
             </div>
             <div className="flex items-center gap-4">

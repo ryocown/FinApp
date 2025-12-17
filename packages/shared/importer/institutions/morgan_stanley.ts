@@ -114,11 +114,12 @@ export class MorganStanleyStatementImporter extends StatementImporter {
   // Identifying Morgan Stanley holdings with CUSIP.
   private static async getInstrumentId(cusip?: string, description?: string): Promise<string> {
 
-    console.log(`Getting instrument ID for CUSIP: ${cusip}`);
+    // console.log(`Getting instrument ID for CUSIP: ${cusip}`);
 
     if (!cusip) return 'unknown_instrument_id';
 
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    // Safe access to process.env for browser compatibility
+    const apiUrl = (typeof process !== 'undefined' && process.env && process.env.API_URL) || 'http://localhost:3001';
 
     try {
       // Try to get existing instrument
@@ -126,7 +127,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`Found instrument ID for CUSIP: ${cusip}, ID: ${data.id}`);
+        // console.log(`Found instrument ID for CUSIP: ${cusip}, ID: ${data.id}`);
         return data.id;
       }
 

@@ -10,6 +10,7 @@ interface GeneralTransactionFormProps {
     setDescription: (description: string) => void
     category: string
     setCategory: (category: string) => void
+    currencySymbol: string
 }
 
 /**
@@ -23,7 +24,8 @@ export function GeneralTransactionForm({
     description,
     setDescription,
     category,
-    setCategory
+    setCategory,
+    currencySymbol
 }: GeneralTransactionFormProps) {
     return (
         <>
@@ -53,7 +55,7 @@ export function GeneralTransactionForm({
             </FormField>
 
             <FormField label="Amount">
-                <AmountInput value={amount} onChange={setAmount} required />
+                <AmountInput value={amount} onChange={setAmount} required currencySymbol={currencySymbol} />
             </FormField>
 
             <FormField label="Description">

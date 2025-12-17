@@ -1,0 +1,59 @@
+```json
+{
+  "title": "FinApp Domain Models",
+  "summary": "Comprehensive documentation of the domain models for the FinApp application. Covers core entities (Institute, Account, Transaction, FinancialInstrument) and supporting models (consolidated in `supporting_models.md`). Includes detailed TransactionType (now including `RECONCILIATION`), AccountType, and **BalanceCheckpointType** enums, StandardCategoryTree helper, strict field ordering conventions, specific logic for Transfers (Linked Transaction pattern for multi-currency), category hierarchy generation logic, and Firestore schema mapping (updated to nested structure: User -> Institute -> Account -> Transaction, with top-level transaction references). Updated to include deterministic transaction ID generation (UUID v5) for imports and random (UUID v4) for manual creation, explicit Institute ID generation (UUID v4), the trade-offs of the nested account structure regarding direct access, the 'Anchor & Backdate' balance calculation strategy (implemented via `IBalanceCheckpoint` using `BalanceCheckpointType` enum and `Account.balanceDate`, with strict Cash vs. Total Value separation for Brokerage accounts, and the 'Same-Day Reconciliation' rule allowing updates when dates match), and the 'Snapshot Strategy' for Net Worth History (relying on interpolated checkpoints). Includes `IStatement` updates (optional `endingBalance` field), the updated Institute model (using `IInstitute` interface and `userId` property), the `IAccount` update to include an optional `instituteId` for frontend grouping, and the Currency Model (documenting `ICurrency`, `ICurrencyPair`, canonical pair logic, and the FX Conversion Layer for Net Worth). Added `account_model.md` (corrected `currency` field to `ICurrency` object) and `currency_model.md` for detailed entity documentation. **Note**: The `ITransaction` model includes `userId` to enable efficient **Collection Group Queries** for global transaction lists. The top-level `transactions` collection is a **Pointer Collection** used primarily for ID-based lookup/deletion, NOT for listing. **New**: Updated Balance Calculation Strategy to include the **Reconciliation Adjustment Lifecycle** (Creation, Deletion/Un-reconcile, Recovery/Self-Healing) and explicitly documented **API Serialization** requirements for Date fields (ISO 8601 Strings). Updated **Financial Instrument Model** to include **Enrichment Strategy** (Alpaca/Gemini) and Search logic. **Update**: Category Model now includes `Reconciliation` as a distinct root-level category type (alongside Expense), separate from the standard Expense hierarchy. Transaction Model updated to include `seed` parameter in deterministic ID generation hash inputs for edge-case collision resolution, and **Transaction Mutability Rules** (defining Changeable vs Unchangeable fields). **Cross-Reference**: See `finapp_server_architecture` for the implementation of data access patterns corresponding to this schema. **Update**: Added `SupportedInstitute` enum to `Institute` model to restrict institute creation to supported importer types. **Update**: Documented **Known Discrepancies** in `IFinancialInstrument` (missing `ticker` in base interface, `instrumentId` vs `id`). **Update**: Explicitly defined **Account Mutability Rules**, specifying that `accountId`, `userId`, `instituteId`, and `balance` are immutable during updates, while `name` and other metadata can be modified. And `IBudget` (client-side aggregation vs raw entity). Clarified **Client-Side Representation** for Transactions (flat structure requiring lookups). **New**: Explicitly documented **Accounting Sign Conventions** (Negative = Debt for Liabilities) to ensure consistent Net Worth calculation and Reconciliation logic.",
+  "references": [
+    {
+      "type": "conversation_id",
+      "value": "b30c9527-5f30-4492-93a7-06a82e3f2e50"
+    },
+    {
+      "type": "conversation_id",
+      "value": "4a7b739c-4386-474d-aaa4-2f211d87d9ce"
+    },
+    {
+      "type": "conversation_id",
+      "value": "2f419d3c-9b21-4f2e-b818-ecb4f62e9bc9"
+    },
+    {
+      "type": "conversation_id",
+      "value": "4b4a06e9-192e-4eb8-8c1c-56e301d6dd54"
+    },
+    {
+      "type": "conversation_id",
+      "value": "14bb4a5c-1d48-4226-a6f8-94d1d7178e5e"
+    },
+    {
+      "type": "conversation_id",
+      "value": "b584282a-9595-4478-a670-da4fdd6d92e6"
+    },
+    {
+      "type": "conversation_id",
+      "value": "e01f4697-7889-48e6-8279-ddf584287867"
+    },
+    {
+      "type": "conversation_id",
+      "value": "415be6e0-996f-4a52-83d7-da3d430f48ca"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/accounting_sign_conventions.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/supporting_models.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "0ec85050-4a1a-44aa-954a-1dd56628d353"
+    },
+    {
+      "type": "conversation_id",
+      "value": "28639d25-50c9-438c-b1d3-438bdfdb4309"
+    },
+    {
+      "type": "conversation_id",
+      "value": "7ee077bf-2486-4770-a667-09d46102a378"
+    }
+  ]
+}

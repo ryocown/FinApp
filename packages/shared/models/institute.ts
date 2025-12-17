@@ -3,7 +3,8 @@ import type { Account } from "./account";
 
 export enum SupportedInstitute {
     CHASE = 'Chase',
-    MORGAN_STANLEY = 'Morgan Stanley'
+    MORGAN_STANLEY = 'Morgan Stanley',
+    PAYPAY = 'PayPay'
 }
 
 export interface IInstitute {

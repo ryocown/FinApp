@@ -4,7 +4,7 @@ import { v5 } from 'uuid';
 
 const TRANSACTION_SALT = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 
-function generateTransactionId(parts: (string | number | boolean | null | undefined)[]): string {
+export function generateTransactionId(parts: (string | number | boolean | null | undefined)[]): string {
   // Filter out undefined/null to keep it clean, or just stringify everything.
   // Stringifying everything ensures position matters (e.g. null vs empty string).
   const data = parts.map(p => p === undefined || p === null ? '' : String(p)).join('|');

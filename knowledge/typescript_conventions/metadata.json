@@ -1,0 +1,18 @@
+{
+  "title": "TypeScript Conventions",
+  "summary": "Coding conventions and standards for TypeScript within the FinApp project, including import patterns (Type-Only Imports for verbatimModuleSyntax, extensionless imports via tsx, CommonJS interop in ESM), type safety patterns (e.g., `as const`, Object.assign for overwrites, Array Access Safety with `noUncheckedIndexedAccess`, **Exact Optional Property Types** handling, and common pitfalls like `split()[0]`), class design patterns (avoiding redundant getters/setters), module configuration (ESM via ESNext/Bundler, project-wide consistency, ESM global variable workarounds, global type management, and 'erasableSyntaxOnly' configuration which is disabled to allow Shared Enums), and best practices.",
+  "references": [
+    {
+      "type": "conversation_id",
+      "value": "4a7b739c-4386-474d-aaa4-2f211d87d9ce"
+    },
+    {
+      "type": "conversation_id",
+      "value": "53c6e288-9d68-4fe8-acc2-39698c5fa8bc"
+    },
+    {
+      "type": "conversation_id",
+      "value": "a180abad-4a99-404b-8273-f4d870c906cf"
+    }
+  ]
+}

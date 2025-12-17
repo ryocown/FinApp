@@ -1,7 +1,6 @@
 import admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
-import { v4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import { ChaseCsvStatementImporter, ChaseCreditCsvStatementImporter } from '../importer/institutions/chase';
 import dotenv from 'dotenv';
@@ -10,7 +9,6 @@ import { Account, AccountType } from '../models/account';
 import { Currency } from '../models/currency';
 import { Institute } from '../models/institute';
 import { type IStatementImporter } from "../importer/importer";
-import { type IBalanceCheckpoint, BalanceCheckpointType } from '../models/balance_checkpoint';
 import { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { MorganStanleyStatementImporter } from '../importer/institutions/morgan_stanley';
 import { fromExcelToCsv } from './from_excel_to_csv';
@@ -34,6 +32,22 @@ if (!admin.apps.length) {
 const dataDir = path.join(__dirname, 'data');
 
 const db = admin.firestore();
+
+const usd = new Currency('US Dollar', '$', 'USD');
+const jpy = new Currency('Japanese Yen', '¥', 'JPY');
+
+// Chase Accounts
+const chase6459 = new Account('6459', -763.33, 'US', usd, 'Chase Credit 6459', AccountType.CREDIT_CARD, false, USER_ID);
+const chase8829 = new Account('8829', 8829, 'US', usd, 'Chase Checking 8829', AccountType.BANK, false, USER_ID);
+
+// Morgan Stanley Accounts
+const morgan3747 = new Account('3747', 0, 'US', usd, 'Morgan Stanley 3747', AccountType.INVESTMENT, true, USER_ID);
+const morgan3797 = new Account('3797', 0, 'US', usd, 'Morgan Stanley 3797', AccountType.INVESTMENT, true, USER_ID);
+const morgan5008 = new Account('5008', 0, 'US', usd, 'Morgan Stanley 5008', AccountType.INVESTMENT, true, USER_ID);
+const morgan6259 = new Account('6259', 0, 'US', usd, 'Morgan Stanley 6259', AccountType.INVESTMENT, true, USER_ID);
+
+const chaseInstitute = new Institute('Chase', USER_ID, [chase6459, chase8829]);
+const morganInstitute = new Institute('Morgan Stanley', USER_ID, [morgan3747, morgan3797, morgan5008, morgan6259]);
 
 async function processTransactionsBatch(
   db: Firestore,
@@ -171,39 +185,15 @@ async function importAccountWithBatch(
 }
 
 async function importToFirebase() {
-  // 1. Create User
-  const user = new User('fake@example.com', 'Fake User');
-  user.userId = USER_ID;
-  await db.collection('users').doc(USER_ID).set(JSON.parse(JSON.stringify(user)));
-  console.log(`Created user ${user.name} (${USER_ID})`);
+  await createUser();
+  await importData();
 
-  // 2. Define Accounts and Currency
-  const usd = new Currency('US Dollar', '$', 'USD');
+  console.log('\nImport complete!');
+}
 
-  // Chase Accounts
-  const chase6459 = new Account('6459', -763.33, 'US', usd, 'Chase Credit 6459', AccountType.CREDIT_CARD, false, USER_ID);
-  const chase8829 = new Account('8829', 8829, 'US', usd, 'Chase Checking 8829', AccountType.BANK, false, USER_ID); // Assuming Checking is BANK or similar
-  // Note: AccountType.CHECKING might not exist, using BANK or checking enum if available.
-  // Checked AccountType: BANK, CREDIT_CARD, INVESTMENT, etc.
-  // Checked AccountTag: CHECKING, SAVINGS.
-  // Account model takes AccountType.
+async function importData() {
+  const institutes = [chaseInstitute, morganInstitute];
 
-  // Morgan Stanley Accounts
-  const morgan3747 = new Account('3747', 0, 'US', usd, 'Morgan Stanley 3747', AccountType.INVESTMENT, true, USER_ID);
-  const morgan3797 = new Account('3797', 0, 'US', usd, 'Morgan Stanley 3797', AccountType.INVESTMENT, true, USER_ID);
-  const morgan5008 = new Account('5008', 0, 'US', usd, 'Morgan Stanley 5008', AccountType.INVESTMENT, true, USER_ID);
-  const morgan6259 = new Account('6259', 0, 'US', usd, 'Morgan Stanley 6259', AccountType.INVESTMENT, true, USER_ID);
-
-  // 3. Define Institutes
-  const chaseInstitute = new Institute('Chase', USER_ID, [chase6459, chase8829]);
-  const morganInstitute = new Institute('Morgan Stanley', USER_ID, [morgan3747, morgan3797, morgan5008, morgan6259]);
-
-  const institutes = [
-    chaseInstitute,
-    // morganInstitute
-  ];
-
-  // 4. Import Data
   for (const institute of institutes) {
     const instituteId = institute.instituteId;
     console.log(`Processing institute ${institute.name} (${instituteId})...`);
@@ -253,15 +243,17 @@ async function importToFirebase() {
       }
 
       if (importer && csvFile) {
-        // let forcedBalance: number | undefined;
-        // if (account === chase8829) forcedBalance = 5000;
-        // if (account === chase6459) forcedBalance = -1000;
         await importAccountWithBatch(db, USER_ID, instituteId, account, importer, csvFile, undefined);
       }
     }
   }
+}
 
-  console.log('\nImport complete!');
+async function createUser() {
+  const user = new User('fake@example.com', 'Fake User');
+  user.userId = USER_ID;
+  await db.collection('users').doc(USER_ID).set(JSON.parse(JSON.stringify(user)));
+  console.log(`Created user ${user.name} (${USER_ID})`);
 }
 
 function convertMorganExcelToCsv() {

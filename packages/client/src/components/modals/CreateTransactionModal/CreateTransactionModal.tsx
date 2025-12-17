@@ -161,6 +161,8 @@ export function CreateTransactionModal({ isOpen, onClose, userId, onSuccess }: C
         setSelectedInstrument(null)
     }
 
+    const selectedAccount = accounts.find(a => a.accountId === accountId)
+
     return (
         <ModalWrapper isOpen={isOpen} onClose={onClose} title="New Transaction" maxWidth="2xl">
             {/* Tabs */}
@@ -234,6 +236,7 @@ export function CreateTransactionModal({ isOpen, onClose, userId, onSuccess }: C
                             setDescription={setDescription}
                             category={category}
                             setCategory={setCategory}
+                            currencySymbol={selectedAccount?.currency.symbol || '$'}
                         />
                     )}
 
@@ -251,6 +254,7 @@ export function CreateTransactionModal({ isOpen, onClose, userId, onSuccess }: C
                             setDescription={setDescription}
                             selectedInstrument={selectedInstrument}
                             setSelectedInstrument={setSelectedInstrument}
+                            currencySymbol={selectedAccount?.currency.symbol || '$'}
                         />
                     )}
 
@@ -264,6 +268,7 @@ export function CreateTransactionModal({ isOpen, onClose, userId, onSuccess }: C
                             setTransferAmount={setTransferAmount}
                             description={description}
                             setDescription={setDescription}
+                            currencySymbol={selectedAccount?.currency.symbol || '$'}
                         />
                     )}
 

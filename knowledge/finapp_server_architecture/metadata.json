@@ -1,0 +1,54 @@
+{
+  "title": "FinApp Server Architecture",
+  "summary": "Documentation of the server-side architecture, including the technology stack (Express, Firebase, CORS, Zod), dependency requirements, configuration (standardized on `.env` for environment variables like `FIREBASE_PROJECT_ID` and `FIRESTORE_EMULATOR_HOST`), standard patterns for route implementation, API design (reflecting nested route structure e.g. `/api/accounts/users/...`, top-level transactions/budget, user-scoped accounts, cursor-based pagination, dedicated account-level transaction filtering with explicit ID usage guidelines, unified server-side aggregation endpoint with flexible multi-dimensional grouping, and documented aggregation strategies for Firestore including cost analysis, implementation patterns (Dimension Extractor), and long-term scalability options like BigQuery and self-hosted MongoDB), API testing setup (Jest, Supertest, ESM mocking patterns), and the Data Access Layer (centralized Firestore reference helpers for user-scoped and global collections, and account resolution logic). Updated to include default sort order details, the critical requirement for resolving transaction references in top-level endpoints, the specific nested querying strategy for account-level endpoints, the institute lookup requirement for account-scoped queries, the **Collection Group Query strategy** for the global transactions endpoint (replacing pointer collections), the new Institute management endpoints, the new Checkpoints endpoint, the new Currencies endpoint (`GET /rates`), the Account Management endpoints (Create, Read, Delete with recursive cleanup), the refined Transaction creation logic, the 'Flatten & Enrich' pattern for the accounts endpoint (injecting `instituteId` into returned account objects), the Account Creation endpoint with Initial Reconciliation support (automatically creating a balance checkpoint), common Implementation Patterns (e.g., Firestore Timestamp handling, Same-Day Reconciliation logic, Schema Validation pitfalls like Silent Field Stripping, Data Dependency Ordering for async pipelines, Local Date Strings safety, **Firestore Query Strategies** including Single Field Index requirements for Collection Groups with specific `gcloud` commands, **Pagination for Collection Group Queries**, and **API Error Handling Strategy** for debuggability), and the Analytics Architecture (specifically the Snapshot Strategy for Net Worth History, documenting the MVP 'Lazy Interpolation' decision vs. future daily cron jobs, the Dynamic Start Date logic for the 'ALL' range, the FX Conversion Strategy for multi-currency support, and the critical Execution Pipeline order of operations). **New**: Includes the **Reconciliation Service** design, featuring the 'Batch Reconciliation Refresh' pattern for handling retrospective updates, the 'Continuous History' model using `RECONCILIATION` transactions (with explicit **Dual-Write** storage requirements), the **Self-Healing & Broken State Handling** logic (allowing flexible deletion of adjustments with automatic recovery), the **Checkpoint Deletion Strategy** (cascading delete of adjustments to support 'undo' functionality), and the **Checkpoint Validation Logic** (batch validation of checkpoint integrity by recalculating balances from transaction history, **optimized to the most recent 12 checkpoints**). Also documents the **Batch Create Transactions** endpoint which triggers the reconciliation refresh, and the **Instrument Service** design (Search & Enrichment APIs). **Restored & Expanded**: **Data Access Layer** documentation now includes the `getAccountRef` iterative search strategy, **`getCollectionData`** generic helper, **`getAllUserAccounts`** aggregation logic, and **`resolveTransactionReferences`** for handling global-to-nested transaction pointers with explicit **Timestamp-to-ISO** date normalization (robustly handling both Timestamp instances and plain objects). Includes documentation for **Required Firestore Indexes** (specifically for Reconciliation Service queries and **User Transactions Collection Group** queries), **Write Patterns** (Explicit ID Generation, and **Transaction Update Pattern** covering Global-to-Nested resolution, Immutable Field Stripping, and Reconciliation Side Effects), a dedicated **Timestamp Serialization Strategy** explaining the root cause of JSON serialization issues with Firestore Timestamps and the mandatory explicit ISO string conversion pattern, and the **API Validation Layer** detailing the use of **Zod schemas** for strict runtime request validation, the `validate` middleware's behavior of **stripping unknown keys**, and the core schema definitions. **Update**: Documented **Global Transaction Access** patterns, explicitly distinguishing between the **Dual Write** strategy (Source of Truth vs. Global Pointer) and the **Read Strategy** (Collection Group Query for listing vs. ID-based Lookup for deletion), emphasizing the critical **Collection Group Index** requirement for `userId` + `date`. **Update**: Updated **Batch Transaction Creation** pattern to include **Duplicate Detection Statistics** (`importedCount`, `duplicateCount`) returned to the client. **Update**: Added **Sort Order** support (`asc` | `desc`) to `getUserTransactions` service and API endpoints. **Update**: Documented **Account Management API** routes, including the new `PUT` endpoint for account renaming (now supporting `accountNumber` updates) and the `GET` endpoint for account-specific transactions with sorting support.",
+  "references": [
+    {
+      "type": "file",
+      "value": "artifacts/reconciliation_service_design.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/data_access_layer.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/firestore_indexes.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/write_patterns.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/api_validation.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/api_routes.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "b8aa3e07-b033-4e2e-88cd-c46d8dc200ea"
+    },
+    {
+      "type": "conversation_id",
+      "value": "7ee077bf-2486-4770-a667-09d46102a378"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/instrument_service_design.md"
+    },
+    {
+      "type": "file",
+      "value": "artifacts/currency_service_design.md"
+    },
+    {
+      "type": "conversation_id",
+      "value": "56"
+    },
+    {
+      "type": "conversation_id",
+      "value": "103"
+    }
+  ]
+}
