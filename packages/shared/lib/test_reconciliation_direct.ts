@@ -6,7 +6,7 @@ delete process.env.FIRESTORE_EMULATOR_HOST;
 // Initialize admin if not already (though firebase.ts will do it)
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: 'hirico-internal-project-1'
+    projectId: 'gshiftwork'
   });
 }
 

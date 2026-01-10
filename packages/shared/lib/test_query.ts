@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'hirico-internal-project-1',
+    projectId: process.env.FIREBASE_PROJECT_ID || 'gshiftwork',
   });
 }
 

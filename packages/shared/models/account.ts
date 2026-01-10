@@ -1,6 +1,6 @@
-import { Currency, type ICurrency } from "./currency";
+import { Currency, type ICurrency } from "./currency.js";
 import { v4 } from "uuid";
-import { type ILot } from "./lot";
+import { type ILot } from "./lot.js";
 
 export interface AccountProp {
   accountId: string;
@@ -14,6 +14,7 @@ export interface AccountProp {
   currency: ICurrency;
   name: string;
   type: AccountType;
+  tags: AccountTag[];
   isTaxable: boolean;
 }
 
@@ -90,7 +91,8 @@ export class Account implements AccountProp {
   name: string;
   type: AccountType;
   isTaxable: boolean;
-  instituteId?: string | undefined;
+  instituteId?: string;
+  tags: AccountTag[];
   interest: Interest[];
 
   constructor(accountNumber: string, balance: number, country: string, currency: Currency,
@@ -106,8 +108,11 @@ export class Account implements AccountProp {
     this.name = name;
     this.type = AccountType;
     this.isTaxable = isTaxable;
-    this.instituteId = instituteId;
+    if (instituteId !== undefined) {
+      this.instituteId = instituteId;
+    }
     this.interest = [];
+    this.tags = [];
   }
 
   withInterest(rate: number, effectiveDate: Date = new Date()): Account {
@@ -122,11 +127,11 @@ export class Account implements AccountProp {
     return this;
   }
 
-  getInterest(): Interest {
+  getInterest(): Interest | undefined {
     return this.interest[0];
   }
 
-  static fromJSON(json: any): AccountProp {
+  static fromJSON(json: any): Account {
     const account = new BankAccount(
       json.accountNumber,
       json.balance,
@@ -138,6 +143,7 @@ export class Account implements AccountProp {
       json.userId
     );
     account.accountId = json.accountId;
+    account.tags = json.tags || [];
     return account;
   }
 }
@@ -160,7 +166,7 @@ export class InvestmentAccount extends Account {
     this.positions = [];
   }
 
-  static fromJSON(json: InvestmentAccountProp): InvestmentAccount {
+  static override fromJSON(json: InvestmentAccountProp): InvestmentAccount {
     const account = new InvestmentAccount(
       json.accountNumber,
       json.balance,
@@ -172,6 +178,7 @@ export class InvestmentAccount extends Account {
       json.userId
     );
     account.accountId = json.accountId;
+    account.tags = json.tags || [];
     account.positions = json.positions || [];
     if (json.balanceDate) {
       account.balanceDate = new Date(json.balanceDate);

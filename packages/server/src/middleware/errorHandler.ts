@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../errors';
-import { logger } from '../logger';
+import { ApiError } from '../errors/index.js';
+import { logger } from '../logger.js';
 
 /**
  * Global error handler middleware.
@@ -33,10 +33,10 @@ export function errorHandler(
     }
 
     // Handle unexpected errors
+    // Handle unexpected errors
     res.status(500).json({
-        error: process.env.NODE_ENV === 'production'
-            ? 'Internal server error'
-            : err.message,
+        error: err.message, // Expose error for debugging
+        stack: err.stack,   // Expose stack for debugging
         code: 'INTERNAL_ERROR'
     });
 }

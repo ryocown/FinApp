@@ -1,0 +1,73 @@
+<div class="space-y-6">
+    <header>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-[var(--mat-sys-on-surface)]">Transactions</h1>
+                <p class="text-[var(--mat-sys-on-surface-variant)] text-sm">Recent activity from your accounts</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button mat-stroked-button (click)="openImportDialog()">
+                    <mat-icon>upload_file</mat-icon>
+                    Import Statement
+                </button>
+                <button mat-fab extended color="primary" (click)="openCreateDialog()">
+                    <mat-icon>add</mat-icon>
+                    Add Transaction
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div
+        class="bg-[var(--mat-sys-surface-container-low)] rounded-xl border border-[var(--mat-sys-outline-variant)] overflow-hidden">
+        <table mat-table [dataSource]="transactions()" class="w-full !bg-transparent">
+
+            <!-- Date Column -->
+            <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef class="!text-[var(--mat-sys-on-surface-variant)]"> Date </th>
+                <td mat-cell *matCellDef="let txn" class="!text-[var(--mat-sys-on-surface)]"> {{txn.date | date:'MMM d,
+                    y'}} </td>
+            </ng-container>
+
+            <!-- Merchant Column -->
+            <ng-container matColumnDef="merchant">
+                <th mat-header-cell *matHeaderCellDef class="!text-[var(--mat-sys-on-surface-variant)]"> Merchant </th>
+                <td mat-cell *matCellDef="let txn" class="!text-[var(--mat-sys-on-surface)]"> {{getMerchantName(txn)}}
+                </td>
+            </ng-container>
+
+            <!-- Category Column -->
+            <ng-container matColumnDef="category">
+                <th mat-header-cell *matHeaderCellDef class="!text-[var(--mat-sys-on-surface-variant)]"> Category </th>
+                <td mat-cell *matCellDef="let txn">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--mat-sys-secondary-container)] text-[var(--mat-sys-on-secondary-container)]">
+                        {{getCategoryName(txn)}}
+                    </span>
+                </td>
+            </ng-container>
+
+            <!-- Amount Column -->
+            <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef class="!text-[var(--mat-sys-on-surface-variant)] text-right">
+                    Amount </th>
+                <td mat-cell *matCellDef="let txn" class="text-right font-medium"
+                    [class.text-emerald-400]="txn.amount > 0">
+                    {{txn.amount | currency:txn.currency.code:'symbol':'1.2-2'}}
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!bg-[var(--mat-sys-surface-container-high)]">
+            </tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                class="hover:!bg-[var(--mat-sys-state-hover)] transition-colors"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell px-6 py-8 text-center text-[var(--mat-sys-on-surface-variant)]"
+                    [attr.colspan]="displayedColumns.length">
+                    No transactions found for this period.
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>

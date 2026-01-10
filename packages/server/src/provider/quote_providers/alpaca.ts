@@ -1,10 +1,10 @@
 import Alpaca from '@alpacahq/alpaca-trade-api';
-import { InstrumentType, type IFinancialInstrument, type StockInstrument } from "@finapp/shared/models/financial_instrument";
-import type { IQuoteProvider } from "../quote_provider";
-import { logger } from "../../logger";
+import { InstrumentType, type IFinancialInstrument, type StockInstrument } from "@finapp/shared";
+import type { IQuoteProvider } from "../quote_provider.js";
+import { logger } from "../../logger.js";
 
 export class AlpacaQuoteProvider implements IQuoteProvider {
-  private alpaca: Alpaca;
+  private alpaca: any;
 
   constructor() {
     const config: { keyId?: string; secretKey?: string; paper?: boolean } = {

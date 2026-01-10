@@ -41,13 +41,13 @@ import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: 'hirico-internal-project-1' // Explicit remote project ID
+    projectId: 'gshiftwork' // Explicit remote project ID
   });
 }
 ```
 
 ## Known Environments
-- **Remote Project ID**: `hirico-internal-project-1`
+- **Remote Project ID**: `gshiftwork`
 - **Local Emulator**: `localhost:8080` (default)
 
 ## Debugging Techniques
@@ -78,7 +78,7 @@ import admin from 'firebase-admin';
 delete process.env.FIRESTORE_EMULATOR_HOST;
 
 if (!admin.apps.length) {
-  admin.initializeApp({ projectId: 'hirico-internal-project-1' });
+  admin.initializeApp({ projectId: 'gshiftwork' });
 }
 
 // 2. Dynamic Import

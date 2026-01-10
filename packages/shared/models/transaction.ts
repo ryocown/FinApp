@@ -1,6 +1,6 @@
-import { Currency } from "./currency";
-import { Merchant } from "./merchant";
-import { v5 } from 'uuid';
+import { Currency } from "./currency.js";
+import { Merchant } from "./merchant.js";
+import { createDeterministicHash } from '../lib/hash.js';
 
 const TRANSACTION_SALT = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 
@@ -8,7 +8,7 @@ export function generateTransactionId(parts: (string | number | boolean | null |
   // Filter out undefined/null to keep it clean, or just stringify everything.
   // Stringifying everything ensures position matters (e.g. null vs empty string).
   const data = parts.map(p => p === undefined || p === null ? '' : String(p)).join('|');
-  return v5(data, TRANSACTION_SALT);
+  return createDeterministicHash(data + TRANSACTION_SALT);
 }
 
 /**
@@ -39,6 +39,7 @@ export interface ITransaction {
   currency: Currency;
   date: Date;
   description: string | null;
+  balance?: number; // Running balance after transaction
   // isTaxDeductable: boolean;
 
   transactionType: TransactionType;
@@ -92,6 +93,7 @@ export class GeneralTransaction implements ITransaction {
   hasCapitalGains: boolean;
   merchant: Merchant | null;
   transactionType: TransactionType;
+  balance?: number;
 
   constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General, seed?: string) {
     // Hash: accountId, userId, amount, currency, date, description, transactionType, merchantName
@@ -117,7 +119,9 @@ export class GeneralTransaction implements ITransaction {
     this.hasCapitalGains = hasCapitalGains;
     this.merchant = merchant;
     this.transactionType = transactionType;
-    this.categoryId = categoryId;
+    if (categoryId !== undefined) {
+      this.categoryId = categoryId;
+    }
     this.tagIds = tagIds;
   }
 
@@ -137,6 +141,7 @@ export class GeneralTransaction implements ITransaction {
       json.transactionType
     );
     transaction.transactionId = json.transactionId;
+    if (json.balance !== undefined) transaction.balance = json.balance;
     return transaction;
   }
 }
@@ -190,7 +195,9 @@ export class TradeTransaction implements ITransaction {
     this.instrumentId = instrumentId;
     this.quantity = quantity;
     this.price = price;
-    this.categoryId = categoryId;
+    if (categoryId !== undefined) {
+      this.categoryId = categoryId;
+    }
     this.tagIds = tagIds;
   }
 
@@ -256,9 +263,13 @@ export class TransferTransaction implements ITransaction {
     this.isTaxDeductable = false;
     this.hasCapitalGains = false;
     this.transactionType = TransactionType.Transfer;
-    this.categoryId = categoryId;
+    if (categoryId !== undefined) {
+      this.categoryId = categoryId;
+    }
     this.tagIds = tagIds;
-    this.exchangeRate = exchangeRate;
+    if (exchangeRate !== undefined) {
+      this.exchangeRate = exchangeRate;
+    }
   }
 
   static fromJSON(json: any): TransferTransaction {

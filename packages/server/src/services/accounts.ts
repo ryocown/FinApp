@@ -1,11 +1,12 @@
+
 import admin from 'firebase-admin';
 import { v4 } from 'uuid';
-import { db, getUserRef, getAccountRef, getAllUserAccounts, getCollectionData, resolveTransactionReferences } from '../firebase';
-import type { AccountProps, Account } from '../../../shared/models/account';
-import { type IBalanceCheckpoint, BalanceCheckpointType } from '../../../shared/models/balance_checkpoint';
-import type { ITransaction } from '../../../shared/models/transaction';
-import { ApiError } from '../errors';
-import { ReconciliationService } from './reconciliation';
+import { db, getUserRef, getAccountRef, getAllUserAccounts, getCollectionData, resolveTransactionReferences } from '../firebase.js';
+import { Account, type AccountProp, AccountTag, AccountType, BankAccount, InvestmentAccount } from "@finapp/shared";
+import { type IBalanceCheckpoint, BalanceCheckpointType } from '@finapp/shared';
+import type { ITransaction } from '@finapp/shared';
+import { ApiError } from '../errors/index.js';
+import { ReconciliationService } from './reconciliation.js';
 
 /**
  * Service for account-related business logic.
@@ -24,7 +25,7 @@ export class AccountService {
      */
     static async createAccount(
         userId: string,
-        accountData: Partial<AccountProps> & { instituteId: string },
+        accountData: Partial<AccountProp> & { instituteId: string },
         initialBalance?: number,
         initialDate?: string
     ): Promise<Account> {
@@ -209,8 +210,36 @@ export class AccountService {
         delete updates.accountId;
         delete updates.userId;
         delete updates.instituteId;
-        delete updates.balance; // Balance should only be updated via reconciliation or transactions
+        // delete updates.balance; // Removed: Balance allowed for manual updates
 
-        await accountRef.update(updates);
+        if (updates.balance !== undefined) {
+            // Create a manual checkpoint for this balance update
+            const account = await getAccountRef(userId, accountId);
+            if (account) {
+                await ReconciliationService.reconcileAccount(
+                    userId,
+                    accountId,
+                    updates.balanceDate ? new Date(updates.balanceDate) : new Date(),
+                    Number(updates.balance)
+                );
+                // Note: reconcileAccount already updates the account document
+            }
+        }
+
+        // Remove balance from direct updates to avoid race conditions or double writes
+        // since reconcileAccount handles it, OR we let update() below handle it if reconcileAccount doesn't set other fields.
+        // ReconciliationService.reconcileAccount updates 'balance' and 'balanceDate'.
+        // So we should remove 'balance' from 'updates' to prevent overwriting if we want to be safe, 
+        // but since we are doing a partial update here for OTHER fields, we should keep it clean.
+        // Actually, if we pass 'balance' to update(), it might overwrite what reconcile did?
+        // Let's remove 'balance' from 'updates' so this final update call only handles name/type/etc.
+        const balanceUpdate = updates.balance;
+        delete updates.balance;
+        delete updates.balanceDate;
+
+        // If there are other updates besides balance, apply them
+        if (Object.keys(updates).length > 0) {
+            await accountRef.update(updates);
+        }
     }
 }

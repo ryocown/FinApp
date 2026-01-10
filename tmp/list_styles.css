@@ -1,0 +1,37 @@
+/* Waypoint List Card (Google-Style Grouped List) */
+.waypoint-list-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.waypoint-list-card .mat-mdc-list-item {
+    background-color: var(--app-theme-surface-container-lowest) !important;
+    border-radius: var(--corner-xs) !important;
+    /* Default inner radius */
+    margin: 0 !important;
+}
+
+.waypoint-list-card .mat-mdc-list-item:hover {
+    background-color: var(--app-theme-floating-card-bg) !important;
+    /* Hover effect */
+}
+
+/* First Item: Top Exterior Styling */
+.waypoint-list-card .mat-mdc-list-item:first-child {
+    border-top-left-radius: var(--corner-xxl) !important;
+    border-top-right-radius: var(--corner-xxl) !important;
+}
+
+/* Last Item: Bottom Exterior Styling */
+.waypoint-list-card .mat-mdc-list-item:last-child {
+    border-bottom-left-radius: var(--corner-xxl) !important;
+    border-bottom-right-radius: var(--corner-xxl) !important;
+}
+
+/* Spacing within items */
+.waypoint-list-card .mat-mdc-list-item-content {
+    padding: var(--spacing-md) !important;
+}

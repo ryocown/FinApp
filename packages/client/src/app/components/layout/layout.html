@@ -1,0 +1,132 @@
+<div class="flex flex-col h-screen !bg-transparent text-slate-100 relative">
+    <!-- Full Width Toolbar (Fixed/Sticky) -->
+    <mat-toolbar color="primary"
+        class="glass-layout border-b !text-slate-100 px-4 w-full flex flex-row justify-between items-center shrink-0"
+        style="height: var(--topbar-height);">
+        <div class="flex items-center h-full flex-1">
+            <button mat-icon-button (click)="toggleSidenav()" class="mr-2 !flex items-center justify-center">
+                <mat-icon>{{ isMobile() ? 'menu' : (isCollapsed() ? 'menu' : 'menu_open') }}</mat-icon>
+            </button>
+            <span class="font-bold text-xl tracking-tight flex items-center h-full">Waypoint</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="topbar-actions">
+            <button mat-icon-button (click)="toggleTheme()" [matTooltip]="'Theme: ' + themeService.theme()">
+                <mat-icon>{{ themeService.theme() === 'dark' ? 'dark_mode' : (themeService.theme() === 'light' ?
+                    'light_mode' : 'brightness_auto') }}</mat-icon>
+            </button>
+
+            <!-- Auth / User Chip -->
+            @if (authService.user()) {
+            @if (authService.user().photoURL) {
+            <div class="relative flex items-center justify-center">
+                <img [src]="authService.user().photoURL"
+                    class=" rounded-full border-2 border-slate-600 hover:border-blue-400 transition-colors cursor-pointer object-cover"
+                    style="width: 32px; height: 32px;"
+                    [matTooltip]="'Account: ' + (authService.user().displayName || 'User')"
+                    [matMenuTriggerFor]="userMenu" #menuTrigger="matMenuTrigger">
+            </div>
+            } @else {
+            <button mat-icon-button [matMenuTriggerFor]="userMenu" #menuTrigger="matMenuTrigger"
+                [matTooltip]="'Account: ' + (authService.user().displayName || 'User')">
+                <mat-icon>account_circle</mat-icon>
+            </button>
+            }
+
+            } @else {
+            <button mat-stroked-button (click)="authService.signIn()">Sign In</button>
+            }
+        </div>
+    </mat-toolbar>
+
+
+    <!-- Sidenav Container (Full Screen Overlay) -->
+    <mat-sidenav-container class="flex-1 overflow-hidden !bg-transparent h-full w-full pt-0" autosize>
+        <!-- Sidenav -->
+        <mat-sidenav #sidenav [mode]="isMobile() ? 'over' : 'side'" [opened]="!isMobile()"
+            class="glass-layout !border-r !bg-transparent text-slate-200 transition-all duration-300"
+            [style.width]="!isMobile() && isCollapsed() ? 'var(--sidebar-width-collapsed)' : (isMobile() ? 'auto' : 'var(--sidebar-width-expanded)')"
+            style="box-shadow: none !important;">
+
+            <app-sidebar [collapsed]="!isMobile() && isCollapsed()"></app-sidebar>
+
+        </mat-sidenav>
+
+        <mat-sidenav-content class="flex flex-col h-full overflow-hidden !bg-transparent text-slate-200">
+            <!-- Main Content -->
+            <main class="flex-1 overflow-auto !px-12 custom-scrollbar">
+                <router-outlet></router-outlet>
+            </main>
+        </mat-sidenav-content>
+    </mat-sidenav-container>
+
+    <!-- Google-Style User Menu (Moved Outside Toolbar) -->
+    <mat-menu #userMenu="matMenu" xPosition="before"
+        class="account-menu !rounded-[28px] !p-0 !min-w-[420px] overflow-hidden">
+        @if (authService.user()) {
+        <div class="flex flex-col bg-[var(--app-theme-surface-container-high)]" (click)="$event.stopPropagation()">
+
+            <!-- 1. Header: Email + Close -->
+            <div class="flex items-center justify-between"
+                style="padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs) var(--spacing-md);">
+                <button mat-icon-button (click)="closeUserMenu()" class="!w-8 !h-8 flex items-center justify-center">
+                    <mat-icon class="!text-[var(--app-theme-text-secondary)] text-sm">close</mat-icon>
+                </button>
+            </div>
+
+            <!-- 2. Profile Section -->
+            <div class="flex flex-col items-center justify-center text-center w-full"
+                style="padding: var(--spacing-lg); gap: var(--spacing-md);">
+                <div class="relative flex justify-center w-full">
+                    <img [src]="authService.user().photoURL || 'assets/default-avatar.png'"
+                        class="account-image w-20 h-20 rounded-full object-cover border-[3px] border-[var(--app-theme-surface-container-high)] shadow-md mx-auto"
+                        onerror="this.style.display='none'">
+                </div>
+                <div class="account-text">
+                    <h3 class="header-medium text-center m-0">
+                        Hi, {{ authService.user().displayName?.split(' ')?.[0] || 'User' }}!
+                    </h3>
+                    <span class="text-sm font-medium text-[var(--app-theme-text-secondary)]">
+                        {{ authService.user().email }}
+                    </span>
+                </div>
+
+                <button mat-stroked-button color="primary" class="manage-button whitespace-nowrap"
+                    routerLink="/accounts">
+                    Manage your Account
+                </button>
+            </div>
+
+            <!-- 3. Actions List (MatList Expressive) -->
+            <div style="padding: 0 var(--spacing-md) var(--spacing-md) var(--spacing-md);">
+                <mat-list class="waypoint-list-card">
+
+                    <!-- Item 1: Net Wealth -->
+                    <mat-list-item>
+                        <mat-icon matListItemIcon
+                            class="!text-[var(--app-theme-text-link)]">account_balance_wallet</mat-icon>
+                        <span matListItemTitle class="!text-[var(--app-theme-text-secondary)] !text-sm !font-medium">
+                            Net Wealth: {{ netWorth() | currency }}
+                        </span>
+                    </mat-list-item>
+
+                    <!-- Item 2: Sign Out -->
+                    <button mat-list-item matRipple [matRippleColor]="'var(--app-theme-primary-ripple)'"
+                        (click)="authService.signOut()" class="cursor-pointer">
+                        <mat-icon matListItemIcon class="!text-[var(--app-theme-text-primary)]">logout</mat-icon>
+                        <span matListItemTitle class="!text-[var(--app-theme-text-primary)]">Sign out</span>
+                    </button>
+
+                </mat-list>
+            </div>
+
+            <div class="account-text" style="padding: var(--spacing-md);">
+                <a href="#" class="hover:text-[var(--app-theme-text-primary)]">Privacy Policy</a>
+                <span> • </span>
+                <a href="#" class="hover:text-[var(--app-theme-text-primary)]">Terms of Service</a>
+            </div>
+        </div>
+        }
+    </mat-menu>
+</div>

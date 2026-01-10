@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "declaration": true,
     "skipLibCheck": true,
@@ -13,6 +13,20 @@
     "**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "dist",
+    "tests",
+    "**/*.test.ts",
+    "lib/check_*.ts",
+    "lib/create_*.ts",
+    "lib/debug_*.ts",
+    "lib/firestore_*.ts",
+    "lib/from_*.ts",
+    "lib/import_*.ts",
+    "lib/seed_*.ts",
+    "lib/simple_*.ts",
+    "lib/test_*.ts",
+    "lib/verify_*.ts",
+    "lib/wipe_*.ts"
   ]
 }

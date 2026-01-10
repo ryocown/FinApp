@@ -1,0 +1,32 @@
+mutation CreateSeedData @transaction @auth(level: PUBLIC, insecureReason: "This mutation is used to populate the database with initial data and is not sensitive.") {
+  # Example: Inserting a user
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      username: "seeduser1",
+      email: "seeduser1@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      username: "seeduser2",
+      email: "seeduser2@example.com",
+      createdAt: "2024-01-02T00:00:00Z"
+    }
+  ])
+  # Example: Inserting a post, referencing the users above
+  post_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440000",
+      userUid: "550e8400-e29b-41d4-a716-446655440000",
+      text: "Seed post 1",
+      createdAt: "2024-01-03T00:00:00Z"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440001",
+      userUid: "550e8400-e29b-41d4-a716-446655440001",
+      text: "Seed post 2",
+      createdAt: "2024-01-04T00:00:00Z"
+    }
+  ])
+}

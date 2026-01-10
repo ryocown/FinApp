@@ -1,8 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { TransactionSchema, BatchTransactionSchema, UpdateTransactionSchema } from '../schemas';
-import { validate } from '../middleware/validate';
-import { TransactionService } from '../services/transactions';
-import { ApiError } from '../errors';
+import { TransactionSchema, BatchTransactionSchema, UpdateTransactionSchema } from '../schemas/index.js';
+import { validate } from '../middleware/validate.js';
+import { TransactionService } from '../services/transactions.js';
+import { ApiError } from '../errors/index.js';
 
 const router = Router();
 

@@ -13,6 +13,8 @@ export interface IBalanceCheckpoint {
 
 export enum BalanceCheckpointType {
   STATEMENT = 'Statement',
-  MANUAL = 'Manual',
+  MANUAL = 'MANUAL', // Changed to uppercase as per code edit
+  IMPORT = 'IMPORT', // Added as per code edit
+  TRANSACTION = 'TRANSACTION', // Added as per instruction
   INITIAL = 'Initial'
 }

@@ -1,11 +1,12 @@
 import admin from 'firebase-admin';
 import { v4 } from 'uuid';
-import { db, getUserRef, getAccountRef, resolveTransactionReferences } from '../firebase';
-import type { ITransaction } from '../../../shared/models/transaction';
-import { ApiError } from '../errors';
-import { ReconciliationService } from './reconciliation';
-import { logger } from '../logger';
-import { ensureDate } from '@finapp/shared/lib/date_utils';
+import { db, getUserRef, getAccountRef, resolveTransactionReferences } from '../firebase.js';
+import type { ITransaction } from '@finapp/shared';
+import { DateUtils } from '@finapp/shared';
+import { ApiError } from '../errors/index.js';
+import { ReconciliationService } from './reconciliation.js';
+import { BalanceCheckpointType } from '@finapp/shared';
+import { logger } from '../logger.js';
 
 /**
  * Service for transaction-related business logic.
@@ -101,6 +102,28 @@ export class TransactionService {
 
         const globalRef = getUserRef(userId).collection('transactions').doc(nestedRef.id);
         await globalRef.set({ RefTxId: nestedRef });
+
+        // Update Account Balance if transaction provides a balance and is newer than the latest manual checkpoint
+        if (transaction.balance !== undefined) {
+            const latestManualCheckpoint = await ReconciliationService.getLatestCheckpoint(userId, transaction.accountId, BalanceCheckpointType.MANUAL);
+            const txDate = new Date(transaction.date);
+
+            if (!latestManualCheckpoint || txDate > new Date(latestManualCheckpoint.date)) {
+                await accountRef.update({
+                    balance: transaction.balance,
+                    balanceDate: txDate
+                });
+
+                // Create a checkpoint for this transaction balance update
+                await ReconciliationService.createCheckpoint(
+                    userId,
+                    transaction.accountId,
+                    transaction.balance,
+                    txDate,
+                    BalanceCheckpointType.TRANSACTION
+                );
+            }
+        }
 
         return { ...txWithUserId, transactionId: nestedRef.id };
     }
@@ -313,18 +336,19 @@ export class TransactionService {
         delete updates.userId;
         delete updates.accountId;
         delete updates.currency;
-        delete updates.tagIds;
+        if (updates.tagIds !== undefined) {
+            // tagIds is allowed
+        }
 
-        // If date is updated, ensure it's a Date object
         if (updates.date) {
-            updates.date = ensureDate(updates.date);
+            updates.date = DateUtils.ensureDate(updates.date);
         }
 
         await nestedRef.update(updates);
 
         // Trigger Reconciliation Refresh if amount or date changed
         if (updates.amount !== undefined || updates.date !== undefined) {
-            const currentTxDate = ensureDate(currentTx.date);
+            const currentTxDate = DateUtils.ensureDate(currentTx.date);
             const minDate = updates.date && updates.date < currentTxDate ? updates.date : currentTxDate;
             await ReconciliationService.refreshCheckpoints(userId, currentTx.accountId, minDate);
         }

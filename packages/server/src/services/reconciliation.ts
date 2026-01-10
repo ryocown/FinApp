@@ -1,9 +1,9 @@
 import admin from 'firebase-admin';
 import { v4 } from 'uuid';
-import { db, getUserRef, getAccountRef } from '../firebase';
-import { type IBalanceCheckpoint, BalanceCheckpointType } from '../../../shared/models/balance_checkpoint';
-import { type ITransaction, TransactionType } from '../../../shared/models/transaction';
-import { logger } from '../logger';
+import { db, getUserRef, getAccountRef } from '../firebase.js';
+import { type IBalanceCheckpoint, BalanceCheckpointType } from '@finapp/shared';
+import { type ITransaction, TransactionType } from '@finapp/shared';
+import { logger } from '../logger.js';
 
 export class ReconciliationService {
   /**
@@ -376,5 +376,83 @@ export class ReconciliationService {
       return snapshot.docs[0]?.id;
     }
     return undefined;
+  }
+
+  /**
+   * Get the latest checkpoint of a specific type (or any if type not provided).
+   */
+  static async getLatestCheckpoint(
+    userId: string,
+    accountId: string,
+    type?: BalanceCheckpointType
+  ): Promise<IBalanceCheckpoint | null> {
+    const result = await getAccountRef(userId, accountId);
+    if (!result) return null;
+    const { ref: accountRef } = result;
+
+    let query = accountRef.collection('balance_checkpoints').orderBy('date', 'desc');
+
+    if (type) {
+      query = query.where('type', '==', type);
+    }
+
+    const snapshot = await query.limit(1).get();
+
+    if (snapshot.empty) return null;
+
+    const data = snapshot.docs[0]!.data() as IBalanceCheckpoint;
+    // Ensure date is a JS Date object
+    if (data.date && !(data.date instanceof Date)) {
+      data.date = (data.date as any).toDate();
+    }
+    return data;
+  }
+
+  /**
+   * Create a checkpoint directly without reconciliation adjustment logic.
+   * Used for tracking balance updates from transactions.
+   */
+  static async createCheckpoint(
+    userId: string,
+    accountId: string,
+    balance: number,
+    date: Date,
+    type: BalanceCheckpointType
+  ): Promise<void> {
+    const result = await getAccountRef(userId, accountId);
+    if (!result) return;
+    const { ref: accountRef } = result;
+
+    const checkpoint: IBalanceCheckpoint = {
+      id: v4(),
+      accountId,
+      date,
+      balance,
+      type,
+      createdAt: new Date()
+    };
+
+    // Check if we already have a checkpoint at this date/type?
+    // For TRANSACTION type, we might have multiple per day? 
+    // Ideally we keep the latest one for the day or just push new ones.
+    // The previous logic for MANUAL reused IDs for same date. 
+    // Let's reuse ID if same date AND same type to avoid clutter?
+    // But transaction times might differ. 
+    // If it's a specific transaction update, let's just make sure we don't spam.
+    // For now, simple insert is safer to preserve history of changes. 
+    // But if we want "End of Day" balance, we might want to update.
+
+    // Let's follow existing pattern: Check for existing at this EXACT date (timestamp).
+    const existingSnap = await accountRef.collection('balance_checkpoints')
+      .where('date', '==', date)
+      .where('type', '==', type)
+      .limit(1)
+      .get();
+
+    if (!existingSnap.empty) {
+      checkpoint.id = existingSnap.docs[0]!.id;
+    }
+
+    await accountRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
   }
 }

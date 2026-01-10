@@ -1,7 +1,7 @@
-import { StatementImporter } from "../importer";
-import { type ITransaction, GeneralTransaction, TransactionType } from "../../models/transaction";
-import { CategoryType } from "../../models/category";
-import { parseJSTDateToUTC } from "../../lib/date_utils";
+import { StatementImporter } from "../importer.js";
+import { type ITransaction, GeneralTransaction, TransactionType } from "../../models/transaction.js";
+import { CategoryType } from "../../models/category.js";
+import { parseJSTDateToUTC } from "../../lib/date_utils.js";
 
 export class PayPayStatementImporter extends StatementImporter {
   constructor(accountId: string, userId: string) {

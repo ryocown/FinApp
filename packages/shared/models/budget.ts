@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
-import { Account } from "./account";
-import { Institute } from "./institute";
+import { Account } from "./account.js";
+import { Institute } from "./institute.js";
 
 export enum BudgetPeriod {
   Weekly = 'WEEKLY',

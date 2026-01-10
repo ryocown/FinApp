@@ -1,4 +1,4 @@
-import { Sector } from "@finapp/shared/models/financial_instrument";
+import { Sector } from "@finapp/shared";
 
 export interface IAIProvider {
   getSector(companyName: string): Promise<Sector | null>;

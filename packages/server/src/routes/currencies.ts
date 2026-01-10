@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
-import { db } from '../firebase';
-import { logger } from '../logger';
+import { db } from '../firebase.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.get('/rates', async (req: Request, res: Response) => {
     res.json(rates);
   } catch (error) {
     logger.error('Error fetching rates:', error);
-    res.status(500).json({ error: 'Failed to fetch rates' });
+    res.status(500).json({ error: 'Failed to fetch rates', details: (error as Error).message });
   }
 });
 

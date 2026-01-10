@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Sector } from "@finapp/shared/models/financial_instrument";
-import type { IAIProvider } from "../ai_provider";
-import { logger } from "../../logger";
+import { Sector } from "@finapp/shared";
+import type { IAIProvider } from "../ai_provider.js";
+import { logger } from "../../logger.js";
 
 export class GeminiAIProvider implements IAIProvider {
   private genAI: GoogleGenerativeAI;

@@ -1,0 +1,49 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Define the palettes
+$light-theme: mat.define-theme((color: (theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: (plain-family: Roboto,
+      ),
+      density: (scale: 0,
+      )));
+
+$dark-theme: mat.define-theme((color: (theme-type: dark, // Set type to dark
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: (plain-family: Roboto,
+      ),
+      density: (scale: 0,
+      )));
+
+// Default theme (Light) if no class present, or we can enforce one.
+// We apply specific themes based on class.
+
+html {
+  @include mat.all-component-themes($light-theme);
+  height: 100%;
+}
+
+// Apply dark theme when .dark-theme class is present
+html.dark-theme {
+  @include mat.all-component-colors($dark-theme);
+}
+
+// Apply light theme explicitly if needed
+html.light-theme {
+  @include mat.all-component-colors($light-theme);
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  // System variables will be set by the theme mixins above on html/body
+  background-color: var(--mat-sys-background);
+  color: var(--mat-sys-on-background);
+  font: var(--mat-sys-body-medium);
+}

@@ -1,0 +1,19 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1550 1548" width="1550" height="1548">
+	<title>SUN</title>
+	<defs>
+		<radialGradient id="g1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(774.668,0,0,774.668,775.245,774)">
+			<stop offset="0" stop-color="#ffcb05" stop-opacity="1"/>
+			<stop offset=".5" stop-color="#ffcb05" stop-opacity="1"/>
+			<stop offset=".59" stop-color="#ffcb05" stop-opacity=".78"/>
+			<stop offset=".7" stop-color="#ffcb05" stop-opacity=".5"/>
+			<stop offset=".8" stop-color="#ffcb05" stop-opacity=".29"/>
+			<stop offset=".89" stop-color="#ffcb05" stop-opacity=".13"/>
+			<stop offset=".96" stop-color="#ffcb05" stop-opacity=".04"/>
+			<stop offset="1" stop-color="#ffcb05" stop-opacity="0"/>
+		</radialGradient>
+	</defs>
+	<style>
+		.s0 { fill: url(#g1) } 
+	</style>
+	<path class="s0" d="m775.4 0c-313.4 0-595.9 188.5-716 477.9-119.7 289.1-53.4 622.2 168 843.6 221.5 221 554.9 287.2 844.5 167.6 289.1-119.7 478-402.2 478-715.1 0-101.7-20.1-202.4-58.9-296.1-38.8-94-95.9-179.3-168-251.4-71.8-71.7-157.4-128.8-251.1-167.6-94.1-38.8-194.8-58.9-296.5-58.9zm0 1161.2c-156.7 0-298-94.4-358-239-60-144.5-26.7-311.1 83.8-421.9 110.9-110.6 277.5-143.9 422.4-83.8 144.6 60 239 200.9 239 357.5 0 50.9-10.2 101-29.6 148.2-19.4 46.9-48 89.7-83.8 125.5-35.9 35.9-78.7 64.4-125.6 83.8-47.2 19.4-97.4 29.7-148.2 29.7z"/>
+</svg>

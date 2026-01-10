@@ -1,0 +1,413 @@
+@import "tailwindcss";
+@import "./app/styles/skeleton.css";
+
+:root {
+    --topbar-height: 64px;
+    --sidebar-width-expanded: 256px;
+    --sidebar-width-collapsed: 64px;
+    /* Icon width + padding */
+    --spaces-and-sizes-large: 20px;
+
+    --corner-extra-large: 28px;
+
+    /* Standard Corner Radius Variables */
+    --corner-xs: 4px;
+    --corner-sm: 8px;
+    --corner-md: 12px;
+    --corner-lg: 16px;
+    --corner-xl: 24px;
+    --corner-xxl: 32px;
+    --corner-full: 9999px;
+
+    /* Standard Spacing Variables */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+
+    /* Legacy - Keep for backward compatibility if needed, or refactor later */
+    --spaces-and-sizes-large: 20px;
+    --spaces-and-sizes-large-horizontal: 20px;
+    --spaces-and-sizes-medium: 12px;
+    --spaces-and-sizes-extra-large: 40px;
+
+    /* --- APP THEME VARIABLES (Dark / Default) --- */
+    /* Gradient Color Stops (Dark) */
+    /* Blue Primary 10 -> Secondary 5 -> Purple Tertiary 10 */
+    --gradient-start: #001B3F;
+    --gradient-mid: #0D0E2A;
+    --gradient-end: #2B1032;
+
+    --app-theme-bg-gradient: linear-gradient(45deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+
+    /* Login Specifics (Dark) */
+    --app-theme-floating-card-bg: #0C0E13;
+    --app-theme-surface-container-lowest: #0C0E13;
+    /* surfaceContainerHigh: #282A2F */
+    --app-theme-surface-container-high: #282A2F;
+    /* surfaceContainerHighest: #36383D */
+    --app-theme-surface-container-highest: #36383D;
+    --app-theme-card-glass: rgb(from var(--app-theme-floating-card-bg) r g b / 0.08);
+
+    --app-theme-login-card-bg: rgba(40, 42, 47, 0.6);
+    --app-theme-login-card-border: rgba(142, 144, 153, 0.2);
+    /* outline: #8E9099 */
+    --app-theme-login-card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+
+    /* onSurface: #E2E2E9 */
+    --app-theme-text-primary: #E2E2E9;
+    /* onSurfaceVariant: #C4C6D0 */
+    --app-theme-text-secondary: #C4C6D0;
+    --app-theme-text-headers: rgba(226, 226, 233, 0.05);
+    /* onSurface with low opacity */
+
+    /* primary: #D0BCFF (Purple Primary for Dark) */
+    --app-theme-text-link: #D0BCFF;
+    /* outlineVariant: #44474E */
+    --app-theme-divider: rgba(68, 71, 78, 0.5);
+    /* Primary Overlays */
+    --app-theme-primary-hover: rgb(from var(--app-theme-text-link) r g b / 0.08);
+    --app-theme-primary-ripple: rgb(from var(--app-theme-text-link) r g b / 0.12);
+
+    /* Particle Palette (Dark) */
+    --app-theme-particle-1: #005CBB;
+    /* Blue 40 */
+    --app-theme-particle-2: #6366F1;
+    /* Purple 50 */
+    --app-theme-particle-3: #ABC7FF;
+    /* Blue 80 */
+    --app-theme-particle-4: #C0C1FF;
+    /* Purple 80 */
+    --app-theme-particle-5: #3376D6;
+    /* Blue 50 */
+
+    /* Particle Effects (Dark) */
+    --app-theme-trail-start: rgba(0, 92, 187, 0);
+    --app-theme-trail-end: rgba(171, 199, 255, 0.6);
+    --app-theme-dot: #D7E2FF;
+    --app-theme-shockwave: 192, 193, 255;
+    /* Purple 80 RGB */
+    --app-theme-connection: 171, 199, 255;
+}
+
+html.light-theme {
+    /* --- APP THEME VARIABLES (Light) --- */
+    /* Gradient Color Stops (Light) */
+    /* Blue Primary 95 -> Purple Primary 90 -> Tertiary 95 */
+    --gradient-start: #ECF0FF;
+    --gradient-mid: #E1E0FF;
+    --gradient-end: #FFECF4;
+
+    --app-theme-bg-gradient: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+
+    /* Login Specifics (Light) */
+    /* surfaceContainerLowest: #FFFFFF */
+    /* surfaceContainerLowest: #FFFFFF */
+    --app-theme-floating-card-bg: #FFFFFF;
+    --app-theme-surface-container-lowest: #FFFFFF;
+    /* surfaceContainerHigh: #E8E8EE */
+    --app-theme-surface-container-high: #E8E8EE;
+    /* surfaceContainerHighest: #E2E2E9 */
+    --app-theme-surface-container-highest: #E2E2E9;
+    --app-theme-card-glass: rgb(from var(--app-theme-floating-card-bg) r g b / 0.08);
+
+    --app-theme-login-card-bg: rgba(232, 232, 238, 0.7);
+    --app-theme-login-card-border: rgba(255, 255, 255, 0.9);
+    --app-theme-login-card-shadow: 0 10px 30px -5px rgba(0, 27, 63, 0.05);
+    /* onPrimaryFixed shadow */
+
+    /* onSurface: #1A1C20 */
+    --app-theme-text-primary: #1A1C20;
+    /* onSurfaceVariant: #44474E */
+    --app-theme-text-secondary: #44474E;
+    --app-theme-text-headers: rgba(26, 28, 32, 0.03);
+
+    /* primary: #005CBB (Blue Primary for Light) */
+    --app-theme-text-link: #005CBB;
+    /* outlineVariant: #C4C6D0 */
+    --app-theme-divider: rgba(196, 198, 208, 0.3);
+    /* Primary Overlays */
+    --app-theme-primary-hover: rgb(from var(--app-theme-text-link) r g b / 0.08);
+    --app-theme-primary-ripple: rgb(from var(--app-theme-text-link) r g b / 0.12);
+
+    /* Particle Palette (Light) - Using 60-80 range for contrast against white */
+    --app-theme-particle-1: #7CABFF;
+    /* Blue 70 */
+    --app-theme-particle-2: #8083FF;
+    /* Purple 60 */
+    --app-theme-particle-3: #5290F2;
+    /* Blue 60 */
+    --app-theme-particle-4: #A0A3FF;
+    /* Purple 70 */
+    --app-theme-particle-5: #3376D6;
+    /* Blue 50 */
+
+    /* Particle Effects (Light) */
+    --app-theme-trail-start: rgba(66, 94, 145, 0);
+    --app-theme-trail-end: rgba(124, 171, 255, 0.5);
+    --app-theme-dot: #575992;
+    --app-theme-shockwave: 160, 163, 255;
+    --app-theme-connection: 124, 171, 255;
+}
+
+html,
+body {
+    min-width: 100vw;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Product Sans', 'Google Sans', 'Open Sans', Roboto, "Helvetica Neue", sans-serif;
+    /* Main Background Use App Theme Variable */
+    background: var(--app-theme-bg-gradient);
+    background-attachment: fixed;
+    /* Prevent white flash during transitions */
+    color: var(--app-theme-text-primary);
+    /* Default text color */
+}
+
+app-root {
+    display: block;
+    height: 100vh;
+    min-height: 100vh;
+    /* Ensure app root takes full viewport height to support internal scrolling */
+    width: 100%;
+}
+
+mat-card {
+    background-color: var(--app-theme-floating-card-bg) !important;
+    padding: var(--spacing-lg) !important;
+    border-radius: var(--corner-xxl) !important;
+}
+
+.dashboard-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+@media (min-width: 768px) {
+    .dashboard-cards-container {
+        flex-direction: row;
+    }
+
+    .dashboard-cards-container>* {
+        flex: 1;
+    }
+}
+
+.account-menu {
+    width: 35ch;
+    max-width: 35ch !important;
+    border-radius: var(--corner-xl) !important;
+}
+
+.account-menu .manage-button,
+.account-menu .account-image {
+    margin: 8px auto;
+    display: block;
+}
+
+.account-menu .account-text {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.account-menu h3 {
+    font-family: 'Google Sans', sans-serif;
+}
+
+/* Waypoint List Card (Google-Style Grouped List) */
+.waypoint-list-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* Base Item Styling (Text, Button, Option) */
+.waypoint-list-card .mat-mdc-list-item,
+.waypoint-list-card .mat-mdc-list-option {
+    background-color: var(--app-theme-surface-container-lowest) !important;
+    border-radius: var(--corner-xs) !important;
+    margin: 0 !important;
+}
+
+/* Hover Effect - Only for Interactive Items */
+.waypoint-list-card a.mat-mdc-list-item:hover,
+.waypoint-list-card button.mat-mdc-list-item:hover,
+.waypoint-list-card .mat-mdc-list-option:hover {
+    background-color: var(--app-theme-primary-hover) !important;
+    cursor: pointer !important;
+}
+
+/* First Item: Top Exterior Styling */
+.waypoint-list-card> :first-child .mat-mdc-list-item,
+.waypoint-list-card> :first-child .mat-mdc-list-option,
+.waypoint-list-card>mat-list-item:first-child,
+.waypoint-list-card>a:first-child,
+.waypoint-list-card>button:first-child {
+    border-top-left-radius: var(--corner-xxl) !important;
+    border-top-right-radius: var(--corner-xxl) !important;
+}
+
+/* Last Item: Bottom Exterior Styling */
+.waypoint-list-card> :last-child .mat-mdc-list-item,
+.waypoint-list-card> :last-child .mat-mdc-list-option,
+.waypoint-list-card>mat-list-item:last-child,
+.waypoint-list-card>a:last-child,
+.waypoint-list-card>button:last-child {
+    border-bottom-left-radius: var(--corner-xxl) !important;
+    border-bottom-right-radius: var(--corner-xxl) !important;
+}
+
+/* Spacing within items */
+.waypoint-list-card .mat-mdc-list-item-content,
+.waypoint-list-card .mat-mdc-list-option-content {
+    padding: var(--spacing-md) !important;
+}
+
+/* Ensure buttons in list are left-aligned */
+.waypoint-list-card button.mat-mdc-list-item {
+    text-align: left !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+/* --- High Contrast Variant (Surface Container High) --- */
+.waypoint-list-card-high {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.waypoint-list-card-high .mat-mdc-list-item,
+.waypoint-list-card-high .mat-mdc-list-option {
+    background-color: var(--app-theme-surface-container-high) !important;
+    border-radius: var(--corner-xs) !important;
+    margin: 0 !important;
+    transition: border-radius 0.2s ease, background-color 0.2s ease;
+}
+
+/* Checked Item = Pill (XXL) */
+.waypoint-list-card-high .mat-mdc-list-item.is-checked,
+.waypoint-list-card-high .mat-mdc-list-option.is-checked {
+    border-radius: var(--corner-xxl) !important;
+}
+
+.waypoint-list-card-high a.mat-mdc-list-item:hover,
+.waypoint-list-card-high button.mat-mdc-list-item:hover,
+.waypoint-list-card-high .mat-mdc-list-option:hover {
+    background-color: var(--app-theme-primary-hover) !important;
+    cursor: pointer !important;
+}
+
+.waypoint-list-card-high .mat-mdc-list-item-content {
+    padding: var(--spacing-sm) var(--spacing-md) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Ensure checkbox/icon slot is centered (User Fix) */
+.waypoint-list-card-high .mat-mdc-list-item-icon-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+}
+
+.waypoint-list-card-high mat-checkbox {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+/* Fix provided by user to align start slot correctly in MDC */
+.waypoint-list-card-high .mdc-list-item.mdc-list-item--with-one-line .mdc-list-item__start {
+    margin-top: 0 !important;
+    display: block !important;
+    align-self: center !important;
+    height: fit-content !important;
+}
+
+/* Rounding Logic for High Variant */
+.waypoint-list-card-high> :first-child .mat-mdc-list-item,
+.waypoint-list-card-high>mat-list-item:first-child {
+    border-top-left-radius: var(--corner-xxl) !important;
+    border-top-right-radius: var(--corner-xxl) !important;
+}
+
+.waypoint-list-card-high> :last-child .mat-mdc-list-item,
+.waypoint-list-card-high>mat-list-item:last-child {
+    border-bottom-left-radius: var(--corner-xxl) !important;
+    border-bottom-right-radius: var(--corner-xxl) !important;
+}
+
+/* Typography Scale (Material 3) */
+.header-large {
+    font-family: 'Google Sans', 'Product Sans', sans-serif;
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 400;
+    color: var(--app-theme-text-primary);
+}
+
+.header-medium {
+    font-family: 'Google Sans', 'Product Sans', sans-serif;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 400;
+    color: var(--app-theme-text-primary);
+}
+
+.header-small {
+    font-family: 'Google Sans', 'Product Sans', sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 400;
+    color: var(--app-theme-text-primary);
+}
+
+.body-large {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.5px;
+    color: var(--app-theme-text-primary);
+}
+
+/* Top Bar Actions Container */
+.topbar-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-left: auto;
+}
+
+/* Force Sidenav Container Transparency (User Fix) */
+.mat-drawer-container {
+    background-color: transparent !important;
+    min-height: calc(100vh - var(--mat-toolbar-standard-height, 64px)) !important;
+    height: calc(100vh - var(--mat-toolbar-standard-height, 64px)) !important;
+}
+
+/* Ensure Toolbar Sticky & Z-Index (User Request) */
+mat-toolbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 999 !important;
+}
+
+/* Glass Layout Utility (User Requested "New Glass Code") */
+.glass-layout {
+    background: var(--app-theme-card-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-color: var(--app-theme-divider) !important;
+}

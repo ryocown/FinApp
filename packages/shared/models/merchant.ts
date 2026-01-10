@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 
-export interface IMerchant {
+export interface MerchantProp {
   merchantId: string;
 
   name: string;
@@ -8,7 +8,16 @@ export interface IMerchant {
   type: string;
 }
 
-export class Merchant implements Merchant {
+export interface KnownMerchant {
+  commonName: string;
+  logo: string;
+  logoFull: string;
+  category: string;
+  matcher: RegExp;
+  website: string;
+}
+
+export class Merchant implements MerchantProp {
   merchantId: string;
 
   name: string;

@@ -1,0 +1,14 @@
+<div class="p-6">
+    <h2 class="text-2xl font-bold mb-4">Budget Overview</h2>
+    <div class="grid gap-4">
+        @for (item of budgetData(); track item.budgetId || item.categoryId) {
+        <div class="p-4 border rounded shadow-sm">
+            <div class="font-medium">{{ item.categoryId }}</div>
+            <div>Amount: {{ item.amount | currency }}</div>
+            <div>Period: {{ item.period }}</div>
+        </div>
+        } @empty {
+        <p>No budget data found.</p>
+        }
+    </div>
+</div>

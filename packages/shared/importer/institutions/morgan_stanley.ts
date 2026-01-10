@@ -1,8 +1,8 @@
-import { CategoryType } from "../../models/category";
-import type { IStatement } from "../../models/statement";
-import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "../../models/transaction";
-import { StatementImporter } from "../importer";
-import { parsePSTDateToUTC } from "../../lib/date_utils";
+import { CategoryType } from "../../models/category.js";
+import type { IStatement } from "../../models/statement.js";
+import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "../../models/transaction.js";
+import { StatementImporter } from "../importer.js";
+import { parsePSTDateToUTC } from "../../lib/date_utils.js";
 
 export class MorganStanleyStatementImporter extends StatementImporter {
   constructor(accountId: string, userId: string) {
@@ -48,7 +48,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
     }
   }
 
-  protected async processTransaction(record: any): Promise<ITransaction | null> {
+  protected override async processTransaction(record: any): Promise<ITransaction | null> {
     const type = this.checkTransactionType(record);
 
     if (type === TransactionType.Trade) {
@@ -103,7 +103,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
     );
   }
 
-  async import(source: string): Promise<IStatement> {
+  override async import(source: string): Promise<IStatement> {
     // take out the first five lines for the MS statement format
     source = source.split('\n').slice(4).join('\n');
     // remove the last 29 lines
@@ -118,12 +118,12 @@ export class MorganStanleyStatementImporter extends StatementImporter {
 
     if (!cusip) return 'unknown_instrument_id';
 
-    // Safe access to process.env for browser compatibility
-    const apiUrl = (typeof process !== 'undefined' && process.env && process.env.API_URL) || 'http://localhost:3001';
+    // Use relative path in browser, or default to localhost in node (if needed, but node usually doesn't fetch via http from itself in this context)
+    const baseUrl = '';
 
     try {
       // Try to get existing instrument
-      const response = await fetch(`${apiUrl}/api/instruments?cusip=${encodeURIComponent(cusip)}`);
+      const response = await fetch(`${baseUrl}/api/instruments?cusip=${encodeURIComponent(cusip)}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -133,7 +133,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
 
       // If not found and name is provided, create it
       if (response.status === 404) {
-        const createResponse = await fetch(`${apiUrl}/api/instruments`, {
+        const createResponse = await fetch(`${baseUrl}/api/instruments`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,10 +1,10 @@
 import { Router, type Request, type Response } from 'express';
-import { getCategoriesRef } from '../firebase';
-import { type ICategory } from '../../../shared/models/category';
+import { getCategoriesRef } from '../firebase.js';
+import { type ICategory } from '@finapp/shared';
 
-import { CategorySchema } from '../schemas';
-import { validate } from '../middleware/validate';
-import { logger } from '../logger';
+import { CategorySchema } from '../schemas/index.js';
+import { validate } from '../middleware/validate.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 

@@ -1,0 +1,30 @@
+# Query to list all items accessible to the public.
+query ListItems @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  items {
+    id
+    name
+    description
+  }
+}
+
+# Mutation to create a new item, only accessible to authenticated users.
+mutation CreateItem($name: String!, $description: String!) @auth(level: USER) {
+  item_insert(data: {
+    name: $name,
+    description: $description,
+    ownerUid_expr: "auth.uid"
+  })
+}
+
+# Mutation to update an item, accessible only to the item owner.
+mutation UpdateItem($id: UUID!, $name: String, $description: String) @auth(expr: "query Item { items(where: {id: {eq: $id}, ownerUid: {eq_expr: 'auth.uid'}}) { id } }.length > 0") {
+  item_update(key: {id: $id}, data: {
+    name: $name,
+    description: $description
+  })
+}
+
+# Mutation to delete an item, accessible only to the item owner.
+mutation DeleteItem($id: UUID!) @auth(expr: "query Item { items(where: {id: {eq: $id}, ownerUid: {eq_expr: 'auth.uid'}}) { id } }.length > 0") {
+  item_delete(key: {id: $id})
+}

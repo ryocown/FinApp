@@ -1,0 +1,107 @@
+<div class="p-6 flex flex-col gap-6" *ngIf="account() as acc">
+    <!-- Header -->
+    <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-4">
+            <h1 class="text-3xl font-bold m-0">{{ acc.name }}</h1>
+            <span class="text-gray-500 text-lg">{{ acc.type }}</span>
+            <button mat-icon-button (click)="openUpdateBalanceDialog()" matTooltip="Update Balance">
+                <mat-icon>edit</mat-icon>
+            </button>
+        </div>
+        <div class="flex gap-2" *ngIf="acc.tags && acc.tags.length">
+            <mat-chip-set>
+                <mat-chip *ngFor="let tag of acc.tags">{{ tag }}</mat-chip>
+            </mat-chip-set>
+        </div>
+        <div class="text-sm text-gray-400" *ngIf="acc.instituteId">Institute ID: {{ acc.instituteId }}</div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>Current Balance</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="pt-4">
+                <div class="text-4xl font-light text-green-400">
+                    {{ acc.balance | currency:acc.currency.code:'symbol':'1.2-2' }}
+                </div>
+                <div class="text-sm text-gray-500 mt-2">
+                    As of {{ acc.balanceDate | date:'mediumDate' }}
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card *ngIf="acc.interest && acc.interest.length">
+            <mat-card-header>
+                <mat-card-title>Interest Rate</mat-card-title>
+            </mat-card-header>
+            <mat-card-content class="pt-4">
+                <div class="text-4xl font-light text-blue-400">
+                    {{ acc.interest[0].rate }}%
+                </div>
+                <div class="text-sm text-gray-500 mt-2">
+                    Effective {{ acc.interest[0].effectiveDate | date:'mediumDate' }}
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Chart -->
+    <mat-card *ngIf="chartData().length">
+        <mat-card-header>
+            <mat-card-title>Balance History</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="h-[300px] w-full mt-4">
+            <ngx-charts-area-chart [view]="view" [scheme]="colorScheme" [results]="chartData()" [gradient]="true"
+                [xAxis]="true" [yAxis]="true" [legend]="false" [showXAxisLabel]="true" [showYAxisLabel]="true"
+                xAxisLabel="Date" yAxisLabel="Balance" [autoScale]="true">
+            </ngx-charts-area-chart>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- Transactions -->
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Transactions</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <table mat-table [dataSource]="transactions()" class="w-full">
+                <!-- Date Column -->
+                <ng-container matColumnDef="date">
+                    <th mat-header-cell *matHeaderCellDef> Date </th>
+                    <td mat-cell *matCellDef="let element"> {{element.date | date:'shortDate'}} </td>
+                </ng-container>
+
+                <!-- Description Column -->
+                <ng-container matColumnDef="description">
+                    <th mat-header-cell *matHeaderCellDef> Description </th>
+                    <td mat-cell *matCellDef="let element"> {{element.description}} </td>
+                </ng-container>
+
+                <!-- Amount Column -->
+                <ng-container matColumnDef="amount">
+                    <th mat-header-cell *matHeaderCellDef> Amount </th>
+                    <td mat-cell *matCellDef="let element" [class.text-red-400]="element.amount < 0"
+                        [class.text-green-400]="element.amount > 0">
+                        {{element.amount | currency:element.currency.code:'symbol':'1.2-2'}}
+                    </td>
+                </ng-container>
+
+                <!-- Balance Column -->
+                <ng-container matColumnDef="balance">
+                    <th mat-header-cell *matHeaderCellDef> Balance </th>
+                    <td mat-cell *matCellDef="let element">
+                        <span *ngIf="element.balance !== undefined">
+                            {{element.balance | currency:element.currency.code:'symbol':'1.2-2'}}
+                        </span>
+                        <span *ngIf="element.balance === undefined" class="text-gray-400">-</span>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+        </mat-card-content>
+    </mat-card>
+</div>

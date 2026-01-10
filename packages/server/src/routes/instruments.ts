@@ -1,10 +1,10 @@
 import { Router, type Request, type Response } from 'express';
 import admin from 'firebase-admin';
-import { AlpacaQuoteProvider } from '../provider/quote_providers/alpaca';
-import { GeminiAIProvider } from '../provider/ai_providers/gemini';
-import { InstrumentType } from '@finapp/shared/models/financial_instrument';
-import { getInstrumentsRef } from '../firebase';
-import { logger } from '../logger';
+import { AlpacaQuoteProvider } from '../provider/quote_providers/alpaca.js';
+import { GeminiAIProvider } from '../provider/ai_providers/gemini.js';
+import { InstrumentType } from '@finapp/shared';
+import { getInstrumentsRef } from '../firebase.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 

@@ -1,0 +1,6 @@
+/* Add component specific styles here */
+:host {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+}

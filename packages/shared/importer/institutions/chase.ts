@@ -1,8 +1,8 @@
-import { StatementImporter } from '../importer';
-import { type ITransaction, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction';
+import { StatementImporter } from '../importer.js';
+import { type ITransaction, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction.js';
 
-import { CategoryType } from '../../models/category';
-import { parsePSTDateToUTC } from '../../lib/date_utils';
+import { CategoryType } from '../../models/category.js';
+import { parsePSTDateToUTC } from '../../lib/date_utils.js';
 
 /**
  * Checking account CSV format:

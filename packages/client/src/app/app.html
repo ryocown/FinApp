@@ -1,0 +1,50 @@
+<div class="flex flex-col h-screen bg-transparent">
+  <!-- Full Width Toolbar -->
+  <mat-toolbar color="primary"
+    class="!bg-[var(--mat-sys-surface-container)] border-b border-[var(--mat-sys-outline-variant)] !text-[var(--mat-sys-on-surface)] px-4 flex flex-row justify-between items-center z-50 shrink-0"
+    style="height: var(--topbar-height);">
+    <div class="flex flex-row items-center h-full flex-1">
+      <button mat-icon-button (click)="toggleSidenav()" class="mr-2 !flex items-center justify-center">
+        <mat-icon>{{ isMobile() ? 'menu' : (isCollapsed() ? 'menu' : 'menu_open') }}</mat-icon>
+      </button>
+      <span class="font-bold text-xl tracking-tight flex items-center h-full">FinApp</span>
+    </div>
+
+    <!-- Theme Toggle & Auth -->
+    <div class="flex flex-row items-center gap-2">
+      <button mat-icon-button (click)="toggleTheme()" [matTooltip]="'Theme: ' + themeService.theme()">
+        <mat-icon>{{ themeService.theme() === 'dark' ? 'dark_mode' : (themeService.theme() === 'light' ? 'light_mode' :
+          'brightness_auto') }}</mat-icon>
+      </button>
+
+      <!-- Auth -->
+      @if (authService.user()) {
+      <img [src]="authService.user().picture"
+        class="w-8 h-8 rounded-full border border-[var(--mat-sys-outline)] cursor-pointer"
+        [matTooltip]="authService.user().name" (click)="authService.signOut()">
+      } @else {
+      <button mat-stroked-button (click)="authService.signIn()">Sign In</button>
+      }
+    </div>
+  </mat-toolbar>
+
+  <!-- Sidenav Container -->
+  <mat-sidenav-container class="flex-1 overflow-hidden !bg-transparent" autosize
+    style="min-height: calc(100vh - var(--topbar-height));">
+    <mat-sidenav #sidenav [mode]="isMobile() ? 'over' : 'side'" [opened]="!isMobile()"
+      class="border-r border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container)] text-[var(--mat-sys-on-surface)] transition-all duration-300"
+      [style.width]="!isMobile() && isCollapsed() ? 'var(--sidebar-width-collapsed)' : (isMobile() ? 'auto' : 'var(--sidebar-width-expanded)')">
+
+      <app-sidebar [collapsed]="!isMobile() && isCollapsed()"></app-sidebar>
+
+    </mat-sidenav>
+
+    <mat-sidenav-content
+      class="flex flex-col h-full overflow-hidden text-[var(--mat-sys-on-background)] !bg-transparent">
+      <!-- Removed default padding here. Child components (Dashboard) will define their own spacing. -->
+      <main class="flex-1 overflow-auto">
+        <router-outlet></router-outlet>
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

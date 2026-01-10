@@ -1,10 +1,11 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { AccountSchema, UpdateAccountSchema } from '../schemas';
-import { validate } from '../middleware/validate';
-import { logger } from '../logger';
-import { AccountService } from '../services/accounts';
-import { ReconciliationService } from '../services/reconciliation';
-import { ApiError } from '../errors';
+import { checkAuth, type AuthRequest } from '../middleware/auth.js';
+import { AccountSchema, UpdateAccountSchema } from '../schemas/index.js';
+import { validate } from '../middleware/validate.js';
+import { logger } from '../logger.js';
+import { AccountService } from '../services/accounts.js';
+import { ReconciliationService } from '../services/reconciliation.js';
+import { ApiError } from '../errors/index.js';
 
 const router = Router();
 
@@ -17,20 +18,29 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
   };
 
 // Get accounts for a user
-router.get('/users/:userId/accounts', asyncHandler(async (req: Request, res: Response) => {
+router.get('/users/:userId/accounts', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const userId = req.params.userId;
   if (!userId) {
     throw ApiError.badRequest('Missing userId');
   }
+
+  if ((req as AuthRequest).user!.uid !== userId) {
+    throw ApiError.forbidden('Access denied');
+  }
+
   const accounts = await AccountService.getUserAccounts(userId);
   res.json(accounts);
 }));
 
 // Create an account for a user
-router.post('/users/:userId/accounts', validate(AccountSchema), asyncHandler(async (req: Request, res: Response) => {
+router.post('/users/:userId/accounts', checkAuth, validate(AccountSchema), asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
   if (!userId) {
     throw ApiError.badRequest('Missing userId');
+  }
+
+  if ((req as AuthRequest).user!.uid !== userId) {
+    throw ApiError.forbidden('Access denied');
   }
 
   const { initialBalance, initialDate, ...accountData } = req.body;
@@ -42,7 +52,7 @@ router.post('/users/:userId/accounts', validate(AccountSchema), asyncHandler(asy
 }));
 
 // Update an account
-router.put('/users/:userId/accounts/:accountId', validate(UpdateAccountSchema), asyncHandler(async (req: Request, res: Response) => {
+router.put('/users/:userId/accounts/:accountId', checkAuth, validate(UpdateAccountSchema), asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
 
   if (!userId || !accountId) {
@@ -54,17 +64,22 @@ router.put('/users/:userId/accounts/:accountId', validate(UpdateAccountSchema), 
 }));
 
 // Get budget for a user
-router.get('/users/:userId/budget', asyncHandler(async (req: Request, res: Response) => {
+router.get('/users/:userId/budget', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
   if (!userId) {
     throw ApiError.badRequest('Missing userId');
   }
+
+  if ((req as AuthRequest).user!.uid !== userId) {
+    throw ApiError.forbidden('Access denied');
+  }
+
   const budget = await AccountService.getUserBudget(userId);
   res.json(budget);
 }));
 
 // Get transactions for a specific account
-router.get('/users/:userId/accounts/:accountId/transactions', asyncHandler(async (req: Request, res: Response) => {
+router.get('/users/:userId/accounts/:accountId/transactions', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
   const { limit, pageToken, sortOrder } = req.query;
 
@@ -83,7 +98,7 @@ router.get('/users/:userId/accounts/:accountId/transactions', asyncHandler(async
 }));
 
 // Reconcile account balance
-router.post('/users/:userId/accounts/:accountId/reconcile', asyncHandler(async (req: Request, res: Response) => {
+router.post('/users/:userId/accounts/:accountId/reconcile', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
   const { date, balance } = req.body;
 
@@ -102,7 +117,7 @@ router.post('/users/:userId/accounts/:accountId/reconcile', asyncHandler(async (
 }));
 
 // Get balance checkpoints for an account
-router.get('/users/:userId/accounts/:accountId/checkpoints', asyncHandler(async (req: Request, res: Response) => {
+router.get('/users/:userId/accounts/:accountId/checkpoints', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
 
   if (!userId || !accountId) {
@@ -114,7 +129,7 @@ router.get('/users/:userId/accounts/:accountId/checkpoints', asyncHandler(async 
 }));
 
 // Delete a checkpoint
-router.delete('/users/:userId/accounts/:accountId/checkpoints/:checkpointId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/users/:userId/accounts/:accountId/checkpoints/:checkpointId', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId, checkpointId } = req.params;
 
   if (!userId || !accountId || !checkpointId) {
@@ -126,7 +141,7 @@ router.delete('/users/:userId/accounts/:accountId/checkpoints/:checkpointId', as
 }));
 
 // Delete an account
-router.delete('/users/:userId/accounts/:accountId', asyncHandler(async (req: Request, res: Response) => {
+router.delete('/users/:userId/accounts/:accountId', checkAuth, asyncHandler(async (req: Request, res: Response) => {
   const { userId, accountId } = req.params;
 
   if (!userId || !accountId) {

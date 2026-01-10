@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from 'express';
-import { db, getUserRef } from '../firebase';
-import { type IBalanceCheckpoint } from '../../../shared/models/balance_checkpoint';
-import { Account } from '../../../shared/models/account';
-import { logger } from '../logger';
+import { db, getUserRef } from '../firebase.js';
+import { type IBalanceCheckpoint, Account } from '@finapp/shared';
+import { logger } from '../logger.js';
+import { checkAuth, type AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -24,13 +24,18 @@ const getDatesInRange = (startDate: Date, endDate: Date): Date[] => {
 };
 
 // Get net worth history
-router.get('/users/:userId/net-worth', async (req: Request, res: Response) => {
+router.get('/users/:userId/net-worth', checkAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
     const { range = '30d' } = req.query; // 30d, 90d, 1y, all
 
     if (!userId) {
       res.status(400).json({ error: 'Missing userId' });
+      return;
+    }
+
+    if (req.user?.uid !== userId) {
+      res.status(403).json({ error: 'Forbidden: Access denied' });
       return;
     }
 

@@ -1,8 +1,10 @@
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+
 import path from 'path';
 import dotenv from 'dotenv';
-import { type ITransaction } from '../../shared/models/transaction';
-import { type Account } from '../../shared/models/account';
+import { type ITransaction } from '@finapp/shared';
+import { type Account } from '@finapp/shared';
 
 // Load .env from project root
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
@@ -19,7 +21,7 @@ if (!admin.apps.length) {
   }
 }
 
-export const db = admin.firestore();
+export const db = getFirestore(admin.app(), 'finapp-data');
 export const auth: admin.auth.Auth = admin.auth();
 
 export const getUserRef = (userId: string) => db.collection('users').doc(userId);
@@ -73,19 +75,29 @@ export const getAllUserAccounts = async (userId: string): Promise<Account[]> => 
 export const resolveTransactionReferences = async (docs: admin.firestore.QueryDocumentSnapshot[]): Promise<ITransaction[]> => {
   const transactionPromises = docs.map(async doc => {
     const data = doc.data();
-    let txData = data;
+    let txData: any = null;
 
     if (data.RefTxId && data.RefTxId instanceof admin.firestore.DocumentReference) {
-      const realDoc = await data.RefTxId.get();
-      if (realDoc.exists) {
-        txData = Object.assign({}, realDoc.data(), { transactionId: realDoc.id });
+      try {
+        const realDoc = await data.RefTxId.get();
+        if (realDoc.exists) {
+          txData = Object.assign({}, realDoc.data(), { transactionId: realDoc.id });
+        } else {
+          // Reference exists but document is missing (dangling pointer)
+          console.warn(`Found dangling transaction reference: ${doc.id} -> ${data.RefTxId.path}`);
+          return null;
+        }
+      } catch (err) {
+        console.error(`Failed to resolve transaction reference for ${doc.id}:`, err);
+        return null;
       }
     } else {
       // Fallback if it's not a reference (legacy data?) or reference broken
       txData = Object.assign({}, data, { transactionId: doc.id });
     }
 
-    // Convert Firestore Timestamp to ISO string for date
+    if (!txData) return null;
+
     // Convert Firestore Timestamp to ISO string for date
     if (txData.date) {
       if (typeof txData.date.toDate === 'function') {
@@ -101,6 +113,7 @@ export const resolveTransactionReferences = async (docs: admin.firestore.QueryDo
     return txData as ITransaction;
   });
 
-  const transactions = (await Promise.all(transactionPromises)).filter(t => t !== null);
-  return transactions;
+  const results = await Promise.all(transactionPromises);
+  // Filter out nulls (broken references)
+  return results.filter((t): t is ITransaction => t !== null);
 };

@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import type { Account } from "./account";
+import type { Account } from "./account.js";
 
 export enum SupportedInstitute {
     CHASE = 'Chase',
@@ -7,23 +7,50 @@ export enum SupportedInstitute {
     PAYPAY = 'PayPay'
 }
 
-export interface IInstitute {
+export enum InstituteTypes {
+    BANK = 'Bank',
+    BROKERAGE = 'Brokerage',
+    FINANCIAL_SERVICE = 'Financial Service',
+    SUPERANNUATION = 'Superannuation',
+    OTHER = 'Other'
+}
+
+export interface InstituteProp {
     instituteId: string;
     name: string;
     userId: string;
     accounts?: Account[];
+    type: InstituteTypes;
 }
 
-export class Institute implements IInstitute {
+export interface SupportedInstituteProp {
+    instituteId: string;
+    commonName: string;
+    displayName: string;
+    shortName: string;
+    logo: string;
+    logoFull: string;
+    type: InstituteTypes;
+}
+
+export class Institute implements InstituteProp {
     instituteId: string;
     name: string;
     userId: string;
     accounts: Account[];
+    type: InstituteTypes;
 
-    constructor(name: string, userId: string, accounts: Account[]) {
+    constructor(name: string, userId: string, accounts: Account[], type: InstituteTypes) {
         this.instituteId = v4();
         this.name = name;
         this.userId = userId;
         this.accounts = accounts;
+        this.type = type;
+    }
+
+    static fromProp(prop: InstituteProp): Institute {
+        const inst = new Institute(prop.name, prop.userId, prop.accounts || [], prop.type);
+        inst.instituteId = prop.instituteId;
+        return inst;
     }
 }

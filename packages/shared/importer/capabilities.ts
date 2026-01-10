@@ -1,9 +1,9 @@
-import { SupportedInstitute } from '../models/institute';
-import { AccountType } from '../models/account';
-import type { IStatementImporter } from './importer';
-import { ChaseCsvStatementImporter as ChaseBankStatementImporter, ChaseCreditCsvStatementImporter as ChaseCreditStatementImporter } from './institutions/chase';
-import { MorganStanleyStatementImporter } from './institutions/morgan_stanley';
-import { PayPayStatementImporter } from './institutions/paypay';
+import { SupportedInstitute } from '../models/institute.js';
+import { AccountType } from '../models/account.js';
+import type { IStatementImporter } from './importer.js';
+import { ChaseCsvStatementImporter as ChaseBankStatementImporter, ChaseCreditCsvStatementImporter as ChaseCreditStatementImporter } from './institutions/chase.js';
+import { MorganStanleyStatementImporter } from './institutions/morgan_stanley.js';
+import { PayPayStatementImporter } from './institutions/paypay.js';
 
 type ImporterConstructor = new (accountId: string, userId: string) => IStatementImporter;
 

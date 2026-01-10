@@ -1,0 +1,86 @@
+<div class="h-full flex flex-col bg-[var(--mat-sys-surface-container)] transition-all duration-300 w-full">
+    <!-- Nav -->
+    <mat-nav-list class="flex-1 pt-2 overflow-y-auto overflow-x-hidden">
+        @if (hasAccounts()) {
+        <a mat-list-item (click)="navigateTo('/')" [activated]="currentRoute() === '/'"
+            [class.!justify-center]="collapsed()">
+            <lucide-icon matListItemIcon [img]="Icons.LayoutDashboard" size="20"
+                class="text-[var(--mat-sys-on-surface-variant)]" [class.mr-0]="collapsed()"></lucide-icon>
+            @if (!collapsed()) {
+            <span matListItemTitle class="text-[var(--mat-sys-on-surface)] ml-2">Dashboard</span>
+            }
+        </a>
+
+        <a mat-list-item (click)="navigateTo('/budget')" [activated]="currentRoute() === '/budget'"
+            [class.!justify-center]="collapsed()">
+            <lucide-icon matListItemIcon [img]="Icons.PieChart" size="20"
+                class="text-[var(--mat-sys-on-surface-variant)]" [class.mr-0]="collapsed()"></lucide-icon>
+            @if (!collapsed()) {
+            <span matListItemTitle class="text-[var(--mat-sys-on-surface)] ml-2">Budget</span>
+            }
+        </a>
+
+        <a mat-list-item (click)="navigateTo('/transactions')" [activated]="currentRoute() === '/transactions'"
+            [class.!justify-center]="collapsed()">
+            <lucide-icon matListItemIcon [img]="Icons.CreditCard" size="20"
+                class="text-[var(--mat-sys-on-surface-variant)]" [class.mr-0]="collapsed()"></lucide-icon>
+            @if (!collapsed()) {
+            <span matListItemTitle class="text-[var(--mat-sys-on-surface)] ml-2">Transactions</span>
+            }
+        </a>
+
+        @if (!collapsed()) {
+        <mat-expansion-panel class="!bg-transparent !shadow-none !rounded-none border-none">
+            <mat-expansion-panel-header class="!px-4">
+                <mat-panel-title
+                    class="flex items-center justify-between text-[var(--mat-sys-on-surface-variant)] w-full">
+                    <div class="flex items-center">
+                        <lucide-icon [img]="Icons.Building" size="20" class="mr-4"></lucide-icon>
+                        Accounts
+                    </div>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <div class="flex gap-2 px-4 py-2">
+                <button mat-stroked-button class="!w-full !px-0 flex-1 !min-w-0"
+                    (click)="$event.stopPropagation(); openCreateAccountDialog()" matTooltip="Add Account">
+                    <mat-icon>add</mat-icon> Acc
+                </button>
+                <button mat-stroked-button class="!w-full !px-0 flex-1 !min-w-0"
+                    (click)="$event.stopPropagation(); openCreateInstituteDialog()" matTooltip="Add Institute">
+                    <mat-icon>domain</mat-icon> Inst
+                </button>
+            </div>
+
+            @for (inst of institutesWithAccounts(); track inst.instituteId) {
+            <div class="pl-4">
+                <div
+                    class="px-4 py-2 text-xs font-semibold text-[var(--mat-sys-on-surface-variant)] uppercase tracking-wider">
+                    {{ inst.name }}
+                </div>
+                @for (acc of inst.accounts; track acc.accountId) {
+                <a mat-list-item (click)="navigateTo('/accounts/' + acc.accountId)" class="!h-10 cursor-pointer">
+                    <span matListItemTitle class="text-sm pl-8 text-[var(--mat-sys-on-surface)]">{{ acc.name }}</span>
+                </a>
+                }
+            </div>
+            }
+        </mat-expansion-panel>
+        } @else {
+        <!-- Collapsed Accounts Icon acts as link to Accounts page or just hidden for now -->
+        <a mat-list-item (click)="navigateTo('/accounts')" matTooltip="Accounts" [class.!justify-center]="collapsed()">
+            <lucide-icon matListItemIcon [img]="Icons.Building" size="20"
+                class="text-[var(--mat-sys-on-surface-variant)]" [class.mr-0]="collapsed()"></lucide-icon>
+        </a>
+        }
+        } @else {
+        <div class="px-4 py-4 text-sm text-[var(--mat-sys-on-surface-variant)] opacity-70 text-center">
+            @if (!collapsed()) {
+            Complete setup to access menu
+            } @else {
+            <mat-icon>lock</mat-icon>
+            }
+        </div>
+        }
+    </mat-nav-list>
+</div>

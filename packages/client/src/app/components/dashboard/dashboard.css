@@ -1,0 +1,60 @@
+.dashboard-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .dashboard-cards-container {
+        flex-direction: row;
+    }
+
+    .dashboard-cards-container>* {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Chart + Accounts Container */
+.dashboard-chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .dashboard-chart-container {
+        flex-direction: row;
+    }
+
+    /* 3:1 Ratio */
+    .dashboard-chart-section {
+        flex: 3;
+        min-width: 0;
+    }
+
+    .dashboard-account-section {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Main Body Spacing */
+.dashboard-main-body {
+    /* "only be horizontal gap" -> Use horizontal variable for side padding */
+    padding-left: var(--spaces-and-sizes-large-horizontal);
+    padding-right: var(--spaces-and-sizes-large-horizontal);
+    padding-top: var(--spaces-and-sizes-large);
+    padding-bottom: var(--spaces-and-sizes-large);
+}
+
+/* Ensure chart container has height */
+app-net-worth-chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 250px;
+}

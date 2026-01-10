@@ -11,15 +11,17 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 import cors from 'cors';
-import accountRoutes from './routes/accounts';
-import transactionRoutes from './routes/transactions';
-import categoryRoutes from './routes/categories';
-import instrumentRoutes from './routes/instruments';
-import instituteRoutes from './routes/institutes';
-import analyticsRoutes from './routes/analytics';
-import currencyRoutes from './routes/currencies';
-import { logger } from './logger';
-import { errorHandler } from './middleware/errorHandler';
+import accountRoutes from './routes/accounts.js';
+import transactionRoutes from './routes/transactions.js';
+import categoryRoutes from './routes/categories.js';
+import instrumentRoutes from './routes/instruments.js';
+import instituteRoutes from './routes/institutes.js';
+import analyticsRoutes from './routes/analytics.js';
+import currencyRoutes from './routes/currencies.js';
+import userRoutes from './routes/users.js';
+import metadataRoutes from './routes/metadata.js';
+import { logger } from './logger.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 // Server entry point (restarted)
 const app = express();
@@ -41,6 +43,8 @@ app.use('/api/institutes', instituteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/instruments', instrumentRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/metadata', metadataRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello from the FinApp server!');

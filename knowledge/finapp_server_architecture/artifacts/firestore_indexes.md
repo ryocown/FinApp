@@ -23,7 +23,7 @@ db.collectionGroup('transactions')
   3. `__name__` (Descending)
 
 **Creation Link**:
-[Create Index in Firebase Console](https://console.firebase.google.com/v1/r/project/hirico-internal-project-1/firestore/indexes?create_composite=Cl5wcm9qZWN0cy9oaXJpY28taW50ZXJuYWwtcHJvamVjdC0xL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy90cmFuc2FjdGlvbnMvaW5kZXhlcy9fEAEaEwoPdHJhbnNhY3Rpb25UeXBlEAEaCAoEZGF0ZRACGgwKCF9fbmFtZV9fEAI)
+[Create Index in Firebase Console](https://console.firebase.google.com/v1/r/project/gshiftwork/firestore/indexes?create_composite=Cl5wcm9qZWN0cy9oaXJpY28taW50ZXJuYWwtcHJvamVjdC0xL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy90cmFuc2FjdGlvbnMvaW5kZXhlcy9fEAEaEwoPdHJhbnNhY3Rpb25UeXBlEAEaCAoEZGF0ZRACGgwKCF9fbmFtZV9fEAI)
 
 ### User Transactions (Collection Group)
 **Usage**: `TransactionService.getUserTransactions`

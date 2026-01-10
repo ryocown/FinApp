@@ -85,16 +85,16 @@ export function parsePSTDateToUTC(dateString: string): Date {
   // Handle MM/DD/YYYY
   if (cleanDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
     const parts = cleanDate.split('/');
-    month = parseInt(parts[0], 10);
-    day = parseInt(parts[1], 10);
-    year = parseInt(parts[2], 10);
+    month = parseInt(parts[0]!, 10);
+    day = parseInt(parts[1]!, 10);
+    year = parseInt(parts[2]!, 10);
   }
   // Handle YYYY-MM-DD
   else if (cleanDate.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
     const parts = cleanDate.split('-');
-    year = parseInt(parts[0], 10);
-    month = parseInt(parts[1], 10);
-    day = parseInt(parts[2], 10);
+    year = parseInt(parts[0]!, 10);
+    month = parseInt(parts[1]!, 10);
+    day = parseInt(parts[2]!, 10);
   } else {
     // Fallback to simple parsing
     return new Date(cleanDate);
@@ -125,12 +125,12 @@ export function parseJSTDateToUTC(dateString: string): Date {
 
   if (match) {
     const [_, yearStr, monthStr, dayStr, hourStr, minuteStr, secondStr] = match;
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10);
-    const day = parseInt(dayStr, 10);
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-    const second = parseInt(secondStr, 10);
+    const year = parseInt(yearStr!, 10);
+    const month = parseInt(monthStr!, 10);
+    const day = parseInt(dayStr!, 10);
+    const hour = parseInt(hourStr!, 10);
+    const minute = parseInt(minuteStr!, 10);
+    const second = parseInt(secondStr!, 10);
 
     // Create UTC date from components
     // Date.UTC returns milliseconds

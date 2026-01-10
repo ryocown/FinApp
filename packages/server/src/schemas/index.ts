@@ -10,6 +10,7 @@ export const AccountSchema = z.object({
     name: z.string().optional(),
   }),
   balance: z.number(),
+  balanceDate: z.string().datetime().optional().or(z.date().optional()).or(z.string().optional()), // Allow string or date
   initialBalance: z.number().optional(),
   initialDate: z.string().optional(),
   accountNumber: z.string().optional(),
@@ -43,6 +44,7 @@ export const CategorySchema = z.object({
 export const InstituteSchema = z.object({
   name: z.string().min(1),
   userId: z.string().min(1),
+  type: z.string().optional() // Make optional for now to avoid breaking existing clients instantly
 });
 
 /**

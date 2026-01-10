@@ -1,20 +1,26 @@
 import { Router, type Request, type Response } from 'express';
 import { v4 } from 'uuid';
-import { db, getUserRef, getCollectionData } from '../firebase';
-import { type IInstitute } from '../../../shared/models/institute';
+import { db, getUserRef, getCollectionData } from '../firebase.js';
+import { type InstituteProp } from '@finapp/shared';
+import { checkAuth, type AuthRequest } from '../middleware/auth.js';
 
-import { InstituteSchema } from '../schemas';
-import { validate } from '../middleware/validate';
-import { logger } from '../logger';
+import { InstituteSchema } from '../schemas/index.js';
+import { validate } from '../middleware/validate.js';
+import { logger } from '../logger.js';
 
 const router = Router();
 
 // Get all institutes for a user
-router.get('/users/:userId/institutes', async (req: Request, res: Response) => {
+router.get('/users/:userId/institutes', checkAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
     if (!userId) {
       res.status(400).json({ error: 'Missing userId' });
+      return;
+    }
+
+    if (req.user!.uid !== userId) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
@@ -23,16 +29,21 @@ router.get('/users/:userId/institutes', async (req: Request, res: Response) => {
     res.json(institutes);
   } catch (error) {
     logger.error('Error fetching institutes:', error);
-    res.status(500).json({ error: 'Failed to fetch institutes' });
+    res.status(500).json({ error: 'Failed to fetch institutes', details: (error as Error).message });
   }
 });
 
 // Create an institute for a user
-router.post('/users/:userId/institutes', validate(InstituteSchema), async (req: Request, res: Response) => {
+router.post('/users/:userId/institutes', checkAuth, validate(InstituteSchema), async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
     if (!userId) {
       res.status(400).json({ error: 'Missing userId' });
+      return;
+    }
+
+    if (req.user!.uid !== userId) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
@@ -45,7 +56,7 @@ router.post('/users/:userId/institutes', validate(InstituteSchema), async (req: 
 
     // Generate UUID v4 for the institute
     const instituteId = v4();
-    const newInstitute: IInstitute = {
+    const newInstitute: InstituteProp = {
       ...instituteData,
       instituteId,
       accounts: [] // Initialize with empty accounts
