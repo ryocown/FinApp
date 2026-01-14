@@ -1,12 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-    selector: 'app-waypoint-icon',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
-    <!-- Zoomed in ViewBox (340 100 360 280) -->
+  selector: 'app-waypoint-icon',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     <svg [class]="class" viewBox="340 100 360 280" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="neonGradient" x1="340" y1="380" x2="700" y2="100" gradientUnits="userSpaceOnUse">
@@ -32,58 +31,155 @@ import { CommonModule } from '@angular/common';
         </filter>
       </defs>
 
-      <!-- Fixed Stars (Tighter Cluster around W [340-700, 100-380]) -->
-      <g fill="#a5b4fc" filter="url(#starGlow)">
-          <circle cx="380" cy="170" r="2.5" opacity="0.8"/>
-          <circle cx="660" cy="280" r="2" opacity="0.6"/>
-          <circle cx="520" cy="130" r="2" opacity="0.9"/>
-          <circle cx="420" cy="320" r="2.5" opacity="0.5"/>
-          <circle cx="620" cy="180" r="2" opacity="0.7"/>
-          <circle cx="480" cy="340" r="2" opacity="0.4"/>
-          <circle cx="580" cy="360" r="1.5" opacity="0.6"/>
-          <circle cx="680" cy="120" r="2" opacity="0.5"/>
+      <!-- Fixed Stars -->
+      <g class="star-cluster" fill="#a5b4fc" filter="url(#starGlow)">
+          <circle cx="380" cy="170" r="2.5" opacity="0.8" style="animation-delay: 0s"/>
+          <circle cx="660" cy="280" r="2" opacity="0.6" style="animation-delay: 1s"/>
+          <circle cx="520" cy="130" r="2" opacity="0.9" style="animation-delay: 0.5s"/>
+          <circle cx="420" cy="320" r="2.5" opacity="0.5" style="animation-delay: 1.5s"/>
+          <circle cx="620" cy="180" r="2" opacity="0.7" style="animation-delay: 2s"/>
+          <circle cx="480" cy="340" r="2" opacity="0.4" style="animation-delay: 0.2s"/>
+          <circle cx="580" cy="360" r="1.5" opacity="0.6" style="animation-delay: 1.2s"/>
+          <circle cx="680" cy="120" r="2" opacity="0.5" style="animation-delay: 0.8s"/>
       </g>
 
       <!-- User Provided W Icon -->
       <g filter="url(#glow)">
         
-        <!-- Main Mesh: STROKE ONLY (Transparent Fill) -->
-        <path d="M475.49,308.7c4.62,6.9,5.57,14.95-.35,21.3-5.04,5.41-14.86,6.38-20.87.79s-6.64-15.37-.89-22.41l-58.07-99.1c-8.44,2.64-16.24-1.43-19.31-9.03-3.29-8.15,1.4-17.06,9.14-19.64,8.63-2.87,17.58,1.54,19.64,10.91l31.94.19,21.43,34.08c4.22-.95,7.92-.95,12.16-.07l30.37-42.86c-4.08-6.79-4.66-15.04.58-20.38,5.86-5.98,14.41-6.03,20.47-1.64,6.88,4.98,6.51,13.26,3.52,20.81l25.61,25.76c5.3-2.15,10.61-3,16.03-.49l42.85-50.32-16.12-14.32,46.83-15.96-9.09,48.48-16.88-14.17-42.64,50.27c2.67,4.82,3.49,9.73,1.51,15.63-1.25,3.73-6.29,6.84-10.91,8.97.67,23.69-1.02,46.52,1.08,71.04l41.05-65.79c-6.09-7.05-6.16-16.32.26-22.42,5.85-5.56,15.98-5.48,21.47,1.27,4.4,5.41,4.83,12.73,1.3,18.25s-10.55,8.31-18,6.27l-39.23,64.56c5.57,6.31,5.5,15.53.12,21.37-5.29,5.75-14.96,5.75-20.82.9-6.82-5.64-6.37-15.02-1.37-22.3l-29.34-43.33c-4.75.84-8.1.83-13.21-.3l-30.26,43.66ZM627.05,162.83l5.33-26.93-26.09,8.99,20.76,17.94ZM521.48,172.79c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86ZM398.87,194.84c0-4.91-3.98-8.89-8.89-8.89s-8.89,3.98-8.89,8.89,3.98,8.89,8.89,8.89,8.89-3.98,8.89-8.89ZM555.52,306.51l.82-71.51c-4.85-1.63-9.28-4.83-10.68-8.51-1.94-5.09-1.38-9.9.87-14.53l-25.63-25.73c-1.81.17-4.26.98-5.48,2.06l.06,47.39c5.18,2,9.69,5.53,11,9.53,2.03,6.18.72,11.17-2.83,15.84l31.88,45.45ZM471.43,303.47l29.3-42.4c-2.95-5.07-4.62-9.79-2.71-15.26,1.63-4.66,5.72-7.95,11.06-9.89l.04-46.54c0-.95-.97-2.39-1.54-2.63s-2.35.6-2.75,1.18l-29.66,41.9c3.89,4.85,5.4,9.88,3.14,15.76-1.61,4.2-5.54,7.46-10.68,9.66l-.08,47.24c0,.82.7,1.89,1.07,2.27s2.21-.41,2.81-1.27ZM461.47,254.89c-7.09-1.56-10.19-5.67-11.66-10.54s-.04-10.02,3.06-14.73l-19.56-31.66-28.15.13-4.31,8.13,59.26,100.25c2.87-18.27.53-34.39,1.37-51.57ZM568.61,220.22c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86ZM623.89,229.6c0-4.92-3.99-8.91-8.91-8.91s-8.91,3.99-8.91,8.91,3.99,8.91,8.91,8.91,8.91-3.99,8.91-8.91ZM473.11,239.98c0-4.9-3.97-8.87-8.87-8.87s-8.87,3.97-8.87,8.87,3.97,8.87,8.87,8.87,8.87-3.97,8.87-8.87ZM521.35,250.89c0-4.88-3.96-8.84-8.84-8.84s-8.84,3.96-8.84,8.84,3.96,8.84,8.84,8.84,8.84-3.96,8.84-8.84ZM473.12,319.21c0-4.89-3.96-8.85-8.85-8.85s-8.85,3.96-8.85,8.85,3.96,8.85,8.85,8.85,8.85-3.96,8.85-8.85ZM568.51,319.22c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86Z"
+        <!-- Main Mesh -->
+        <path class="path-draw" d="M475.49,308.7c4.62,6.9,5.57,14.95-.35,21.3-5.04,5.41-14.86,6.38-20.87.79s-6.64-15.37-.89-22.41l-58.07-99.1c-8.44,2.64-16.24-1.43-19.31-9.03-3.29-8.15,1.4-17.06,9.14-19.64,8.63-2.87,17.58,1.54,19.64,10.91l31.94.19,21.43,34.08c4.22-.95,7.92-.95,12.16-.07l30.37-42.86c-4.08-6.79-4.66-15.04.58-20.38,5.86-5.98,14.41-6.03,20.47-1.64,6.88,4.98,6.51,13.26,3.52,20.81l25.61,25.76c5.3-2.15,10.61-3,16.03-.49l42.85-50.32-16.12-14.32,46.83-15.96-9.09,48.48-16.88-14.17-42.64,50.27c2.67,4.82,3.49,9.73,1.51,15.63-1.25,3.73-6.29,6.84-10.91,8.97.67,23.69-1.02,46.52,1.08,71.04l41.05-65.79c-6.09-7.05-6.16-16.32.26-22.42,5.85-5.56,15.98-5.48,21.47,1.27,4.4,5.41,4.83,12.73,1.3,18.25s-10.55,8.31-18,6.27l-39.23,64.56c5.57,6.31,5.5,15.53.12,21.37-5.29,5.75-14.96,5.75-20.82.9-6.82-5.64-6.37-15.02-1.37-22.3l-29.34-43.33c-4.75.84-8.1.83-13.21-.3l-30.26,43.66ZM627.05,162.83l5.33-26.93-26.09,8.99,20.76,17.94ZM521.48,172.79c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86ZM398.87,194.84c0-4.91-3.98-8.89-8.89-8.89s-8.89,3.98-8.89,8.89,3.98,8.89,8.89,8.89,8.89-3.98,8.89-8.89ZM555.52,306.51l.82-71.51c-4.85-1.63-9.28-4.83-10.68-8.51-1.94-5.09-1.38-9.9.87-14.53l-25.63-25.73c-1.81.17-4.26.98-5.48,2.06l.06,47.39c5.18,2,9.69,5.53,11,9.53,2.03,6.18.72,11.17-2.83,15.84l31.88,45.45ZM471.43,303.47l29.3-42.4c-2.95-5.07-4.62-9.79-2.71-15.26,1.63-4.66,5.72-7.95,11.06-9.89l.04-46.54c0-.95-.97-2.39-1.54-2.63s-2.35.6-2.75,1.18l-29.66,41.9c3.89,4.85,5.4,9.88,3.14,15.76-1.61,4.2-5.54,7.46-10.68,9.66l-.08,47.24c0,.82.7,1.89,1.07,2.27s2.21-.41,2.81-1.27ZM461.47,254.89c-7.09-1.56-10.19-5.67-11.66-10.54s-.04-10.02,3.06-14.73l-19.56-31.66-28.15.13-4.31,8.13,59.26,100.25c2.87-18.27.53-34.39,1.37-51.57ZM568.61,220.22c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86ZM623.89,229.6c0-4.92-3.99-8.91-8.91-8.91s-8.91,3.99-8.91,8.91,3.99,8.91,8.91,8.91,8.91-3.99,8.91-8.91ZM473.11,239.98c0-4.9-3.97-8.87-8.87-8.87s-8.87,3.97-8.87,8.87,3.97,8.87,8.87,8.87,8.87-3.97,8.87-8.87ZM521.35,250.89c0-4.88-3.96-8.84-8.84-8.84s-8.84,3.96-8.84,8.84,3.96,8.84,8.84,8.84,8.84-3.96,8.84-8.84ZM473.12,319.21c0-4.89-3.96-8.85-8.85-8.85s-8.85,3.96-8.85,8.85,3.96,8.85,8.85,8.85,8.85-3.96,8.85-8.85ZM568.51,319.22c0-4.89-3.97-8.86-8.86-8.86s-8.86,3.97-8.86,8.86,3.97,8.86,8.86,8.86,8.86-3.97,8.86-8.86Z"
               fill="none" 
               stroke="url(#neonGradient)" 
               stroke-width="2"/>
 
-        <!-- Highlighs: STROKE ONLY (Inverted Fill) -->
-        <path d="M555.52,306.51l-31.88-45.45c3.55-4.67,4.86-9.65,2.83-15.84-1.31-4-5.82-7.52-11-9.53l-.06-47.39c1.23-1.08,3.68-1.89,5.48-2.06l25.63,25.73c-2.24,4.62-2.8,9.43-.87,14.53,1.4,3.68,5.83,6.88,10.68,8.51l-.82,71.51Z"
+        <!-- Highlights (Separated for merge effect) -->
+        <path class="path-draw-delayed" d="M555.52,306.51l-31.88-45.45c3.55-4.67,4.86-9.65,2.83-15.84-1.31-4-5.82-7.52-11-9.53l-.06-47.39c1.23-1.08,3.68-1.89,5.48-2.06l25.63,25.73c-2.24,4.62-2.8,9.43-.87,14.53,1.4,3.68,5.83,6.88,10.68,8.51l-.82,71.51Z"
               fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
 
-        <path d="M461.47,254.89c-.84,17.18,1.5,33.3-1.37,51.57l-59.26-100.25,4.31-8.13,28.15-.13,19.56,31.66c-3.11,4.71-4.6,9.67-3.06,14.73s4.57,8.98,11.66,10.54Z"
+        <path class="path-draw-delayed" d="M461.47,254.89c-.84,17.18,1.5,33.3-1.37,51.57l-59.26-100.25,4.31-8.13,28.15-.13,19.56,31.66c-3.11,4.71-4.6,9.67-3.06,14.73s4.57,8.98,11.66,10.54Z"
               fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
 
-        <path d="M471.43,303.47c-.6.86-2.43,1.65-2.81,1.27s-1.07-1.45-1.07-2.27l.08-47.24c5.14-2.2,9.06-5.46,10.68-9.66,2.26-5.88.75-10.92-3.14-15.76l29.66-41.9c.41-.58,2.18-1.42,2.75-1.18s1.54,1.68,1.54,2.63l-.04,46.54c-5.34,1.95-9.44,5.23-11.06,9.89-1.91,5.47-.23,10.2,2.71,15.26l-29.3,42.4Z"
+        <path class="path-draw-delayed" d="M471.43,303.47c-.6.86-2.43,1.65-2.81,1.27s-1.07-1.45-1.07-2.27l.08-47.24c5.14-2.2,9.06-5.46,10.68-9.66,2.26-5.88.75-10.92-3.14-15.76l29.66-41.9c.41-.58,2.18-1.42,2.75-1.18s1.54,1.68,1.54,2.63l-.04,46.54c-5.34,1.95-9.44,5.23-11.06,9.89-1.91,5.47-.23,10.2,2.71,15.26l-29.3,42.4Z"
               fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
 
-        <!-- Arrow Head: STROKE AND FILL -->
-        <polygon points="627.05 162.83 606.29 144.89 632.38 135.9 627.05 162.83" 
+        <!-- Arrow Head -->
+        <polygon class="arrow-head" points="627.05 162.83 606.29 144.89 632.38 135.9 627.05 162.83" 
                  fill="url(#neonGradient)" stroke="url(#neonGradient)" stroke-width="2"/>
 
-        <!-- Nodes: INVERTED (Hollow Rings) -->
-        <circle cx="389.98" cy="194.84" r="8.89" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="614.98" cy="229.6" r="8.91" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="464.24" cy="239.98" r="8.87" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="464.27" cy="319.21" r="8.85" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="512.61" cy="172.79" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="559.76" cy="220.22" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="559.65" cy="319.22" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
-        <circle cx="512.52" cy="250.89" r="8.84" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+        <!-- Nodes: Added class="node" to target them -->
+        <g id="node-group">
+            <circle class="node" cx="389.98" cy="194.84" r="8.89" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="464.24" cy="239.98" r="8.87" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="464.27" cy="319.21" r="8.85" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="512.61" cy="172.79" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="512.52" cy="250.89" r="8.84" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="559.76" cy="220.22" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="559.65" cy="319.22" r="8.86" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+            <circle class="node" cx="614.98" cy="229.6" r="8.91" fill="none" stroke="url(#neonGradient)" stroke-width="2"/>
+        </g>
       </g>
     </svg>
-  `,
-    styles: [`
-    :host { display: inline-block; }
-    svg { width: 100%; height: 100%; overflow: visible; }
-  `]
+    `,
+  styles: [`
+        :host { display: inline-block; }
+        svg { width: 100%; height: 100%; overflow: visible; }
+
+        /* --- 1. The Lines (The Merge) --- */
+        .path-draw {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            
+            /* Fill settings */
+            fill: url(#neonGradient);
+            fill-opacity: 0;
+
+            /* 1. drawLines: Draws the stroke (0s - 2.5s)
+               2. fillGraph: Fills the shape (3.5s - 4.5s), synced with arrow 
+            */
+            animation: 
+                drawLines 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+                fillGraph 1s ease-out forwards 3.5s; 
+        }
+
+        .path-draw-delayed {
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            fill: none; /* Keep highlights stroke-only */
+            animation: drawLines 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation-delay: 0.2s; 
+        }
+
+        /* --- 2. The Nodes (Light up) --- */
+        .node {
+            opacity: 0;
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: lightUp 0.6s ease-out forwards;
+        }
+
+        .node:nth-child(1) { animation-delay: 2.2s; }
+        .node:nth-child(2) { animation-delay: 2.35s; }
+        .node:nth-child(3) { animation-delay: 2.5s; }
+        .node:nth-child(4) { animation-delay: 2.65s; }
+        .node:nth-child(5) { animation-delay: 2.8s; }
+        .node:nth-child(6) { animation-delay: 2.95s; }
+        .node:nth-child(7) { animation-delay: 3.1s; }
+        .node:nth-child(8) { animation-delay: 3.25s; }
+
+        /* The Arrow Head */
+        .arrow-head {
+            opacity: 0;
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: fadeInArrow 0.8s ease-out forwards;
+            animation-delay: 3.5s;
+        }
+
+        /* Background Stars */
+        .star-cluster circle {
+            animation: twinkle 4s infinite ease-in-out alternate;
+        }
+
+        /* --- Keyframes --- */
+
+        @keyframes drawLines {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fillGraph {
+            to { fill-opacity: 1; } /* Changed from 0.2 to 1 for solid fill */
+        }
+
+        @keyframes lightUp {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+                filter: brightness(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.4);
+                filter: brightness(2);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        @keyframes fadeInArrow {
+            0% { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.9; }
+        }
+    `],
+  encapsulation: ViewEncapsulation.None
 })
 export class WaypointIconComponent {
-    @Input() class: string = '';
+  @Input() class: string = '';
 }

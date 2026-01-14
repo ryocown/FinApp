@@ -1,90 +1,198 @@
-<div class="flex-1 h-full overflow-auto dashboard-main-body bg-transparent">
-    <header class="mb-8 flex justify-between items-center">
-        <div>
-            <h1 class="text-[32px] leading-[40px] font-normal text-[var(--mat-sys-on-surface)]"
-                style="font-family: 'Google Sans Display', sans-serif;">
-                Accounts
-            </h1>
-            <p class="text-[var(--mat-sys-on-surface-variant)] mt-1">Manage your connected financial accounts.</p>
-        </div>
-        <button mat-flat-button color="primary" (click)="openCreateDialog()">
-            <mat-icon class="mr-2">add</mat-icon>
-            Add Account
-        </button>
-    </header>
+<div
+    class="dashboard-main-body bg-transparent h-full overflow-y-auto snap-y snap-mandatory scroll-smooth custom-scrollbar">
 
-    @if (isLoading()) {
-    <div class="flex justify-center items-center h-64">
-        <mat-spinner diameter="40"></mat-spinner>
-    </div>
-    } @else {
-    <div class="rounded-xl overflow-hidden border border-[var(--mat-sys-outline-variant)]">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full !bg-[var(--mat-sys-surface-container)]">
+    <!-- Section 1: User Details / Danger Zone -->
+    <section class="h-full min-h-full snap-start p-6 flex flex-col justify-center box-border">
+        <div class="max-w-3xl mx-auto w-full">
+            <header class="mb-8 text-center animate-enter">
+                <h2 class="header-large">User Profile</h2>
+                <p class="text-[var(--app-theme-text-secondary)] mt-1">Account settings and data management</p>
+            </header>
 
-            <!-- Name Column -->
-            <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>
-                <td mat-cell *matCellDef="let account">
-                    <div class="flex items-center gap-3">
-                        <mat-icon class="text-[var(--mat-sys-primary)]">
-                            {{ getIconForType(account.type) }}
-                        </mat-icon>
-                        <div class="flex flex-col">
-                            <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ account.name }}</span>
-                            <span class="text-xs text-[var(--mat-sys-secondary)]">{{ account.type }}</span>
+            <!-- Material 3 Content Card (Flat, Lowest Container) -->
+            <mat-card appearance="outlined"
+                class="!rounded-[28px] !bg-[var(--mat-sys-surface-container-lowest)] !p-8 flex flex-col gap-8 animate-enter !border-[var(--mat-sys-outline-variant)] shadow-none"
+                style="animation-delay: 100ms">
+
+                <!-- Profile Header -->
+                <mat-card-content class="!p-0 flex flex-col gap-8">
+                    <div class="flex items-center gap-6">
+                        <img [src]="authService.user()?.photoURL"
+                            class="w-24 h-24 rounded-full border-4 border-[var(--mat-sys-surface-container-high)] object-cover"
+                            onerror="this.src='assets/default-avatar.png'">
+                        <div>
+                            <h2 class="header-medium mb-1">{{ authService.user()?.displayName }}</h2>
+                            <p class="text-[var(--app-theme-text-secondary)]">{{ authService.user()?.email }}</p>
+                            <div class="mt-4 flex gap-2">
+                                <div
+                                    class="px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+                                    Active User
+                                </div>
+                                <div
+                                    class="px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold border border-blue-500/20">
+                                    Google Auth
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </td>
-            </ng-container>
 
-            <!-- Balance Column -->
-            <ng-container matColumnDef="balance">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> Balance </th>
-                <td mat-cell *matCellDef="let account">
-                    <span class="font-medium" [class.text-emerald-400]="account.balance >= 0"
-                        [class.text-red-400]="account.balance < 0">
-                        {{ account.balance | currency:account.currency.code:'symbol':'1.2-2' }}
-                    </span>
-                </td>
-            </ng-container>
+                    <div class="h-px bg-[var(--mat-sys-outline-variant)]"></div>
 
-            <!-- Currency Column -->
-            <ng-container matColumnDef="currency">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header> Currency </th>
-                <td mat-cell *matCellDef="let account"> {{ account.currency.code }} </td>
-            </ng-container>
+                    <!-- Danger Zone -->
+                    <div>
+                        <h3 class="header-small mb-4 text-red-400 flex items-center gap-2">
+                            <mat-icon class="scale-90">warning</mat-icon> Danger Zone
+                        </h3>
 
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef> </th>
-                <td mat-cell *matCellDef="let account" class="text-right">
-                    <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-                        <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #menu="matMenu">
-                        <button mat-menu-item (click)="openUpdateBalanceDialog(account)">
-                            <mat-icon>account_balance</mat-icon>
-                            <span>Update Balance</span>
-                        </button>
-                        <button mat-menu-item class="!text-red-400">
-                            <mat-icon class="!text-red-400">delete</mat-icon>
-                            <span>Delete</span>
-                        </button>
-                    </mat-menu>
-                </td>
-            </ng-container>
+                        <div class="p-6 rounded-2xl border border-red-500/30 bg-red-500/5 backdrop-blur-sm">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                <div>
+                                    <h4 class="font-semibold text-red-200">Delete all data</h4>
+                                    <p class="text-sm text-red-200/60 mt-1 max-w-md">
+                                        Permanently remove all your accounts, transactions, and user preferences. This
+                                        action cannot be undone.
+                                    </p>
+                                </div>
+                                <button mat-stroked-button color="warn"
+                                    class="!border-red-500/50 !text-red-300 hover:!bg-red-500/10"
+                                    (click)="deleteAccount()" [disabled]="isDeleting()">
+                                    {{ isDeleting() ? 'Deleting...' : 'Delete Data' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </mat-card-content>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                class="hover:bg-white/5 transition-colors cursor-pointer" (click)="navigateToAccount(row.accountId)">
-            </tr>
-        </table>
+            </mat-card>
 
-        @if (dataSource.data.length === 0) {
-        <div class="p-8 text-center text-[var(--mat-sys-on-surface-variant)]">
-            No accounts found. Add one to get started.
+            <!-- Hint to scroll -->
+            <div class="flex justify-center mt-12 opacity-30 animate-bounce">
+                <mat-icon class="!w-8 !h-8 !text-2xl">keyboard_arrow_down</mat-icon>
+            </div>
         </div>
-        }
+    </section>
+
+    <!-- Section 2: Accounts List -->
+    <section class="h-full min-h-full snap-start p-6 flex flex-col justify-center box-border">
+        <div class="max-w-5xl mx-auto w-full h-full flex flex-col">
+            <header class="flex justify-between items-center mb-6 shrink-0">
+                <div>
+                    <h1 class="header-large">Accounts</h1>
+                    <p class="text-[var(--app-theme-text-secondary)] mt-1">Manage your connected balances</p>
+                </div>
+                <button mat-flat-button color="primary" (click)="openCreateDialog()">
+                    <mat-icon class="mr-2">add</mat-icon>
+                    Add Account
+                </button>
+            </header>
+
+            <!-- Table Container (Detached Rows Style) -->
+            <div class="flex-1 min-h-0 flex flex-col">
+
+                @if (isLoading()) {
+                <div class="flex justify-center items-center h-full">
+                    <mat-spinner diameter="40"></mat-spinner>
+                </div>
+                } @else {
+                <div class="overflow-auto custom-scrollbar flex-1 -mx-4 px-4 pb-4">
+                    <table mat-table [dataSource]="dataSource" matSort
+                        class="w-full bg-transparent border-separate border-spacing-y-3">
+                        <!-- Name Column -->
+                        <ng-container matColumnDef="name">
+                            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="!pl-6 !bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
+                                Name </th>
+                            <td mat-cell *matCellDef="let account"
+                                class="!pl-6 first:rounded-l-[28px] bg-[var(--mat-sys-surface-container-lowest)] border-y border-l border-[var(--mat-sys-outline-variant)]">
+                                <div class="flex items-center gap-4 py-3 cursor-pointer"
+                                    (click)="navigateToAccount(account.accountId)">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-[var(--mat-sys-surface-container-highest)] flex items-center justify-center text-[var(--mat-sys-primary)]">
+                                        <mat-icon class="scale-110">{{ getIconForType(account.type) }}</mat-icon>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-base text-[var(--mat-sys-on-surface)]">{{
+                                            account.name }}</span>
+                                        <span class="text-xs text-[var(--mat-sys-on-surface-variant)] capitalize">{{
+                                            account.type.replace('_', ' ') | lowercase }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </ng-container>
+
+                        <!-- Balance Column -->
+                        <ng-container matColumnDef="balance">
+                            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="!bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
+                                Balance </th>
+                            <td mat-cell *matCellDef="let account"
+                                class="bg-[var(--mat-sys-surface-container-lowest)] border-y border-[var(--mat-sys-outline-variant)]">
+                                <span class="font-mono text-lg text-[var(--mat-sys-on-surface)]">
+                                    {{ account.balance | currency:account.currency.code:'symbol':'1.0-0' }}
+                                </span>
+                            </td>
+                        </ng-container>
+
+                        <!-- Currency Column -->
+                        <ng-container matColumnDef="currency">
+                            <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="!bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
+                                Currency </th>
+                            <td mat-cell *matCellDef="let account"
+                                class="bg-[var(--mat-sys-surface-container-lowest)] border-y border-[var(--mat-sys-outline-variant)] text-[var(--mat-sys-on-surface-variant)]">
+                                {{ account.currency.code }} </td>
+                        </ng-container>
+
+                        <!-- Actions Column -->
+                        <ng-container matColumnDef="actions">
+                            <th mat-header-cell *matHeaderCellDef class="!bg-transparent border-b-0 opacity-60"> </th>
+                            <td mat-cell *matCellDef="let account"
+                                class="text-right !pr-6 last:rounded-r-[28px] bg-[var(--mat-sys-surface-container-lowest)] border-y border-r border-[var(--mat-sys-outline-variant)]">
+                                <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                                    <mat-icon class="text-[var(--mat-sys-on-surface-variant)]">more_vert</mat-icon>
+                                </button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="openUpdateBalanceDialog(account)">
+                                        <mat-icon>edit</mat-icon>
+                                        <span>Update Balance</span>
+                                    </button>
+                                    <button mat-menu-item (click)="navigateToAccount(account.accountId)">
+                                        <mat-icon>visibility</mat-icon>
+                                        <span>View Details</span>
+                                    </button>
+                                </mat-menu>
+                            </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="!bg-transparent"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                            class="hover:brightness-95 transition-all cursor-pointer h-20 shadow-sm hover:shadow-md">
+                        </tr>
+                    </table>
+
+                    @if (dataSource.data.length === 0) {
+                    <div
+                        class="text-center p-12 text-[var(--app-theme-text-secondary)] h-full flex flex-col justify-center items-center">
+                        <mat-icon class="scale-150 mb-4 opacity-50">account_balance_wallet</mat-icon>
+                        <p>No accounts found.</p>
+                        <button mat-button color="primary" class="mt-4" (click)="openCreateDialog()">Create your first
+                            account</button>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Morph Loader Overlay -->
+    @if (isDeleting()) {
+    <div
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md animate-enter">
+        <div class="morph-loader mb-8"></div>
+        <h2 class="text-2xl font-light text-white tracking-widest uppercase animate-pulse">Deleting Data...</h2>
     </div>
     }
+
 </div>

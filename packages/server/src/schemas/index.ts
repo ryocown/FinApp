@@ -53,7 +53,8 @@ export const CategorySchema = z.object({
 export const InstituteSchema = z.object({
   name: z.string().min(1),
   userId: z.string().min(1),
-  type: z.string().optional() // Make optional for now to avoid breaking existing clients instantly
+  type: z.string().optional(),
+  supportedInstituteId: z.string().optional() // New field
 });
 
 /**

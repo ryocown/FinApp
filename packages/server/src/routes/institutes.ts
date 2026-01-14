@@ -57,8 +57,8 @@ router.post('/users/:userId/institutes', checkAuth, validate(InstituteSchema), a
     // Generate UUID v4 for the institute
     const instituteId = v4();
 
-    // Generate supportedInstituteId from name (slugify)
-    const supportedInstituteId = instituteData.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    // Generate supportedInstituteId from name (slugify) if not provided
+    const supportedInstituteId = instituteData.supportedInstituteId || instituteData.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
     const newInstitute: InstituteProp = {
       ...instituteData,

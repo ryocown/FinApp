@@ -79,7 +79,8 @@ export class TransactionsComponent {
     // Lazy load the component import if needed, but here we just import it at top
     import('../transactions/import-transaction-dialog/import-transaction-dialog').then(({ ImportTransactionDialogComponent }) => {
       this.dialog.open(ImportTransactionDialogComponent, {
-        width: '800px',
+        width: 'auto',
+        maxWidth: '95vw',
         data: {
           account,
           instituteName: institute?.name,

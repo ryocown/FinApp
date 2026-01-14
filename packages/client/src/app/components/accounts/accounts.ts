@@ -4,6 +4,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Account, AccountType } from '@finapp/shared/models';
@@ -11,6 +12,7 @@ import { AccountService } from '../../services/account';
 import { AuthService } from '../../services/auth.service';
 import { CreateAccountDialogComponent } from './create-account-dialog/create-account-dialog';
 import { UpdateBalanceDialogComponent } from './update-balance-dialog/update-balance-dialog';
+import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 
@@ -25,7 +27,10 @@ import { Router } from '@angular/router';
     MatIconModule,
     MatMenuModule,
     MatProgressSpinnerModule,
-    CurrencyPipe
+    MatMenuModule,
+    MatProgressSpinnerModule,
+    CurrencyPipe,
+    MatCardModule
   ],
   templateUrl: './accounts.html',
   styles: [`
@@ -37,7 +42,7 @@ import { Router } from '@angular/router';
 })
 export class AccountsComponent {
   private accountService = inject(AccountService);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService); // Public for HTML access
   private dialog = inject(MatDialog);
   private router = inject(Router);
 
@@ -130,5 +135,36 @@ export class AccountsComponent {
   }
   navigateToAccount(accountId: string) {
     this.router.navigate(['/accounts', accountId]);
+  }
+
+  // --- Deletion Logic ---
+  isDeleting = signal(false);
+
+  async deleteAccount() {
+    const uid = this.authService.user()?.uid;
+    if (!uid) return;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete all data?',
+        message: 'This will permanently remove all your accounts, transactions, and user preferences. This action cannot be undone.',
+        confirmText: 'Delete Data',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        this.isDeleting.set(true);
+        try {
+          await this.authService.deleteUserData(uid);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await this.authService.signOut();
+        } catch (error) {
+          console.error("Delete failed", error);
+          this.isDeleting.set(false);
+        }
+      }
+    });
   }
 }

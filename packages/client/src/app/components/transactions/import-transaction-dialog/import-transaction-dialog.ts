@@ -6,13 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatStepperModule, MatStepper } from '@angular/material/stepper';
+import { CdkStepperModule } from '@angular/cdk/stepper';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { lastValueFrom } from 'rxjs';
 
-import { Account, TransactionProcessor, TransactionProto, ParsedTransaction, Institute, AccountType, Currency, TransactionType, toDateProto } from '@finapp/shared/models';
+import { Account, TransactionProcessor, TransactionProto, ParsedTransaction, Institute, AccountType, Currency, TransactionType, toDateProto, SUPPORTED_INSTITUTES } from '@finapp/shared/models';
 import { TransactionService } from '../../../services/transaction';
 import { InstituteService } from '../../../services/institute';
 import { AccountService } from '../../../services/account';
@@ -31,12 +32,12 @@ export interface ImportDialogData {
     standalone: true,
     imports: [
         CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule,
-        MatProgressBarModule, MatStepperModule, MatCheckboxModule, MatSelectModule,
+        MatProgressBarModule, MatStepperModule, CdkStepperModule, MatCheckboxModule, MatSelectModule,
         MatInputModule, MatFormFieldModule
     ],
     template: `
     <h2 mat-dialog-title>Import Wizard</h2>
-    <mat-dialog-content class="min-w-[800px] min-h-[500px] max-h-[80vh]">
+    <mat-dialog-content class="min-w-[fit-content] min-h-[500px] max-h-[80vh]">
       
       <mat-stepper [linear]="true" #stepper>
         
@@ -46,7 +47,7 @@ export interface ImportDialogData {
                 
                 @if (isDownloading() || loading()) {
                     <mat-progress-bar mode="indeterminate" class="max-w-md w-full mb-4"></mat-progress-bar>
-                    <p class="text-zinc-400">
+                    <p style="color: var(--app-theme-text-secondary)">
                         {{ isDownloading() ? 'Downloading from Drive...' : 'Processing file...' }}
                     </p>
                 } @else {
@@ -54,8 +55,8 @@ export interface ImportDialogData {
                     <div class="border-2 border-dashed rounded-xl p-8 w-full max-w-md flex flex-col items-center justify-center text-center cursor-pointer transition-all relative"
                         [class.border-emerald-500]="isDragging()"
                         [class.bg-emerald-500\/10]="isDragging()"
-                        [class.border-zinc-700]="!isDragging()"
-                        [class.hover:bg-zinc-800\/50]="!isDragging()">
+                        [style.border-color]="!isDragging() ? 'var(--app-theme-divider)' : ''"
+                        [class.hover:bg-zinc-800\/50]="!isDragging()"> <!-- Keeping hover simple for now or replace with theme hover -->
                         
                         <input type="file" 
                             (change)="onFileSelected($event)" 
@@ -65,15 +66,15 @@ export interface ImportDialogData {
                             accept=".csv,.xlsx,.pdf,.txt" 
                             class="absolute inset-0 opacity-0 cursor-pointer z-10">
                             
-                        <mat-icon class="scale-150 mb-4" [class.text-emerald-500]="isDragging()" [class.text-zinc-500]="!isDragging()">upload_file</mat-icon>
-                        <p class="text-lg font-medium text-white">Drag and drop to upload</p>
-                        <p class="text-sm text-zinc-400 mt-2">or click to browse</p>
+                        <mat-icon class="scale-150 mb-4" [class.text-emerald-500]="isDragging()" [style.color]="!isDragging() ? 'var(--app-theme-text-secondary)' : ''">upload_file</mat-icon>
+                        <p class="text-lg font-medium" style="color: var(--app-theme-text-primary)">Drag and drop to upload</p>
+                        <p class="text-sm mt-2" style="color: var(--app-theme-text-secondary)">or click to browse</p>
                     </div>
 
                     <div class="flex items-center w-full max-w-md">
-                        <div class="h-px bg-zinc-800 flex-1"></div>
-                        <span class="px-4 text-zinc-500 text-sm">OR</span>
-                        <div class="h-px bg-zinc-800 flex-1"></div>
+                        <div class="h-px flex-1" style="background-color: var(--app-theme-divider)"></div>
+                        <span class="px-4 text-sm" style="color: var(--app-theme-text-secondary)">OR</span>
+                        <div class="h-px flex-1" style="background-color: var(--app-theme-divider)"></div>
                     </div>
 
                     <!-- Google Drive -->
@@ -91,11 +92,12 @@ export interface ImportDialogData {
             <div class="space-y-6 py-4">
                 
                 <!-- Matching Config -->
-                <div class="grid grid-cols-2 gap-6 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+                <div class="grid grid-cols-2 gap-6 p-4 rounded-lg border" 
+                     style="background-color: var(--app-theme-surface-container-high); border-color: var(--app-theme-divider)">
                     
                     <!-- Institute Match -->
                     <div class="flex flex-col gap-2">
-                            <label class="text-xs text-zinc-500 uppercase tracking-wide">Institute</label>
+                            <label class="text-xs uppercase tracking-wide" style="color: var(--app-theme-text-secondary)">Institute</label>
                             <div class="flex gap-2">
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-select [(ngModel)]="selectedInstituteId" (selectionChange)="onInstituteChange()">
@@ -116,7 +118,7 @@ export interface ImportDialogData {
 
                     <!-- Account Match -->
                     <div class="flex flex-col gap-2">
-                            <label class="text-xs text-zinc-500 uppercase tracking-wide">Account</label>
+                            <label class="text-xs uppercase tracking-wide" style="color: var(--app-theme-text-secondary)">Account</label>
                             <div class="flex gap-2">
                             <mat-form-field appearance="outline" class="w-full">
                                 <mat-select [(ngModel)]="selectedAccountId">
@@ -137,17 +139,18 @@ export interface ImportDialogData {
                 </div>
 
                 <!-- Transactions Table -->
-                <div class="border border-zinc-800 rounded-lg overflow-hidden flex flex-col max-h-[400px]">
-                    <div class="bg-zinc-900 p-3 border-b border-zinc-800 flex justify-between items-center">
-                        <h3 class="font-medium text-white">Transactions ({{ transactions().length }})</h3>
-                        <div class="text-sm text-zinc-400">
+                <div class="border rounded-lg overflow-hidden flex flex-col max-h-[400px]" style="border-color: var(--app-theme-divider)">
+                    <div class="p-3 border-b flex justify-between items-center" 
+                         style="background-color: var(--app-theme-surface-container-highest); border-color: var(--app-theme-divider)">
+                        <h3 class="font-medium" style="color: var(--app-theme-text-primary)">Transactions ({{ transactions().length }})</h3>
+                        <div class="text-sm" style="color: var(--app-theme-text-secondary)">
                             {{ selection().length }} selected
                         </div>
                     </div>
                     
                     <div class="overflow-y-auto">
                         <table class="w-full text-sm text-left">
-                            <thead class="bg-zinc-900/50 text-zinc-400 sticky top-0">
+                            <thead class="glass-layout sticky top-0" style="color: var(--app-theme-text-secondary)">
                                 <tr>
                                     <th class="px-4 py-3 w-12">
                                         <mat-checkbox 
@@ -161,20 +164,20 @@ export interface ImportDialogData {
                                     <th class="px-4 py-3 text-right">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-zinc-800">
+                            <tbody class="divide-y" style="border-color: var(--app-theme-divider)">
                                 @for (t of transactions(); track $index) {
-                                    <tr class="hover:bg-zinc-800/30 transition-colors">
+                                    <tr class="transition-colors hover:bg-white/5">
                                         <td class="px-4 py-2">
                                             <mat-checkbox 
                                                 [checked]="isSelected(t)"
                                                 (change)="toggleSelection(t, $event.checked)">
                                             </mat-checkbox>
                                         </td>
-                                        <td class="px-4 py-2 text-zinc-300">{{ t.date.timestamp | date:'shortDate' }}</td>
-                                        <td class="px-4 py-2 text-white">{{ t.description }}</td>
+                                        <td class="px-4 py-2" style="color: var(--app-theme-text-secondary)">{{ t.date.timestamp | date:'shortDate' }}</td>
+                                        <td class="px-4 py-2" style="color: var(--app-theme-text-primary)">{{ t.description }}</td>
                                         <td class="px-4 py-2 text-right font-medium" 
                                             [class.text-emerald-400]="t.amount > 0" 
-                                            [class.text-white]="t.amount <= 0">
+                                            [style.color]="t.amount <= 0 ? 'var(--app-theme-text-primary)' : ''">
                                             {{ t.amount | currency:t.currency.code:'symbol':'1.2-2' }}
                                         </td>
                                     </tr>
@@ -191,20 +194,20 @@ export interface ImportDialogData {
              @if (uploading()) {
                  <div class="flex flex-col items-center justify-center py-12">
                     <mat-progress-bar mode="indeterminate" class="max-w-md mb-4"></mat-progress-bar>
-                    <p class="text-zinc-400">Saving transactions...</p>
+                    <p style="color: var(--app-theme-text-secondary)">Saving transactions...</p>
                 </div>
             } @else if (error()) {
                  <div class="flex flex-col items-center justify-center py-12 text-center">
                     <mat-icon class="text-red-500 scale-150 mb-4">error</mat-icon>
-                    <h3 class="text-lg font-medium text-white mb-2">Import Failed</h3>
+                    <h3 class="text-lg font-medium mb-2" style="color: var(--app-theme-text-primary)">Import Failed</h3>
                     <p class="text-red-400 mb-6">{{ error() }}</p>
                     <button mat-stroked-button (click)="resetState()">Try Again</button>
                 </div>
             } @else {
                  <div class="flex flex-col items-center justify-center py-12 text-center">
                     <mat-icon class="text-emerald-500 scale-150 mb-4">check_circle</mat-icon>
-                    <h3 class="text-lg font-medium text-white mb-2">Success!</h3>
-                    <p class="text-zinc-400 mb-6">Imported {{ selection().length }} transactions.</p>
+                    <h3 class="text-lg font-medium mb-2" style="color: var(--app-theme-text-primary)">Success!</h3>
+                    <p class="mb-6" style="color: var(--app-theme-text-secondary)">Imported {{ selection().length }} transactions.</p>
                     <button mat-raised-button color="primary" mat-dialog-close>Close</button>
                  </div>
             }
@@ -424,12 +427,29 @@ export class ImportTransactionDialogComponent {
             // 1. Create Institute if NEW
             let instituteId = this.selectedInstituteId();
             if (instituteId === 'NEW') {
-                // Fixed: using correct positional arguments (userId, name) and checking return.
-                // Wait, I need to observe the return.
+                const name = this.newInstituteName().trim();
+                let supportedId: string | undefined;
+                let type: string | any = 'Other';
+
+                // Attempt to match with supported institutes
+                const lowerName = name.toLowerCase();
+                const match = SUPPORTED_INSTITUTES.find(inst =>
+                    inst.displayName.toLowerCase() === lowerName ||
+                    inst.commonName.toLowerCase() === lowerName ||
+                    inst.shortName.toLowerCase() === lowerName
+                );
+
+                if (match) {
+                    supportedId = match.supportedInstituteId;
+                    type = match.type;
+                }
+
                 // createInstitute returns Observable<Institute>.
                 const newInst = await lastValueFrom(this.instituteService.createInstitute(
                     this.data.userId,
-                    this.newInstituteName()
+                    name,
+                    type,
+                    supportedId
                 ));
 
                 instituteId = newInst.instituteId;

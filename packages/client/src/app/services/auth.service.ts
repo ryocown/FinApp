@@ -158,6 +158,10 @@ export class AuthService {
         }
     }
 
+    async deleteUserData(userId: string): Promise<void> {
+        await lastValueFrom(this.http.delete(`${environment.apiUrl}/users/${userId}/data`));
+    }
+
     async signOut() {
         try {
             if (window.google) {

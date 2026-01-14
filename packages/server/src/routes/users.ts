@@ -107,4 +107,32 @@ router.put('/:userId', checkAuth, async (req: AuthRequest, res: Response) => {
     }
 });
 
+// Delete all user data (Wipeout)
+router.delete('/:userId/data', checkAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            res.status(400).json({ error: 'Missing userId' });
+            return;
+        }
+
+        if (req.user!.uid !== userId) {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        const userRef = getUserRef(userId);
+
+        // Recursive delete using firebase-admin
+        await db.recursiveDelete(userRef);
+
+        logger.info(`Recursively deleted all data for user ${userId}`);
+        res.status(200).json({ message: 'User data deleted successfully' });
+
+    } catch (error) {
+        logger.error('Error deleting user data:', error);
+        res.status(500).json({ error: 'Failed to delete user data' });
+    }
+});
+
 export default router;
