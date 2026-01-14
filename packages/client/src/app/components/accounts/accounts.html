@@ -95,15 +95,13 @@
                 </div>
                 } @else {
                 <div class="overflow-auto custom-scrollbar flex-1 -mx-4 px-4 pb-4">
-                    <table mat-table [dataSource]="dataSource" matSort
-                        class="w-full bg-transparent border-separate border-spacing-y-3">
+                    <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent custom-table">
                         <!-- Name Column -->
                         <ng-container matColumnDef="name">
                             <th mat-header-cell *matHeaderCellDef mat-sort-header
                                 class="!pl-6 !bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
                                 Name </th>
-                            <td mat-cell *matCellDef="let account"
-                                class="!pl-6 first:rounded-l-[28px] bg-[var(--mat-sys-surface-container-lowest)] border-y border-l border-[var(--mat-sys-outline-variant)]">
+                            <td mat-cell *matCellDef="let account" class="!pl-6">
                                 <div class="flex items-center gap-4 py-3 cursor-pointer"
                                     (click)="navigateToAccount(account.accountId)">
                                     <div
@@ -125,8 +123,7 @@
                             <th mat-header-cell *matHeaderCellDef mat-sort-header
                                 class="!bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
                                 Balance </th>
-                            <td mat-cell *matCellDef="let account"
-                                class="bg-[var(--mat-sys-surface-container-lowest)] border-y border-[var(--mat-sys-outline-variant)]">
+                            <td mat-cell *matCellDef="let account">
                                 <span class="font-mono text-lg text-[var(--mat-sys-on-surface)]">
                                     {{ account.balance | currency:account.currency.code:'symbol':'1.0-0' }}
                                 </span>
@@ -138,16 +135,14 @@
                             <th mat-header-cell *matHeaderCellDef mat-sort-header
                                 class="!bg-transparent border-b-0 text-[var(--mat-sys-on-surface-variant)] uppercase text-xs tracking-wider opacity-60">
                                 Currency </th>
-                            <td mat-cell *matCellDef="let account"
-                                class="bg-[var(--mat-sys-surface-container-lowest)] border-y border-[var(--mat-sys-outline-variant)] text-[var(--mat-sys-on-surface-variant)]">
+                            <td mat-cell *matCellDef="let account" class="text-[var(--mat-sys-on-surface-variant)]">
                                 {{ account.currency.code }} </td>
                         </ng-container>
 
                         <!-- Actions Column -->
                         <ng-container matColumnDef="actions">
                             <th mat-header-cell *matHeaderCellDef class="!bg-transparent border-b-0 opacity-60"> </th>
-                            <td mat-cell *matCellDef="let account"
-                                class="text-right !pr-6 last:rounded-r-[28px] bg-[var(--mat-sys-surface-container-lowest)] border-y border-r border-[var(--mat-sys-outline-variant)]">
+                            <td mat-cell *matCellDef="let account" class="text-right !pr-6">
                                 <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
                                     <mat-icon class="text-[var(--mat-sys-on-surface-variant)]">more_vert</mat-icon>
                                 </button>

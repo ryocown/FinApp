@@ -38,6 +38,50 @@ import { Router } from '@angular/router';
       display: block;
       height: 100%;
     }
+
+    .custom-table {
+      border-collapse: separate;
+      border-spacing: 0 2px; /* 2px gap between rows */
+    }
+
+    /* Base styles for all cells (Background + Top/Bottom Borders) */
+    .custom-table td {
+      background-color: var(--mat-sys-surface-container-lowest);
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      border-left: none;
+      border-right: none;
+    }
+
+    /* Left edge of all rows */
+    .custom-table td:first-child {
+      border-left: 1px solid var(--mat-sys-outline-variant);
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Right edge of all rows */
+    .custom-table td:last-child {
+      border-right: 1px solid var(--mat-sys-outline-variant);
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* First Row Special Rounding (Large Top) */
+    .custom-table tr:first-child td:first-child {
+      border-top-left-radius: 28px;
+    }
+    .custom-table tr:first-child td:last-child {
+      border-top-right-radius: 28px;
+    }
+
+    /* Last Row Special Rounding (Large Bottom) */
+    .custom-table tr:last-child td:first-child {
+      border-bottom-left-radius: 28px;
+    }
+    .custom-table tr:last-child td:last-child {
+      border-bottom-right-radius: 28px;
+    }
   `]
 })
 export class AccountsComponent {
