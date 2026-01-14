@@ -1,32 +1,26 @@
 import { v4 } from "uuid";
-import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "./transaction.js";
+import { GeneralTransaction, type TransactionProto, TradeTransaction, TransactionType, TransferTransaction } from "./transaction.js";
 
-export enum RecurrenceFrequency {
-  Daily = 'DAILY',
-  Weekly = 'WEEKLY',
-  BiWeekly = 'BI_WEEKLY',
-  Monthly = 'MONTHLY',
-  Yearly = 'YEARLY'
-}
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-export interface IRecurringTransaction {
+export interface RecurringTransactionProto {
   recurringTransactionId: string;
-  templateTransaction: ITransaction;
+  templateTransaction: TransactionProto;
 
   frequency: RecurrenceFrequency;
   nextDueDate: Date;
   endDate: Date | null;
 }
 
-export class RecurringTransaction implements IRecurringTransaction {
+export class RecurringTransaction implements RecurringTransactionProto {
   recurringTransactionId: string;
-  templateTransaction: ITransaction;
+  templateTransaction: TransactionProto;
 
   frequency: RecurrenceFrequency;
   nextDueDate: Date;
   endDate: Date | null;
 
-  constructor(templateTransaction: ITransaction, frequency: RecurrenceFrequency, nextDueDate: Date, endDate: Date | null = null) {
+  constructor(templateTransaction: TransactionProto, frequency: RecurrenceFrequency, nextDueDate: Date, endDate: Date | null = null) {
     this.recurringTransactionId = v4();
     this.templateTransaction = templateTransaction;
     this.frequency = frequency;
@@ -35,7 +29,7 @@ export class RecurringTransaction implements IRecurringTransaction {
   }
 
   static fromJSON(json: any): RecurringTransaction {
-    let templateTransaction: ITransaction;
+    let templateTransaction: TransactionProto;
     switch (json.templateTransaction.transactionType) {
       case TransactionType.General:
         templateTransaction = GeneralTransaction.fromJSON(json.templateTransaction);
@@ -47,7 +41,7 @@ export class RecurringTransaction implements IRecurringTransaction {
         templateTransaction = TransferTransaction.fromJSON(json.templateTransaction);
         break;
       default:
-        throw new Error(`Unknown transaction type: ${json.templateTransaction.transactionType}`);
+        throw new Error(`Unknown transaction type: ${json.templateTransaction.transactionType} `);
     }
 
     const recurringTransaction = new RecurringTransaction(

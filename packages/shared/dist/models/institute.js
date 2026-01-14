@@ -19,15 +19,17 @@ export class Institute {
     userId;
     accounts;
     type;
-    constructor(name, userId, accounts, type) {
+    supportedInstituteId;
+    constructor(name, userId, accounts, type, supportedInstituteId) {
         this.instituteId = v4();
         this.name = name;
         this.userId = userId;
         this.accounts = accounts;
         this.type = type;
+        this.supportedInstituteId = supportedInstituteId;
     }
     static fromProp(prop) {
-        const inst = new Institute(prop.name, prop.userId, prop.accounts || [], prop.type);
+        const inst = new Institute(prop.name, prop.userId, prop.accounts || [], prop.type, prop.supportedInstituteId);
         inst.instituteId = prop.instituteId;
         return inst;
     }

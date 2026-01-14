@@ -152,8 +152,24 @@ export class ParticleBackgroundComponent implements OnInit, OnDestroy {
         const trailColorStart = isDark ? 'rgba(139, 92, 246, 0)' : 'rgba(14, 165, 233, 0)';
         const trailColorEnd = isDark ? 'rgba(192, 132, 252, 0.6)' : 'rgba(56, 189, 248, 0.6)';
         const dotColor = isDark ? '#c084fc' : '#38bdf8';
-        const shockwaveColorBase = isDark ? '167, 139, 250' : '56, 189, 248'; // RGB for template string
-        const connectionColorBase = isDark ? '139, 92, 246' : '2, 132, 199'; // RGB for connection
+        const shockwaveColorBase = isDark ? '167, 139, 250' : '56, 189, 248';
+        const connectionColorBase = isDark ? '139, 92, 246' : '2, 132, 199';
+
+        // --- PACKET BURST ON COLLAPSE START ---
+        if (this.collapse && this.packets.length < 20 && Math.random() < 0.2) {
+            // Spawn rapid packets to simulate "data transfer" before warp
+            const p1 = this.particles[Math.floor(Math.random() * this.particles.length)];
+            let p2: Particle | null = null;
+            let minD = 200;
+            for (const other of this.particles) {
+                if (other === p1) continue;
+                const d = Math.hypot(p1.x - other.x, p1.y - other.y);
+                if (d < minD) { p2 = other; break; }
+            }
+            if (p2) {
+                this.packets.push({ p1, p2, progress: 0, speed: 0.1 }); // High speed packets
+            }
+        }
 
         // --- PACKET MANAGEMENT ---
         if (!this.collapse && this.packets.length < 5 && Math.random() < 0.005) {
@@ -236,24 +252,23 @@ export class ParticleBackgroundComponent implements OnInit, OnDestroy {
             const p = this.particles[i];
 
             if (this.collapse) {
-                // WARP SPEED LOGIC
+                // SINGULARITY ZOOM LOGIC
+                // Pull everything towards the exact center
                 const dx = centerX - p.x;
                 const dy = centerY - p.y;
                 const dist = Math.hypot(dx, dy);
 
-                // Normalize and accelerate
-                const speed = 10 + (maxDist - dist) * 0.05;
+                // Accelerate as they get closer (Singularity effect)
+                const speed = 5 + (2000 / (dist + 1));
                 const nx = dx / dist;
                 const ny = dy / dist;
 
                 p.x += nx * speed;
                 p.y += ny * speed;
 
-                // If reaches center, respawn far away or hide
-                if (dist < 20) {
-                    p.x = centerX + (Math.random() - 0.5) * width; // Scamble
-                    p.y = centerY + (Math.random() - 0.5) * height; // Scamble
-                    p.baseAlpha = 0; // Fade out
+                // Fade out ONLY when very close to center (entering the "portal")
+                if (dist < 10) {
+                    p.baseAlpha = 0;
                 }
             } else {
                 p.x += p.vx;

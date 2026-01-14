@@ -64,9 +64,9 @@ router.get('/users/:userId/net-worth', checkAuth, async (req: AuthRequest, res: 
           const data = d.data();
           return {
             ...data,
-            date: data.date.toDate ? data.date.toDate() : new Date(data.date),
+            date: new Date(data.date.timestamp),
             balance: Number(data.balance)
-          } as IBalanceCheckpoint;
+          };
         })
       };
     }));
@@ -87,7 +87,7 @@ router.get('/users/:userId/net-worth', checkAuth, async (req: AuthRequest, res: 
         const firstCheckpoint = account.checkpoints[0];
         if (firstCheckpoint) {
           const firstCheckpointDate = firstCheckpoint.date;
-          if (!hasCheckpoints || firstCheckpointDate < earliestDate) {
+          if (!hasCheckpoints || firstCheckpointDate.getTime() < earliestDate.getTime()) {
             earliestDate = firstCheckpointDate;
             hasCheckpoints = true;
           }
@@ -157,6 +157,7 @@ router.get('/users/:userId/net-worth', checkAuth, async (req: AuthRequest, res: 
       for (const account of accountsWithCurrency) {
         let lastCheckpointBalance = 0;
         for (const cp of account.checkpoints) {
+          // cp.date in account.checkpoints was converted to Date object in step 2 (line 67 update)
           if (cp.date <= endOfDay) {
             lastCheckpointBalance = cp.balance;
           } else {
@@ -193,6 +194,117 @@ router.get('/users/:userId/net-worth', checkAuth, async (req: AuthRequest, res: 
   } catch (error) {
     logger.error('Error calculating net worth:', error);
     res.status(500).json({ error: 'Failed to calculate net worth' });
+  }
+});
+
+/**
+ * Get Month-over-Month (MoM) metrics
+ */
+router.get('/users/:userId/mom', checkAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId || !req.user || req.user.uid !== userId) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    // Dates
+    const now = new Date();
+    const currentMonthEnd = new Date(now);
+
+    // Previous Month: Same day last month
+    const prevMonthEnd = new Date(now);
+    prevMonthEnd.setMonth(now.getMonth() - 1);
+
+    // Normalize to EOD to capture everything up to that second
+    // Or exactly 30 days ago? "MoM" usually means "vs Last Month".
+    // Let's use exact timestamp comparison or EOD?
+    // Using EOD ensures we get the "Status" at end of day.
+    // Actually, "Current" is "Right Now".
+    // "Previous" is "Right Now - 1 Month" or "EOD Last Month"?
+    // User wants "MoM Diff". Usually: (Current Value - Value 1 Month Ago).
+
+    // Helper to calculate Net Worth at a specific point in time
+    const calculateNetWorthAt = async (targetDate: Date): Promise<number> => {
+      const institutesSnapshot = await getUserRef(userId).collection('institutes').get();
+      let total = 0;
+
+      for (const doc of institutesSnapshot.docs) {
+        const accountsSnap = await doc.ref.collection('accounts').get();
+        for (const accountDoc of accountsSnap.docs) {
+          const accountData = accountDoc.data() as Account;
+
+          // Find latest checkpoint BEFORE or ON targetDate
+          // We need to fetch checkpoints. 
+          // Optimization: Limit 1 orderBy date desc where date <= targetDate
+          // Firestore doesn't support inequality on one field and sort on another easily without index?
+          // Actually: where('date.timestamp', '<=', timestamp).orderBy('date.timestamp', 'desc').limit(1)
+          // This works and is indexed.
+
+          const cpSnap = await accountDoc.ref.collection('balance_checkpoints')
+            .where('date.timestamp', '<=', targetDate.getTime())
+            .orderBy('date.timestamp', 'desc')
+            .limit(1)
+            .get();
+
+          let balance = 0;
+          const firstDoc = cpSnap.docs[0];
+          if (!cpSnap.empty && firstDoc) {
+            const data = firstDoc.data();
+            balance = Number(data['balance'] || 0);
+          }
+
+          // Currency conversion (Mocked JPYUSD for now as per NetWorth route)
+          if (accountData.currency?.code && accountData.currency.code !== 'USD') {
+            // Fetch rate for targetDate
+            // Simplify: assume 1:1 if not found or look up latest price?
+            // For now, let's treat non-USD as 0 or 1:1 to prevent crashing if no rate?
+            // Or fetch rate.
+            // Reusing logic is hard without refactoring.
+            // Let's copy simple logic: JPY -> USD approx 0.007 or fetch from DB?
+            // Fetching from DB for a single point is fast.
+            const pairId = accountData.currency.code < 'USD' ? `${accountData.currency.code}USD` : `USD${accountData.currency.code}`;
+            // Fetch latest price before targetDate
+            const priceSnap = await db.collection('currencies').doc(pairId).collection('prices')
+              .where('date', '<=', targetDate.toISOString().split('T')[0])
+              .orderBy('date', 'desc')
+              .limit(1)
+              .get();
+
+            if (!priceSnap.empty) {
+              const firstPriceDoc = priceSnap.docs[0];
+              if (firstPriceDoc) {
+                const data = firstPriceDoc.data();
+                const priceRate = data['rate'] as number | undefined;
+                if (priceRate !== undefined) {
+                  balance *= priceRate;
+                }
+              }
+            }
+          }
+          total += balance;
+        }
+      }
+      return total;
+    };
+
+    const currentValue = await calculateNetWorthAt(now);
+    const prevValue = await calculateNetWorthAt(prevMonthEnd);
+
+    const diff = currentValue - prevValue;
+    const percent = prevValue === 0 ? (currentValue === 0 ? 0 : 100) : ((diff / prevValue) * 100);
+
+    res.json({
+      current: currentValue,
+      previous: prevValue,
+      diff,
+      percent
+    });
+
+  } catch (error) {
+    logger.error('Error calculating MoM:', error);
+    res.status(500).json({ error: 'Failed to calculate MoM' });
   }
 });
 

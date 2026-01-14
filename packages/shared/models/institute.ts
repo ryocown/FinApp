@@ -21,6 +21,7 @@ export interface InstituteProp {
     userId: string;
     accounts?: Account[];
     type: InstituteTypes;
+    supportedInstituteId?: string;
 }
 
 export interface SupportedInstituteProp {
@@ -31,6 +32,7 @@ export interface SupportedInstituteProp {
     logo: string;
     logoFull: string;
     type: InstituteTypes;
+    supportedInstituteId?: string;
 }
 
 export class Institute implements InstituteProp {
@@ -39,17 +41,19 @@ export class Institute implements InstituteProp {
     userId: string;
     accounts: Account[];
     type: InstituteTypes;
+    supportedInstituteId?: string;
 
-    constructor(name: string, userId: string, accounts: Account[], type: InstituteTypes) {
+    constructor(name: string, userId: string, accounts: Account[], type: InstituteTypes, supportedInstituteId?: string) {
         this.instituteId = v4();
         this.name = name;
         this.userId = userId;
         this.accounts = accounts;
         this.type = type;
+        this.supportedInstituteId = supportedInstituteId;
     }
 
     static fromProp(prop: InstituteProp): Institute {
-        const inst = new Institute(prop.name, prop.userId, prop.accounts || [], prop.type);
+        const inst = new Institute(prop.name, prop.userId, prop.accounts || [], prop.type, prop.supportedInstituteId);
         inst.instituteId = prop.instituteId;
         return inst;
     }

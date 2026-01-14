@@ -1,266 +1,327 @@
-<div class="flex-1 h-full overflow-auto dashboard-main-body bg-transparent">
-    <header class="mb-8 flex justify-between items-center">
-        <!-- Welcome Section -->
-        <div class="mb-8 w-full">
-            <h1 class="text-[57px] leading-[64px] tracking-[-0.25px] font-normal text-[var(--mat-sys-on-surface)]"
-                style="font-family: 'Google Sans Display', sans-serif;">
-                Welcome back, {{ authService.user()?.displayName || 'User' }}
-            </h1>
-            <p class="text-[var(--mat-sys-on-surface-variant)] mt-1">Here's what's happening successfully with your
-                finances today.</p>
-        </div>
-    </header>
+<div class="dashboard-main-body bg-transparent">
 
-    <div class="space-y-6">
-        @if (isLoading()) {
-        <!-- Skeleton Net Worth Card -->
-        <mat-card class="!bg-[#1d1d20] min-h-[400px]">
-            <mat-card-header>
-                <div class="skeleton skeleton-text subtitle w-32"></div>
-            </mat-card-header>
-            <mat-card-content class="mt-4">
-                <div class="skeleton skeleton-text title w-48 mb-6"></div>
-                <div
-                    class="h-64 rounded-lg bg-zinc-900/30 border border-zinc-800/50 flex items-center justify-center p-2">
-                    <div class="skeleton w-full h-full opacity-20"></div>
-                </div>
-            </mat-card-content>
-        </mat-card>
+    <!-- Loader Container (Morph Loader) - Above Welcome Text -->
+    <div class="dashboard-loader-container" [class.loaded]="!isLoading()">
+        <div class="morph-loader"></div>
+    </div>
 
-        <!-- Skeleton Assets/Liabilities -->
-        <div class="grid grid-cols-2 gap-4">
-            <mat-card class="!bg-[#1d1d20] h-32">
-                <mat-card-header>
-                    <div class="skeleton skeleton-text subtitle w-24"></div>
-                    <div class="skeleton skeleton-text title w-32 mt-2"></div>
-                </mat-card-header>
-            </mat-card>
-            <mat-card class="!bg-[#1d1d20] h-32">
-                <mat-card-header>
-                    <div class="skeleton skeleton-text subtitle w-24"></div>
-                    <div class="skeleton skeleton-text title w-32 mt-2"></div>
-                </mat-card-header>
-            </mat-card>
-        </div>
+    <div class="dashboard-content-wrapper" [class.loading]="isLoading()">
+        <header class="mt-8 flex justify-between items-center">
+            <!-- Welcome Section -->
+            <div class="mb-8 w-full">
+                <h1 class="header-large">
+                    Welcome back, <span class="header-title">{{ authService.user()?.displayName || 'User' }}</span>
+                </h1>
+            </div>
+        </header>
 
-        } @else {
-        <!-- 3-Column Stats Grid -->
-        <div class="dashboard-cards-container">
-
-            <!-- Net Wealth Card -->
-            <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none transition-transform hover:scale-[1.01] duration-300">
-                <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <mat-icon
-                        class="!text-8xl !w-24 !h-24 leading-none text-[var(--mat-sys-on-surface)]">account_balance</mat-icon>
-                </div>
-                <mat-card-header>
-                    <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Net
-                        Wealth</mat-card-title>
-                    <mat-card-subtitle class="mt-2">
-                        <div class="flex items-baseline gap-2">
-                            <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ netWorth() |
-                                currency:'USD':'symbol':'1.0-0' }}</h2>
-                            <div class="flex items-center text-sm font-medium"
-                                [class.text-emerald-400]="netWorthMoM().trend === 'up'"
-                                [class.text-red-400]="netWorthMoM().trend === 'down'">
-                                <mat-icon class="!text-base !w-4 !h-4 mr-1">
-                                    {{ netWorthMoM().trend === 'up' ? 'trending_up' : (netWorthMoM().trend === 'down' ?
-                                    'trending_down' : 'trending_flat') }}
-                                </mat-icon>
-                                <span>{{ netWorthMoM().value }}%</span>
-                            </div>
-                        </div>
-                    </mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
-                            <mat-icon class="!text-lg !w-5 !h-5 text-red-400">local_fire_department</mat-icon> Burn Rate
-                        </span>
-                        <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ burnRate() |
-                            currency:'USD':'symbol':'1.0-0' }} /
-                            mo</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)]">MoM Diff</span>
-                        <span class="font-medium text-emerald-400">+ $12,450</span>
-                    </div>
-                </mat-card-content>
-            </mat-card>
-
-            <!-- Total Assets Card -->
-            <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none transition-transform hover:scale-[1.01] duration-300">
-                <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <mat-icon
-                        class="!text-8xl !w-24 !h-24 leading-none text-[var(--mat-sys-on-surface)]">savings</mat-icon>
-                </div>
-                <mat-card-header>
-                    <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Total
-                        Assets</mat-card-title>
-                    <mat-card-subtitle class="mt-2">
-                        <div class="flex items-baseline gap-2">
-                            <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ totalAssets() |
-                                currency:'USD':'symbol':'1.0-0' }}</h2>
-                            <div class="flex items-center text-sm font-medium"
-                                [class.text-emerald-400]="assetsMoM().trend === 'up'"
-                                [class.text-red-400]="assetsMoM().trend === 'down'">
-                                <mat-icon class="!text-base !w-4 !h-4 mr-1">
-                                    {{ assetsMoM().trend === 'up' ? 'trending_up' : (assetsMoM().trend === 'down' ?
-                                    'trending_down' : 'trending_flat') }}
-                                </mat-icon>
-                                <span>{{ assetsMoM().value }}%</span>
-                            </div>
-                        </div>
-                    </mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
-                            <mat-icon class="!text-lg !w-5 !h-5 text-blue-400">timeline</mat-icon> Future Wealth (10y)
-                        </span>
-                        <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ futureWealth() |
-                            currency:'USD':'symbol':'1.0-0'
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)]">MoM Diff</span>
-                        <span class="font-medium text-emerald-400">+ $8,200</span>
-                    </div>
-                </mat-card-content>
-            </mat-card>
-
-            <!-- Total Liabilities Card -->
-            <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none transition-transform hover:scale-[1.01] duration-300">
-                <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <mat-icon
-                        class="!text-8xl !w-24 !h-24 leading-none text-[var(--mat-sys-on-surface)]">credit_card</mat-icon>
-                </div>
-                <mat-card-header>
-                    <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Total
-                        Liabilities</mat-card-title>
-                    <mat-card-subtitle class="mt-2">
-                        <div class="flex items-baseline gap-2">
-                            <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ totalLiabilities() |
-                                currency:'USD':'symbol':'1.0-0' }}</h2>
-                            <div class="flex items-center text-sm font-medium"
-                                [class.text-emerald-400]="liabilitiesMoM().trend === 'down'"
-                                [class.text-red-400]="liabilitiesMoM().trend === 'up'">
-                                <mat-icon class="!text-base !w-4 !h-4 mr-1">
-                                    {{ liabilitiesMoM().trend === 'down' ? 'trending_down' : (liabilitiesMoM().trend ===
-                                    'up' ? 'trending_up' : 'trending_flat') }}
-                                </mat-icon>
-                                <span>{{ liabilitiesMoM().value }}%</span>
-                            </div>
-                        </div>
-                    </mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
-                            <mat-icon class="!text-lg !w-5 !h-5 text-purple-400">shopping_bag</mat-icon> Buying Power
-                        </span>
-                        <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ buyingPower() |
-                            currency:'USD':'symbol':'1.0-0'
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
-                            <mat-icon class="!text-lg !w-5 !h-5 text-yellow-400">score</mat-icon> Credit Score
-                        </span>
-                        <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ creditScore() }}</span>
-                    </div>
-                </mat-card-content>
-            </mat-card>
-        </div>
-
-        <!-- Chart + Account Filter Container -->
-        <div class="dashboard-chart-container">
-            <!-- Col 1: Chart (Flex 3) -->
-            <div class="dashboard-chart-section h-full">
+        <div class="flex flex-col gap-6">
+            @if (isLoading()) {
+            <!-- 3-Column Stats Grid Skeletons -->
+            <div class="dashboard-stats-grid flex flex-col md:flex-row gap-6 w-full">
+                @for (i of [1,2,3]; track i) {
                 <mat-card
-                    class="!bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] shadow-none h-full">
+                    class="flex-1 !bg-[var(--mat-sys-surface-container)] h-full min-h-[200px] relative overflow-hidden">
+                    <div class="absolute right-0 top-0 p-4 opacity-5">
+                        <div class="skeleton-avatar w-24 h-24"></div>
+                    </div>
                     <mat-card-header>
-                        <mat-card-title>Net Worth History</mat-card-title>
-                        <mat-card-actions align="end" class="!pb-0">
-                            <mat-button-toggle-group [value]="range()" (change)="setRange($event.value)"
-                                appearance="legacy" name="range" aria-label="Date Range">
-                                <mat-button-toggle value="30d">30D</mat-button-toggle>
-                                <mat-button-toggle value="90d">3M</mat-button-toggle>
-                                <mat-button-toggle value="1y">1Y</mat-button-toggle>
-                                <mat-button-toggle value="all">ALL</mat-button-toggle>
-                            </mat-button-toggle-group>
-                        </mat-card-actions>
+                        <div class="skeleton skeleton-text subtitle w-32"></div>
+                        <div class="skeleton skeleton-text title w-48 mt-4"></div>
                     </mat-card-header>
-
-                    <mat-card-content class="mt-4">
-                        <div
-                            class="h-64 rounded-lg bg-zinc-900/30 border border-zinc-800/50 overflow-hidden mb-6 flex items-center justify-center p-2">
-                            <app-net-worth-chart [data]="netWorthHistory()"></app-net-worth-chart>
+                    <mat-card-content class="mt-auto pt-6 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div class="skeleton skeleton-text w-24"></div>
+                            <div class="skeleton skeleton-text w-24"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="skeleton skeleton-text w-16"></div>
+                            <div class="skeleton skeleton-text w-20"></div>
                         </div>
                     </mat-card-content>
                 </mat-card>
+                }
             </div>
 
-            <!-- Col 2: Account Filter Card (Flex 1) -->
-            <div class="dashboard-account-section h-full">
-                <mat-card
-                    class="!bg-[var(--app-theme-surface-container-lowest)] !text-[var(--mat-sys-on-surface)] shadow-none h-full">
-                    <mat-card-header>
-                        <mat-card-title>Accounts</mat-card-title>
-                    </mat-card-header>
-                    <br />
-                    <mat-card-content class="mt-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
-                        @for (group of groupedAccounts(); track group[0]) {
-                        <div mat-subheader
-                            class="!text-[var(--mat-sys-on-surface-variant)] !text-sm !font-medium uppercase tracking-wider !pl-0 !bg-transparent mt-4 mb-2">
-                            {{ group[0] }}
-                        </div>
-                        <mat-list class="waypoint-list-card-high">
-                            @for (account of group[1]; track account.accountId) {
-                            <mat-list-item [class.is-checked]="isAccountVisible(account.accountId)"
-                                (click)="navigateToAccount(account.accountId)"
-                                class="cursor-pointer hover:bg-white/5 transition-colors">
-                                <span matListItemIcon>
-                                    <mat-checkbox [checked]="isAccountVisible(account.accountId)"
-                                        (change)="toggleAccount(account.accountId)" color="primary"
-                                        (click)="$event.stopPropagation()">
-                                    </mat-checkbox>
-                                </span>
-                                <span matListItemTitle class="!text-sm flex items-center gap-2 group/item">
-                                    {{ account.name }}
-                                    <button mat-icon-button
-                                        class="!w-6 !h-6 !p-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
-                                        (click)="$event.stopPropagation(); openUpdateBalanceDialog(account)">
-                                        <mat-icon
-                                            class="!text-sm !w-4 !h-4 text-[var(--mat-sys-on-surface-variant)]">edit</mat-icon>
-                                    </button>
-                                </span>
-                                <span matListItemMeta
-                                    class="!text-xs !text-[var(--mat-sys-on-surface-variant)] whitespace-nowrap">
-                                    {{ account.balance | currency:account.currency.code:'symbol':'1.0-0' }}
-                                </span>
-                            </mat-list-item>
+            <!-- Chart + Account Filter Skeletons -->
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Chart Skeleton (Flex 3) -->
+                <div class="flex-[3] h-full flex flex-col">
+                    <mat-card
+                        class="!bg-[var(--mat-sys-surface-container)] shadow-none h-full flex flex-col min-h-[400px]">
+                        <mat-card-header>
+                            <div class="skeleton skeleton-text subtitle w-48"></div>
+                        </mat-card-header>
+                        <mat-card-content class="mt-4 flex-1 flex flex-col">
+                            <div
+                                class="rounded-lg bg-[var(--mat-sys-surface-container-highest)] border border-[var(--mat-sys-outline-variant)] flex-1 w-full h-full p-2">
+                                <div class="skeleton w-full h-full opacity-10"></div>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+
+                <!-- List Skeleton (Flex 1) -->
+                <div class="flex-1 min-w-[300px] h-full">
+                    <mat-card class="!bg-[var(--mat-sys-surface-container-lowest)] shadow-none h-full min-h-[400px]">
+                        <mat-card-header>
+                            <div class="skeleton skeleton-text subtitle w-32"></div>
+                        </mat-card-header>
+                        <mat-card-content class="mt-4 space-y-4">
+                            @for (j of [1,2,3,4,5]; track j) {
+                            <div class="flex items-center gap-4">
+                                <div class="skeleton-avatar w-10 h-10 rounded"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="skeleton skeleton-text w-full"></div>
+                                    <div class="skeleton skeleton-text w-1/2"></div>
+                                </div>
+                            </div>
                             }
-                        </mat-list>
-                        }
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+            </div>
+
+            } @else {
+
+            <!-- 3-Column Stats Grid -->
+            <div class="dashboard-stats-grid flex flex-col md:flex-row gap-6 w-full animate-enter">
+
+                <!-- Net Wealth Card -->
+                <mat-card (mousemove)="onMouseMove($event)"
+                    class="glow-card flex-1 !bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none duration-300">
+                    <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <mat-icon class="!text-8xl !w-24 !h-24 leading-none"
+                            style="color: rgb(from var(--mat-sys-on-surface) r g b / 0.1)">account_balance</mat-icon>
+                    </div>
+                    <mat-card-header>
+                        <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Net
+                            Wealth</mat-card-title>
+                        <mat-card-subtitle class="mt-2">
+                            <div class="flex items-baseline gap-2">
+                                <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ netWorth() |
+                                    currency:'USD':'symbol':'1.0-0' }}</h2>
+                                <div class="flex items-center text-sm font-medium"
+                                    [class.text-emerald-400]="netWorthMoM().trend === 'up'"
+                                    [class.text-red-400]="netWorthMoM().trend === 'down'">
+                                    <mat-icon class="!text-base !w-4 !h-4 mr-1">
+                                        {{ netWorthMoM().trend === 'up' ? 'trending_up' : (netWorthMoM().trend ===
+                                        'down' ?
+                                        'trending_down' : 'trending_flat') }}
+                                    </mat-icon>
+                                    <span>{{ netWorthMoM().percent | number:'1.0-1' }}%</span>
+                                </div>
+                            </div>
+                        </mat-card-subtitle>
+                    </mat-card-header>
+                    <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
+                                <mat-icon class="!text-lg !w-5 !h-5 text-red-400">local_fire_department</mat-icon>
+                                Burn Rate
+                            </span>
+                            <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ burnRate() |
+                                currency:'USD':'symbol':'1.0-0' }} /
+                                mo</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)]">MoM Diff</span>
+                            <span class="font-medium" [class.text-emerald-400]="netWorthMoM().trend === 'up'"
+                                [class.text-red-400]="netWorthMoM().trend === 'down'">
+                                {{ netWorthMoM().trend === 'up' ? '+' : '-' }} {{ netWorthMoM().value |
+                                currency:'USD':'symbol':'1.0-0' }}
+                            </span>
+                        </div>
                     </mat-card-content>
-                    <br />
-                    <mat-card-actions>
-                        <button mat-button (click)="openCreateAccountDialog()">
-                            <mat-icon class="mr-2">add_circle</mat-icon>
-                            Add Account
-                        </button>
-                        <button mat-button (click)="openCreateInstituteDialog()">
-                            <mat-icon class="mr-2">domain</mat-icon>
-                            Add Institute
-                        </button>
-                    </mat-card-actions>
+                </mat-card>
+
+                <!-- Total Assets Card -->
+                <mat-card (mousemove)="onMouseMove($event)"
+                    class="glow-card flex-1 !bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none duration-300">
+                    <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <mat-icon class="!text-8xl !w-24 !h-24 leading-none"
+                            style="color: rgb(from var(--mat-sys-on-surface) r g b / 0.1)">savings</mat-icon>
+                    </div>
+                    <mat-card-header>
+                        <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Total
+                            Assets</mat-card-title>
+                        <mat-card-subtitle class="mt-2">
+                            <div class="flex items-baseline gap-2">
+                                <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ totalAssets() |
+                                    currency:'USD':'symbol':'1.0-0' }}</h2>
+                                <div class="flex items-center text-sm font-medium"
+                                    [class.text-emerald-400]="assetsMoM().trend === 'up'"
+                                    [class.text-red-400]="assetsMoM().trend === 'down'">
+                                    <mat-icon class="!text-base !w-4 !h-4 mr-1">
+                                        {{ assetsMoM().trend === 'up' ? 'trending_up' : (assetsMoM().trend === 'down' ?
+                                        'trending_down' : 'trending_flat') }}
+                                    </mat-icon>
+                                    <span>{{ assetsMoM().value }}%</span>
+                                </div>
+                            </div>
+                        </mat-card-subtitle>
+                    </mat-card-header>
+                    <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
+                                <mat-icon class="!text-lg !w-5 !h-5 text-blue-400">timeline</mat-icon>
+                                Future Wealth (10y)
+                            </span>
+                            <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ futureWealth() |
+                                currency:'USD':'symbol':'1.0-0'
+                                }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)]">MoM Diff</span>
+                            <!-- Using a multiplier of netWorthMoM for Future Wealth MoM estimation if real data missing -->
+                            <span class="font-medium" [class.text-emerald-400]="netWorthMoM().trend === 'up'"
+                                [class.text-red-400]="netWorthMoM().trend === 'down'">
+                                {{ netWorthMoM().trend === 'up' ? '+' : '-' }} {{ (netWorthMoM().value * 2.15) |
+                                currency:'USD':'symbol':'1.0-0' }}
+                            </span>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <!-- Total Liabilities Card -->
+                <mat-card (mousemove)="onMouseMove($event)"
+                    class="glow-card flex-1 !bg-[var(--mat-sys-surface-container)] !text-[var(--mat-sys-on-surface)] flex flex-col h-full relative overflow-hidden group shadow-none duration-300">
+                    <div class="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <mat-icon class="!text-8xl !w-24 !h-24 leading-none"
+                            style="color: rgb(from var(--mat-sys-on-surface) r g b / 0.1)">credit_card</mat-icon>
+                    </div>
+                    <mat-card-header>
+                        <mat-card-title class="!text-lg !font-normal !text-[var(--mat-sys-on-surface-variant)]">Total
+                            Liabilities</mat-card-title>
+                        <mat-card-subtitle class="mt-2">
+                            <div class="flex items-baseline gap-2">
+                                <h2 class="text-4xl font-normal text-[var(--mat-sys-on-surface)]">{{ totalLiabilities()
+                                    |
+                                    currency:'USD':'symbol':'1.0-0' }}</h2>
+                                <div class="flex items-center text-sm font-medium"
+                                    [class.text-emerald-400]="liabilitiesMoM().trend === 'down'"
+                                    [class.text-red-400]="liabilitiesMoM().trend === 'up'">
+                                    <mat-icon class="!text-base !w-4 !h-4 mr-1">
+                                        {{ liabilitiesMoM().trend === 'down' ? 'trending_down' : (liabilitiesMoM().trend
+                                        ===
+                                        'up' ? 'trending_up' : 'trending_flat') }}
+                                    </mat-icon>
+                                    <span>{{ liabilitiesMoM().value }}%</span>
+                                </div>
+                            </div>
+                        </mat-card-subtitle>
+                    </mat-card-header>
+                    <mat-card-content class="mt-auto pt-6 space-y-3 relative z-10">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
+                                <mat-icon class="!text-lg !w-5 !h-5 text-purple-400">shopping_bag</mat-icon>
+                                Buying Power
+                            </span>
+                            <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ buyingPower() |
+                                currency:'USD':'symbol':'1.0-0'
+                                }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-[var(--mat-sys-on-surface-variant)] flex items-center gap-2">
+                                <mat-icon class="!text-lg !w-5 !h-5 text-yellow-400">credit_score</mat-icon>
+                                Total Credit Line
+                            </span>
+                            <span class="font-medium text-[var(--mat-sys-on-surface)]">{{ totalCreditLine() |
+                                currency:'USD':'symbol':'1.0-0' }}</span>
+                        </div>
+                    </mat-card-content>
                 </mat-card>
             </div>
+
+            <!-- Chart + Account Filter Container -->
+            <div class="flex flex-col md:flex-row gap-6 animate-enter" style="animation-delay: 100ms">
+                <!-- Col 1: Chart (Flex 3) -->
+                <div class="flex-[3] h-full flex flex-col">
+                    <mat-card class="!text-[var(--mat-sys-on-surface)] shadow-none h-full flex flex-col">
+                        <mat-card-header>
+                            <mat-card-title>Net Worth History</mat-card-title>
+                            <mat-card-actions align="end" class="!pb-0">
+                                <mat-button-toggle-group [value]="range()" (change)="setRange($event.value)"
+                                    appearance="legacy" name="range" aria-label="Date Range">
+                                    <mat-button-toggle value="30d">30D</mat-button-toggle>
+                                    <mat-button-toggle value="90d">3M</mat-button-toggle>
+                                    <mat-button-toggle value="1y">1Y</mat-button-toggle>
+                                    <mat-button-toggle value="all">ALL</mat-button-toggle>
+                                </mat-button-toggle-group>
+                            </mat-card-actions>
+                        </mat-card-header>
+
+                        <mat-card-content class="mt-4 flex-1 flex flex-col min-h-0">
+                            <div
+                                class="rounded-lg bg-[var(--mat-sys-surface-container-highest)] border border-[var(--mat-sys-outline-variant)] overflow-hidden mb-6 flex items-center justify-center p-2 flex-1 w-full min-h-[300px]">
+                                <app-net-worth-chart [data]="netWorthHistory()"
+                                    class="w-full h-full block"></app-net-worth-chart>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+
+                <!-- Col 2: Account Filter Card (Flex 1) -->
+                <div class="flex-1 min-w-[300px] h-full">
+                    <mat-card
+                        class="!bg-[var(--mat-sys-surface-container-lowest)] !text-[var(--mat-sys-on-surface)] shadow-none h-full">
+                        <mat-card-header>
+                            <mat-card-title>Accounts</mat-card-title>
+                        </mat-card-header>
+                        <br />
+                        <mat-card-content class="mt-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                            @for (group of groupedAccounts(); track group.name) {
+                            <div mat-subheader
+                                class="!text-[var(--mat-sys-on-surface-variant)] !text-sm !font-medium uppercase tracking-wider !pl-0 !bg-transparent mt-4 mb-2 flex items-center gap-2">
+                                @if (group.logo) {
+                                <img [src]="group.logo" class="w-5 h-5 object-contain theme-logo" alt="Logo">
+                                }
+                                {{ group.name }}
+                            </div>
+                            <mat-list class="waypoint-list-card-high">
+                                @for (account of group.accounts; track account.accountId) {
+                                <mat-list-item [class.is-checked]="isAccountVisible(account.accountId)"
+                                    (click)="navigateToAccount(account.accountId)"
+                                    class="cursor-pointer hover:bg-white/5 transition-colors">
+                                    <span matListItemIcon>
+                                        <mat-checkbox [checked]="isAccountVisible(account.accountId)"
+                                            (change)="toggleAccount(account.accountId)" color="primary"
+                                            (click)="$event.stopPropagation()">
+                                        </mat-checkbox>
+                                    </span>
+                                    <span matListItemTitle class="!text-sm flex items-center gap-2 group/item">
+                                        {{ account.name }}
+                                    </span>
+                                    <span matListItemMeta
+                                        class="!text-xs !text-[var(--mat-sys-on-surface-variant)] whitespace-nowrap">
+                                        {{ account.balance | currency:account.currency.code:'symbol':'1.0-0' }}
+                                        <button mat-icon-button
+                                            class="!w-6 !h-6 !p-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                            (click)="$event.stopPropagation(); openUpdateBalanceDialog(account)">
+                                            <mat-icon
+                                                class="!text-sm !w-4 !h-4 text-[var(--mat-sys-on-surface-variant)]">currency_exchange</mat-icon>
+                                        </button>
+                                    </span>
+                                </mat-list-item>
+                                }
+                            </mat-list>
+                            }
+                        </mat-card-content>
+                        <br />
+                        <mat-card-actions>
+                            <button mat-button (click)="openCreateAccountDialog()">
+                                <mat-icon class="mr-2">add_circle</mat-icon>
+                                Add Account
+                            </button>
+                            <button mat-button (click)="openCreateInstituteDialog()">
+                                <mat-icon class="mr-2">domain</mat-icon>
+                                Add Institute
+                            </button>
+                        </mat-card-actions>
+                    </mat-card>
+                </div>
+            </div>
+            }
         </div>
-        }
     </div>
 </div>

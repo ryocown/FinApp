@@ -1,6 +1,6 @@
 <div class="onboarding-content">
     <mat-card-header class="justify-center mb-6">
-        <mat-card-title class="!text-3xl !font-bold text-slate-100">Welcome to Waypoint</mat-card-title>
+        <mat-card-title class="!text-3xl !font-bold">Welcome to Waypoint</mat-card-title>
     </mat-card-header>
 
     <mat-card-content>
@@ -25,8 +25,7 @@
 
         <!-- Step 2: Institute -->
         <div *ngIf="step() === 2" class="flex flex-col gap-4 max-w-lg mx-auto">
-            <div
-                class="p-4 rounded-xl bg-emerald-900/20 border border-emerald-800 text-emerald-200 text-sm mb-2 text-center">
+            <div class="p-4 rounded-xl bg-emerald-900/20 border border-emerald-800 text-sm mb-2 text-center">
                 Profile saved! Next, add your primary institution.
             </div>
 
@@ -40,8 +39,7 @@
 
         <!-- Step 3: First Account -->
         <div *ngIf="step() === 3" class="flex flex-col gap-4 max-w-lg mx-auto">
-            <div
-                class="p-4 rounded-xl bg-emerald-900/20 border border-emerald-800 text-emerald-200 text-sm mb-2 text-center">
+            <div class="p-4 rounded-xl bg-emerald-900/20 border border-emerald-800 text-sm mb-2 text-center">
                 Institute added! Now, create a vault.
             </div>
 
@@ -73,7 +71,7 @@
         </div>
 
         <!-- Logout / Switch Account -->
-        <div class="mt-8 pt-4 border-t border-slate-700/50 text-center">
+        <div class="mt-8 pt-4 text-center">
             <button mat-button color="warn" (click)="authService.signOut()">
                 Switch Account / Logout
             </button>

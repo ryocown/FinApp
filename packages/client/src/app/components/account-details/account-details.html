@@ -2,8 +2,11 @@
     <!-- Header -->
     <div class="flex flex-col gap-2">
         <div class="flex items-center gap-4">
-            <h1 class="text-3xl font-bold m-0">{{ acc.name }}</h1>
-            <span class="text-gray-500 text-lg">{{ acc.type }}</span>
+            <h1 class="text-3xl font-bold m-0 flex items-center gap-2">
+                <img *ngIf="instituteLogo" [src]="instituteLogo" class="w-8 h-8 object-contain theme-logo" alt="Logo">
+                {{ acc.name }}
+            </h1>
+            <span class="text-[var(--mat-sys-on-surface-variant)] text-lg">{{ acc.type }}</span>
             <button mat-icon-button (click)="openUpdateBalanceDialog()" matTooltip="Update Balance">
                 <mat-icon>edit</mat-icon>
             </button>
@@ -13,7 +16,8 @@
                 <mat-chip *ngFor="let tag of acc.tags">{{ tag }}</mat-chip>
             </mat-chip-set>
         </div>
-        <div class="text-sm text-gray-400" *ngIf="acc.instituteId">Institute ID: {{ acc.instituteId }}</div>
+        <div class="text-sm text-[var(--mat-sys-on-surface-variant)]" *ngIf="acc.instituteId">Institute: {{
+            institute()?.name || acc.instituteId }}</div>
     </div>
 
     <!-- Summary Cards -->
@@ -26,8 +30,8 @@
                 <div class="text-4xl font-light text-green-400">
                     {{ acc.balance | currency:acc.currency.code:'symbol':'1.2-2' }}
                 </div>
-                <div class="text-sm text-gray-500 mt-2">
-                    As of {{ acc.balanceDate | date:'mediumDate' }}
+                <div class="text-sm text-[var(--mat-sys-on-surface-variant)] mt-2">
+                    As of {{ acc.balanceDate.timestamp | date:'mediumDate' }}
                 </div>
             </mat-card-content>
         </mat-card>
@@ -40,23 +44,40 @@
                 <div class="text-4xl font-light text-blue-400">
                     {{ acc.interest[0].rate }}%
                 </div>
-                <div class="text-sm text-gray-500 mt-2">
-                    Effective {{ acc.interest[0].effectiveDate | date:'mediumDate' }}
+                <div class="text-sm text-[var(--mat-sys-on-surface-variant)] mt-2">
+                    Effective {{ acc.interest[0].effectiveDate.timestamp | date:'mediumDate' }}
                 </div>
             </mat-card-content>
         </mat-card>
     </div>
 
     <!-- Chart -->
-    <mat-card *ngIf="chartData().length">
+    <mat-card>
         <mat-card-header>
             <mat-card-title>Balance History</mat-card-title>
         </mat-card-header>
         <mat-card-content class="h-[300px] w-full mt-4">
-            <ngx-charts-area-chart [view]="view" [scheme]="colorScheme" [results]="chartData()" [gradient]="true"
-                [xAxis]="true" [yAxis]="true" [legend]="false" [showXAxisLabel]="true" [showYAxisLabel]="true"
-                xAxisLabel="Date" yAxisLabel="Balance" [autoScale]="true">
-            </ngx-charts-area-chart>
+            <ng-container *ngIf="chartData().length && chartData()[0].series.length > 1; else noData">
+                <ngx-charts-area-chart [view]="view" [scheme]="colorScheme" [results]="chartData()" [gradient]="true"
+                    [xAxis]="true" [yAxis]="true" [legend]="false" [showXAxisLabel]="true" [showYAxisLabel]="true"
+                    xAxisLabel="Date" yAxisLabel="Balance" [autoScale]="true">
+                </ngx-charts-area-chart>
+            </ng-container>
+            <ng-template #noData>
+                <div
+                    class="h-full w-full flex flex-col items-center justify-center gap-4 text-[var(--mat-sys-on-surface-variant)]">
+                    <mat-icon class="scale-150">show_chart</mat-icon>
+                    <span class="text-lg">No data to plot</span>
+                    <div class="flex gap-2">
+                        <button mat-stroked-button color="primary" (click)="openAddTransactionDialog()">
+                            Add Transaction
+                        </button>
+                        <button mat-stroked-button color="primary" (click)="openUpdateBalanceDialog()">
+                            Update Balance
+                        </button>
+                    </div>
+                </div>
+            </ng-template>
         </mat-card-content>
     </mat-card>
 
@@ -70,7 +91,9 @@
                 <!-- Date Column -->
                 <ng-container matColumnDef="date">
                     <th mat-header-cell *matHeaderCellDef> Date </th>
-                    <td mat-cell *matCellDef="let element"> {{element.date | date:'shortDate'}} </td>
+                    <td mat-cell *matCellDef="let element" class="px-4 py-2 text-[var(--mat-sys-on-surface-variant)]">{{
+                        element.date.timestamp |
+                        date:'shortDate' }}</td>
                 </ng-container>
 
                 <!-- Description Column -->
@@ -91,12 +114,8 @@
                 <!-- Balance Column -->
                 <ng-container matColumnDef="balance">
                     <th mat-header-cell *matHeaderCellDef> Balance </th>
-                    <td mat-cell *matCellDef="let element">
-                        <span *ngIf="element.balance !== undefined">
-                            {{element.balance | currency:element.currency.code:'symbol':'1.2-2'}}
-                        </span>
-                        <span *ngIf="element.balance === undefined" class="text-gray-400">-</span>
-                    </td>
+                    <td mat-cell *matCellDef="let element"> {{element.balance |
+                        currency:element.currency.code:'symbol':'1.2-2'}} </td>
                 </ng-container>
 
                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

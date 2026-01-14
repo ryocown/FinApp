@@ -1,18 +1,22 @@
 import { Currency, type ICurrency } from "./currency.js";
 import { type ILot } from "./lot.js";
+import { type DateProto } from "./date-proto.js";
 export interface AccountProp {
     accountId: string;
     instituteId?: string;
     userId: string;
     accountNumber: string;
+    /** Computed: Not stored in DB */
     balance: number;
-    balanceDate: Date;
+    /** Computed: Not stored in DB */
+    balanceDate: DateProto;
     country: string;
     currency: ICurrency;
     name: string;
     type: AccountType;
     tags: AccountTag[];
     isTaxable: boolean;
+    limit?: number;
 }
 export interface Position {
     instrumentId: string;
@@ -50,14 +54,14 @@ export declare enum AccountTag {
 }
 export interface Interest {
     rate: number;
-    effectiveDate: Date;
+    effectiveDate: DateProto;
 }
 export declare class Account implements AccountProp {
     accountId: string;
     userId: string;
     accountNumber: string;
     balance: number;
-    balanceDate: Date;
+    balanceDate: DateProto;
     country: string;
     currency: Currency;
     name: string;
@@ -66,8 +70,9 @@ export declare class Account implements AccountProp {
     instituteId?: string;
     tags: AccountTag[];
     interest: Interest[];
+    limit?: number;
     constructor(accountNumber: string, balance: number, country: string, currency: Currency, name: string, AccountType: AccountType, isTaxable: boolean | undefined, userId: string, instituteId?: string);
-    withInterest(rate: number, effectiveDate?: Date): Account;
+    withInterest(rate: number, effectiveDate?: DateProto): Account;
     getInterest(): Interest | undefined;
     static fromJSON(json: any): Account;
 }

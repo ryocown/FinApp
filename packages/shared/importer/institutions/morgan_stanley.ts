@@ -1,6 +1,6 @@
 import { CategoryType } from "../../models/category.js";
-import type { IStatement } from "../../models/statement.js";
-import { GeneralTransaction, type ITransaction, TradeTransaction, TransactionType, TransferTransaction } from "../../models/transaction.js";
+import type { StatementProto } from "../../models/statement.js";
+import { GeneralTransaction, type TransactionProto, TradeTransaction, TransactionType, TransferTransaction } from "../../models/transaction.js";
 import { StatementImporter } from "../importer.js";
 import { parsePSTDateToUTC } from "../../lib/date_utils.js";
 
@@ -48,7 +48,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
     }
   }
 
-  protected override async processTransaction(record: any): Promise<ITransaction | null> {
+  protected override async processTransaction(record: any): Promise<TransactionProto | null> {
     const type = this.checkTransactionType(record);
 
     if (type === TransactionType.Trade) {
@@ -103,7 +103,7 @@ export class MorganStanleyStatementImporter extends StatementImporter {
     );
   }
 
-  override async import(source: string): Promise<IStatement> {
+  override async import(source: string): Promise<StatementProto> {
     // take out the first five lines for the MS statement format
     source = source.split('\n').slice(4).join('\n');
     // remove the last 29 lines

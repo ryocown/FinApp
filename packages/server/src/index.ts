@@ -22,6 +22,8 @@ import userRoutes from './routes/users.js';
 import metadataRoutes from './routes/metadata.js';
 import { logger } from './logger.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { db } from './firebase.js';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Server entry point (restarted)
 const app = express();
@@ -45,6 +47,45 @@ app.use('/api/currencies', currencyRoutes);
 app.use('/api/instruments', instrumentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/metadata', metadataRoutes);
+
+// Temporary Migration Route
+
+
+app.post('/api/migrations/remove-account-balance', async (req, res, next) => {
+  try {
+    logger.info('Starting migration: Removing balance/balanceDate from Account documents...');
+    const usersSnap = await db.collection('users').get();
+    let updatedCount = 0;
+
+    for (const userDoc of usersSnap.docs) {
+      const institutesSnap = await userDoc.ref.collection('institutes').get();
+      for (const instituteDoc of institutesSnap.docs) {
+        const accountsSnap = await instituteDoc.ref.collection('accounts').get();
+        const batch = db.batch();
+        let batchCount = 0;
+
+        for (const accountDoc of accountsSnap.docs) {
+          const data = accountDoc.data();
+          if (data.balance !== undefined || data.balanceDate !== undefined) {
+            batch.update(accountDoc.ref, {
+              balance: FieldValue.delete(),
+              balanceDate: FieldValue.delete()
+            });
+            updatedCount++;
+            batchCount++;
+          }
+        }
+        if (batchCount > 0) {
+          await batch.commit();
+        }
+      }
+    }
+    logger.info(`Migration complete. Updated ${updatedCount} accounts.`);
+    res.json({ success: true, updatedCount });
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello from the FinApp server!');

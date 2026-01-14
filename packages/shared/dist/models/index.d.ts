@@ -1,5 +1,5 @@
 export { type AccountProp, Account, InvestmentAccount, AccountType, AccountTag, BankAccount } from './account.js';
-export { type ITransaction, type IGeneralTransaction, type ITradeTransaction, type ITransferTransaction, GeneralTransaction, TradeTransaction, TransferTransaction, TransactionType, generateTransactionId } from './transaction.js';
+export { type TransactionProto, type GeneralTransactionProto, type TradeTransactionProto, type TransferTransactionProto, GeneralTransaction, TradeTransaction, TransferTransaction, TransactionType, generateTransactionId } from './transaction.js';
 export { type ICategory, Category, CategoryType, CategoryGroups, ExpenseTypes, ExpenseTree, StandardCategoryTree } from './category.js';
 export { type IFinancialInstrument, type StockInstrument, type BondInstrument, type OptionInstrument, type UnderlyingAsset, InstrumentType, Sector, BondType, OptionType } from './financial_instrument.js';
 export { type ICurrency, Currency } from './currency.js';
@@ -9,11 +9,13 @@ export { type IBalanceCheckpoint, BalanceCheckpointType } from './balance_checkp
 export { type IBudget, Budget, BudgetManager, BudgetPeriod } from './budget.js';
 export { type MerchantProp, type KnownMerchant, Merchant } from './merchant.js';
 export * from './known_merchants.js';
-export { type IStatement, Statement } from './statement.js';
+export { type StatementProto, Statement } from './statement.js';
+export { type BalanceEntryProto, type YearlyBalanceDocProto } from './balance-history.js';
 export { type ITag, Tag } from './tag.js';
 export { type ILot, Lot } from './lot.js';
 export { type IPricePoint, PricePoint } from './price_history.js';
-export { type IRecurringTransaction, type RecurrenceFrequency, RecurringTransaction } from './recurring_transaction.js';
+export { type RecurringTransactionProto, type RecurrenceFrequency, RecurringTransaction } from './recurring_transaction.js';
 export { type IUser, User } from './user.js';
 export * as DateUtils from '../lib/date_utils.js';
 export * from '../importer/index.js';
+export { type DateProto, toDateProto } from './date-proto.js';

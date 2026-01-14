@@ -1,5 +1,5 @@
-import { type IStatement } from "../models/statement.js";
-import { type ITransaction, TransactionType } from "../models/transaction.js";
+import { type StatementProto } from "../models/statement.js";
+import { type TransactionProto, TransactionType } from "../models/transaction.js";
 import { type ICurrency } from "../models/currency.js";
 export interface ICsvMapping {
     dateColumn: string;
@@ -13,17 +13,17 @@ export interface ICsvMapping {
     cusipColumn?: string;
     symbolColumn?: string;
 }
-export interface IStatementImporter {
-    import(source: any): Promise<IStatement>;
+export interface StatementImporterProto {
+    import(source: any): Promise<StatementProto>;
 }
-export declare abstract class StatementImporter implements IStatementImporter {
+export declare abstract class StatementImporter implements StatementImporterProto {
     protected accountId: string;
     protected userId: string;
     protected mapping: ICsvMapping;
     protected currency: ICurrency;
     protected transactionTypeColumn: string;
     constructor(accountId: string, userId: string, mapping: ICsvMapping, currency: ICurrency);
-    import(source: string): Promise<IStatement>;
+    import(source: string): Promise<StatementProto>;
     protected abstract checkTransactionType(record: any): TransactionType;
-    protected processTransaction(record: any): Promise<ITransaction | null>;
+    protected processTransaction(record: any): Promise<TransactionProto | null>;
 }

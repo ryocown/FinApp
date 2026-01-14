@@ -1,5 +1,5 @@
-import { type IStatement } from "../models/statement.js";
-import { type ITransaction, TransactionType } from "../models/transaction.js";
+import { type StatementProto } from "../models/statement.js";
+import { type TransactionProto, TransactionType } from "../models/transaction.js";
 import { type ICurrency } from "../models/currency.js";
 
 export interface ICsvMapping {
@@ -15,11 +15,11 @@ export interface ICsvMapping {
   symbolColumn?: string;
 }
 
-export interface IStatementImporter {
-  import(source: any): Promise<IStatement>;
+export interface StatementImporterProto {
+  import(source: any): Promise<StatementProto>;
 }
 
-export abstract class StatementImporter implements IStatementImporter {
+export abstract class StatementImporter implements StatementImporterProto {
   protected accountId: string;
   protected userId: string;
   protected mapping: ICsvMapping;
@@ -35,13 +35,13 @@ export abstract class StatementImporter implements IStatementImporter {
     this.transactionTypeColumn = mapping.transactionTypeColumn;
   }
 
-  async import(source: string): Promise<IStatement> {
+  async import(source: string): Promise<StatementProto> {
     throw new Error("StatementImporter is deprecated. Use TransactionProcessor.");
   }
 
   protected abstract checkTransactionType(record: any): TransactionType;
 
-  protected async processTransaction(record: any): Promise<ITransaction | null> {
+  protected async processTransaction(record: any): Promise<TransactionProto | null> {
     return null;
   }
 }

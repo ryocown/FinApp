@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./app/styles/skeleton.css";
 
+
+
+
 :root {
     --topbar-height: 64px;
     --sidebar-width-expanded: 256px;
@@ -150,6 +153,8 @@ html.light-theme {
     --app-theme-dot: #575992;
     --app-theme-shockwave: 160, 163, 255;
     --app-theme-connection: 124, 171, 255;
+    --app-theme-connection: 124, 171, 255;
+
 }
 
 html,
@@ -180,22 +185,7 @@ mat-card {
     border-radius: var(--corner-xxl) !important;
 }
 
-.dashboard-cards-container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
-    margin: var(--spacing-lg) 0;
-}
 
-@media (min-width: 768px) {
-    .dashboard-cards-container {
-        flex-direction: row;
-    }
-
-    .dashboard-cards-container>* {
-        flex: 1;
-    }
-}
 
 .account-menu {
     width: 35ch;
@@ -330,9 +320,15 @@ mat-card {
 /* Fix provided by user to align start slot correctly in MDC */
 .waypoint-list-card-high .mdc-list-item.mdc-list-item--with-one-line .mdc-list-item__start {
     margin-top: 0 !important;
-    display: block !important;
+    display: block;
     align-self: center !important;
     height: fit-content !important;
+}
+
+.mdc-list-item--with-trailing-meta .mdc-list-item__end {
+    align-items: center;
+    display: flex !important;
+    gap: 8px;
 }
 
 /* Rounding Logic for High Variant */
@@ -346,6 +342,14 @@ mat-card {
 .waypoint-list-card-high>mat-list-item:last-child {
     border-bottom-left-radius: var(--corner-xxl) !important;
     border-bottom-right-radius: var(--corner-xxl) !important;
+}
+
+.header-title {
+    background: linear-gradient(45deg, var(--app-theme-particle-3), var(--app-theme-particle-4));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 /* Typography Scale (Material 3) */
@@ -411,3 +415,5 @@ mat-toolbar {
     -webkit-backdrop-filter: blur(12px) !important;
     border-color: var(--app-theme-divider) !important;
 }
+
+/* --- Loader & Dashboard Styles Moved to dashboard.css --- */

@@ -1,10 +1,11 @@
+import { type DateProto } from './date-proto.js';
 export interface IBalanceCheckpoint {
     id: string;
     accountId: string;
-    date: Date;
+    date: DateProto;
     balance: number;
     type: BalanceCheckpointType;
-    createdAt: Date;
+    createdAt: DateProto;
     validation?: {
         isValid: boolean;
         difference: number;

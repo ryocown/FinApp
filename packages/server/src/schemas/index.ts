@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+const DateProtoSchema = z.object({
+  timestamp: z.number(),
+  year: z.number(),
+  month: z.number(),
+  day: z.number(),
+  quarter: z.number(),
+});
+
 export const AccountSchema = z.object({
   name: z.string().min(1),
   instituteId: z.string().min(1),
@@ -9,8 +17,8 @@ export const AccountSchema = z.object({
     symbol: z.string(),
     name: z.string().optional(),
   }),
-  balance: z.number(),
-  balanceDate: z.string().datetime().optional().or(z.date().optional()).or(z.string().optional()), // Allow string or date
+  balance: z.number().optional(),
+  balanceDate: z.union([z.string(), z.date(), DateProtoSchema]).optional(),
   initialBalance: z.number().optional(),
   initialDate: z.string().optional(),
   accountNumber: z.string().optional(),
@@ -21,8 +29,8 @@ export const UpdateAccountSchema = AccountSchema.partial();
 export const TransactionSchema = z.object({
   accountId: z.string(),
   amount: z.number(),
-  date: z.string(), // ISO date string
-  description: z.string(),
+  date: z.string().or(DateProtoSchema), // Allow ISO string or DateProto
+  description: z.string().nullable().optional(),
   categoryId: z.string().optional(),
   transactionType: z.string().optional(),
   currency: z.object({
@@ -31,6 +39,7 @@ export const TransactionSchema = z.object({
     name: z.string().optional(),
   }).optional(),
   tagIds: z.array(z.string()).optional(),
+  statementId: z.string().nullable().optional(),
 });
 
 export const UpdateTransactionSchema = TransactionSchema.partial();
@@ -54,8 +63,8 @@ export const InstituteSchema = z.object({
 export const BatchTransactionSchema = z.object({
   transactions: z.array(z.object({
     amount: z.number(),
-    date: z.string(), // ISO date string
-    description: z.string().optional(),
+    date: z.string().or(DateProtoSchema), // ISO date string or Proto
+    description: z.string().nullable().optional(),
     categoryId: z.string().optional(),
     transactionType: z.string().optional(),
     currency: z.object({

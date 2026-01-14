@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import { v4 } from 'uuid';
 import { db, getUserRef, getAccountRef } from '../firebase.js';
 import { type IBalanceCheckpoint, BalanceCheckpointType } from '@finapp/shared';
-import { type ITransaction, TransactionType } from '@finapp/shared';
+import { type TransactionProto, TransactionType, toDateProto, type DateProto } from '@finapp/shared';
 import { logger } from '../logger.js';
 
 export class ReconciliationService {
@@ -13,9 +13,10 @@ export class ReconciliationService {
   static async reconcileAccount(
     userId: string,
     accountId: string,
-    date: Date,
+    date: DateProto,
     targetBalance: number
   ): Promise<IBalanceCheckpoint> {
+    const reconcileDate = new Date(date.timestamp);
     // 1. Find the account and its parent institute
     const result = await getAccountRef(userId, accountId);
     if (!result) {
@@ -31,24 +32,25 @@ export class ReconciliationService {
 
     // 2. Find the last checkpoint BEFORE this reconciliation date
     const lastCheckpointSnap = await accountRef.collection('balance_checkpoints')
-      .where('date', '<=', date)
-      .orderBy('date', 'desc')
+      .where('date.timestamp', '<=', reconcileDate.getTime())
+      .orderBy('date.timestamp', 'desc')
       .limit(1)
       .get();
 
     let startBalance = 0;
     let startDate = new Date(0); // Epoch
+    const reconcileDateTimestamp = reconcileDate.getTime();
 
     if (!lastCheckpointSnap.empty) {
       const doc = lastCheckpointSnap.docs[0];
       if (doc) {
         const lastCheckpoint = doc.data() as IBalanceCheckpoint;
 
-        if (lastCheckpoint.date && new Date(lastCheckpoint.date).getTime() === date.getTime()) {
+        if (lastCheckpoint.date && lastCheckpoint.date.timestamp === reconcileDateTimestamp) {
           // We are re-reconciling the same day. We need the checkpoint BEFORE this one to be the "Start".
           const prevCheckpointSnap = await accountRef.collection('balance_checkpoints')
-            .where('date', '<', date)
-            .orderBy('date', 'desc')
+            .where('date.timestamp', '<', date.timestamp)
+            .orderBy('date.timestamp', 'desc')
             .limit(1)
             .get();
 
@@ -57,31 +59,34 @@ export class ReconciliationService {
             if (prevDoc) {
               const prev = prevDoc.data() as IBalanceCheckpoint;
               startBalance = prev.balance;
-              startDate = prev.date instanceof Date ? prev.date : (prev.date as any).toDate();
+              startDate = new Date(prev.date.timestamp);
             }
           }
         } else {
           startBalance = lastCheckpoint.balance;
-          startDate = lastCheckpoint.date instanceof Date ? lastCheckpoint.date : (lastCheckpoint.date as any).toDate();
+          startDate = new Date(lastCheckpoint.date.timestamp);
         }
       }
     }
 
     // 3. Sum transactions in (startDate, date]
     // We must EXCLUDE any existing RECONCILIATION transaction for THIS date to avoid circular logic
+    // 3. Sum transactions in (startDate, date]
+    // We must EXCLUDE any existing RECONCILIATION transaction for THIS date to avoid circular logic
     const transactionsSnap = await accountRef.collection('transactions')
-      .where('date', '>', startDate)
-      .where('date', '<=', date)
+      .where('date.timestamp', '>', startDate.getTime())
+      .where('date.timestamp', '<=', reconcileDateTimestamp)
       .get();
 
     let calculatedSum = 0;
     let existingReconTxId: string | null = null;
 
     transactionsSnap.forEach(doc => {
-      const tx = doc.data() as ITransaction;
-      const txDate = tx.date instanceof Date ? tx.date : (tx.date as any).toDate();
+      const tx = doc.data() as TransactionProto;
+      // Handle date access: tx.date is TransactionProto -> DateProto
+      const txDateTimestamp = tx.date.timestamp;
 
-      if (tx.transactionType === TransactionType.Reconciliation && txDate.getTime() === date.getTime()) {
+      if (tx.transactionType === TransactionType.Reconciliation && txDateTimestamp === reconcileDateTimestamp) {
         existingReconTxId = tx.transactionId;
       } else {
         calculatedSum += tx.amount;
@@ -107,7 +112,7 @@ export class ReconciliationService {
       } else {
         // Create new
         const categoryId = await this.getReconciliationCategoryId(userId);
-        const newTx: ITransaction = {
+        const newTx: TransactionProto = {
           transactionId: v4(),
           accountId,
           userId,
@@ -117,7 +122,8 @@ export class ReconciliationService {
           description: 'Reconciliation Adjustment',
           transactionType: TransactionType.Reconciliation,
           ...(categoryId ? { categoryId } : {}),
-          tagIds: []
+          tagIds: [],
+          statementId: null // Add statementId as null
         };
 
         await accountRef.collection('transactions').doc(newTx.transactionId).set(newTx);
@@ -145,7 +151,7 @@ export class ReconciliationService {
       date: date,
       balance: targetBalance,
       type: BalanceCheckpointType.MANUAL,
-      createdAt: new Date()
+      createdAt: toDateProto(new Date())
     };
 
     // Check if we already have a checkpoint at this date, if so update it
@@ -153,7 +159,7 @@ export class ReconciliationService {
       const doc = lastCheckpointSnap.docs[0];
       if (doc) {
         const last = doc.data() as IBalanceCheckpoint;
-        if (last.date && new Date(last.date).getTime() === date.getTime()) {
+        if (last.date && last.date.timestamp === reconcileDateTimestamp) {
           checkpoint.id = last.id; // Reuse ID
         }
       }
@@ -161,23 +167,11 @@ export class ReconciliationService {
 
     await accountRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
 
-    // 7. Update Account Balance (if this is the latest)
-    const accountDoc = await accountRef.get();
-    const accountData = accountDoc.data();
+    // 7. Update Account Balance - SKIPPED
+    // We strictly use checkpoints as source of truth now.
+    // The 'Account' document will not hold the balance.
 
-    const getJsDate = (d: any): Date => {
-      if (!d) return new Date(0);
-      if (typeof d.toDate === 'function') return d.toDate();
-      return new Date(d);
-    };
-    const currentBalanceDate = getJsDate(accountData?.balanceDate);
-
-    if (date >= currentBalanceDate) {
-      await accountRef.update({
-        balance: targetBalance,
-        balanceDate: date
-      });
-    }
+    return checkpoint;
 
     return checkpoint;
   }
@@ -197,8 +191,8 @@ export class ReconciliationService {
 
     // Find all checkpoints >= minDate
     const checkpointsSnap = await accountRef.collection('balance_checkpoints')
-      .where('date', '>=', minDate)
-      .orderBy('date', 'asc')
+      .where('date.timestamp', '>=', minDate.getTime())
+      .orderBy('date.timestamp', 'asc')
       .get();
 
     if (checkpointsSnap.empty) return;
@@ -207,8 +201,8 @@ export class ReconciliationService {
 
     for (const doc of checkpointsSnap.docs) {
       const checkpoint = doc.data() as IBalanceCheckpoint;
-      const checkpointDate = checkpoint.date instanceof Date ? checkpoint.date : (checkpoint.date as any).toDate();
-      await this.reconcileAccount(userId, accountId, checkpointDate, checkpoint.balance);
+      const checkpointDate = new Date(checkpoint.date.timestamp);
+      await this.reconcileAccount(userId, accountId, checkpoint.date, checkpoint.balance);
     }
   }
 
@@ -230,7 +224,7 @@ export class ReconciliationService {
 
     // Sort checkpoints by date ascending for easier calculation
     const sortedCheckpoints = [...checkpoints].sort((a, b) =>
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+      a.date.timestamp - b.date.timestamp
     );
 
     // We only validate the provided checkpoints.
@@ -244,10 +238,10 @@ export class ReconciliationService {
     // OR fetch the one before it from DB.
     // Let's fetch the one immediately before the first one in our list to anchor the chain.
 
-    const firstDate = new Date(sortedCheckpoints[0]!.date);
+    const firstDate = new Date(sortedCheckpoints[0]!.date.timestamp);
     const prevCheckpointSnap = await accountRef.collection('balance_checkpoints')
-      .where('date', '<', firstDate)
-      .orderBy('date', 'desc')
+      .where('date.timestamp', '<', firstDate.getTime())
+      .orderBy('date.timestamp', 'desc')
       .limit(1)
       .get();
 
@@ -259,14 +253,14 @@ export class ReconciliationService {
       if (doc) {
         const prev = doc.data() as IBalanceCheckpoint;
         runningBalance = prev.balance;
-        lastDate = prev.date instanceof Date ? prev.date : (prev.date as any).toDate();
+        lastDate = new Date(prev.date.timestamp);
       }
     }
 
     const validatedCheckpoints: IBalanceCheckpoint[] = [];
 
     for (const checkpoint of sortedCheckpoints) {
-      const currentDate = new Date(checkpoint.date);
+      const currentDate = new Date(checkpoint.date.timestamp);
 
       // Sum transactions between lastDate and currentDate
       // EXCLUDING the reconciliation adjustment for THIS checkpoint date (if any)
@@ -279,13 +273,13 @@ export class ReconciliationService {
       // So we SHOULD include all transactions, including adjustments, to see if they sum up to the checkpoint.
 
       const transactionsSnap = await accountRef.collection('transactions')
-        .where('date', '>', lastDate)
-        .where('date', '<=', currentDate)
+        .where('date.timestamp', '>', lastDate.getTime())
+        .where('date.timestamp', '<=', currentDate.getTime())
         .get();
 
       let periodSum = 0;
       transactionsSnap.forEach(doc => {
-        const tx = doc.data() as ITransaction;
+        const tx = doc.data() as TransactionProto;
         periodSum += tx.amount;
       });
 
@@ -313,7 +307,7 @@ export class ReconciliationService {
 
     // Return in original order (descending usually)
     return validatedCheckpoints.sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
+      b.date.timestamp - a.date.timestamp
     );
   }
 
@@ -350,7 +344,7 @@ export class ReconciliationService {
     // Let's try exact match first.
     const adjustmentSnap = await accountRef.collection('transactions')
       .where('transactionType', '==', TransactionType.Reconciliation)
-      .where('date', '==', checkpointDate)
+      .where('date.timestamp', '==', checkpointDate.getTime())
       .get();
 
     if (!adjustmentSnap.empty) {
@@ -402,9 +396,9 @@ export class ReconciliationService {
 
     const data = snapshot.docs[0]!.data() as IBalanceCheckpoint;
     // Ensure date is a JS Date object
-    if (data.date && !(data.date instanceof Date)) {
-      data.date = (data.date as any).toDate();
-    }
+    // if (data.date && !(data.date instanceof Date)) {
+    //   data.date = (data.date as any).toDate();
+    // }
     return data;
   }
 
@@ -416,7 +410,7 @@ export class ReconciliationService {
     userId: string,
     accountId: string,
     balance: number,
-    date: Date,
+    date: DateProto,
     type: BalanceCheckpointType
   ): Promise<void> {
     const result = await getAccountRef(userId, accountId);
@@ -429,7 +423,7 @@ export class ReconciliationService {
       date,
       balance,
       type,
-      createdAt: new Date()
+      createdAt: toDateProto(new Date())
     };
 
     // Check if we already have a checkpoint at this date/type?
@@ -444,7 +438,7 @@ export class ReconciliationService {
 
     // Let's follow existing pattern: Check for existing at this EXACT date (timestamp).
     const existingSnap = await accountRef.collection('balance_checkpoints')
-      .where('date', '==', date)
+      .where('date.timestamp', '==', date.timestamp)
       .where('type', '==', type)
       .limit(1)
       .get();

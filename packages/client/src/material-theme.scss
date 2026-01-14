@@ -39,6 +39,36 @@ html.light-theme {
   @include mat.all-component-colors($light-theme);
 }
 
+// Custom Color Palettes
+$yellow-theme: mat.define-theme((color: (theme-type: light,
+        primary: mat.$yellow-palette,
+        tertiary: mat.$orange-palette,
+      )));
+
+$red-theme: mat.define-theme((color: (theme-type: light,
+        primary: mat.$red-palette,
+        tertiary: mat.$rose-palette,
+      )));
+
+$green-theme: mat.define-theme((color: (theme-type: light,
+        primary: mat.$green-palette,
+        tertiary: mat.$spring-green-palette,
+      )));
+
+// Apply custom palettes via classes
+// These will override component colors within the container having this class
+.mat-yellow {
+  @include mat.all-component-colors($yellow-theme);
+}
+
+.mat-red {
+  @include mat.all-component-colors($red-theme);
+}
+
+.mat-green {
+  @include mat.all-component-colors($green-theme);
+}
+
 body {
   margin: 0;
   height: 100%;

@@ -1,5 +1,5 @@
 import { StatementImporter } from '../importer.js';
-import { type ITransaction, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction.js';
+import { type TransactionProto, GeneralTransaction, TransactionType, TransferTransaction } from '../../models/transaction.js';
 
 import { CategoryType } from '../../models/category.js';
 import { parsePSTDateToUTC } from '../../lib/date_utils.js';
@@ -54,7 +54,7 @@ export class ChaseCsvStatementImporter extends StatementImporter {
     }
   }
 
-  protected override async processTransaction(record: any): Promise<ITransaction | null> {
+  protected override async processTransaction(record: any): Promise<TransactionProto | null> {
     const date = parsePSTDateToUTC(record[this.mapping.dateColumn]);
     const amount = parseFloat(record[this.mapping.amountColumn]);
     const description = record[this.mapping.descriptionColumn];
@@ -141,7 +141,7 @@ export class ChaseCreditCsvStatementImporter extends StatementImporter {
     }
   }
 
-  protected override async processTransaction(record: any): Promise<ITransaction | null> {
+  protected override async processTransaction(record: any): Promise<TransactionProto | null> {
 
     const dateStr = record[this.mapping.dateColumn] || record['Post Date'];
     const date = parsePSTDateToUTC(dateStr);

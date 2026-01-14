@@ -17,6 +17,7 @@ export interface InstituteProp {
     userId: string;
     accounts?: Account[];
     type: InstituteTypes;
+    supportedInstituteId?: string;
 }
 export interface SupportedInstituteProp {
     instituteId: string;
@@ -26,6 +27,7 @@ export interface SupportedInstituteProp {
     logo: string;
     logoFull: string;
     type: InstituteTypes;
+    supportedInstituteId?: string;
 }
 export declare class Institute implements InstituteProp {
     instituteId: string;
@@ -33,6 +35,7 @@ export declare class Institute implements InstituteProp {
     userId: string;
     accounts: Account[];
     type: InstituteTypes;
-    constructor(name: string, userId: string, accounts: Account[], type: InstituteTypes);
+    supportedInstituteId?: string;
+    constructor(name: string, userId: string, accounts: Account[], type: InstituteTypes, supportedInstituteId?: string);
     static fromProp(prop: InstituteProp): Institute;
 }

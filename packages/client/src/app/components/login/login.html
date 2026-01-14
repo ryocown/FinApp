@@ -10,9 +10,9 @@
     </div>
 
     <!-- Header Section -->
-    <header class="relative z-10 animate-enter flex flex-col items-center"
-        style="position: absolute; top: 12%; left: 0; right: 0;" [class.fade-out]="loginState() === 'success'">
-        <app-waypoint-icon class="w-16 h-16 mb-4 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]"></app-waypoint-icon>
+    <header class="relative z-10 flex flex-col items-center" [class.animate-enter]="loginState() !== 'success'"
+        style="position: absolute; top: 12%; left: 0; right: 0;" [class.logo-drop]="loginState() === 'success'">
+        <app-waypoint-icon class="w-62 h62 mb-4 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]"></app-waypoint-icon>
         <!-- <h1 class="sr-only">Waypoint</h1> -->
     </header>
 

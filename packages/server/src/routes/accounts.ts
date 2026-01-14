@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate.js';
 import { logger } from '../logger.js';
 import { AccountService } from '../services/accounts.js';
 import { ReconciliationService } from '../services/reconciliation.js';
+import { toDateProto } from '@finapp/shared';
 import { ApiError } from '../errors/index.js';
 
 const router = Router();
@@ -109,7 +110,7 @@ router.post('/users/:userId/accounts/:accountId/reconcile', checkAuth, asyncHand
   const checkpoint = await ReconciliationService.reconcileAccount(
     userId,
     accountId,
-    new Date(date),
+    toDateProto(new Date(date)),
     Number(balance)
   );
 

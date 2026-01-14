@@ -1,5 +1,6 @@
 import { Currency } from "./currency.js";
 import { Merchant } from "./merchant.js";
+import { type DateProto } from "./date-proto.js";
 export declare function generateTransactionId(parts: (string | number | boolean | null | undefined)[]): string;
 /**
  * I don't think we are going to do double entry bookkeeping,
@@ -18,16 +19,21 @@ export declare function generateTransactionId(parts: (string | number | boolean 
  * The net result is allowing the investment account to track its own positions,
  * while maintaining a single cash account and a single total balance.
  */
-export interface ITransaction {
+export interface TransactionProto {
     transactionId: string;
     accountId: string;
     userId: string;
+    statementId: string | null;
     categoryId?: string;
     tagIds: string[];
     amount: number;
     currency: Currency;
-    date: Date;
+    date: DateProto;
     description: string | null;
+    /**
+     * Optional running balance after this transaction.
+     * This is computed on read or provided on write (to create a checkpoint).
+     */
     balance?: number;
     transactionType: TransactionType;
 }
@@ -43,22 +49,22 @@ export declare enum TransactionType {
     Other = "OTHER",
     Reconciliation = "RECONCILIATION"
 }
-export interface IGeneralTransaction extends ITransaction {
+export interface GeneralTransactionProto extends TransactionProto {
     transactionType: TransactionType.General;
     merchant: Merchant | null;
 }
-export interface ITradeTransaction extends ITransaction {
+export interface TradeTransactionProto extends TransactionProto {
     instrumentId: string;
     transactionType: TransactionType.Trade;
     quantity: number;
     price: number;
 }
-export interface ITransferTransaction extends ITransaction {
+export interface TransferTransactionProto extends TransactionProto {
     transactionType: TransactionType.Transfer;
     linkedTransactionId: string;
     exchangeRate?: number;
 }
-export declare class GeneralTransaction implements ITransaction {
+export declare class GeneralTransaction implements TransactionProto {
     transactionId: string;
     accountId: string;
     userId: string;
@@ -66,17 +72,18 @@ export declare class GeneralTransaction implements ITransaction {
     tagIds: string[];
     amount: number;
     currency: Currency;
-    date: Date;
+    date: DateProto;
     description: string | null;
     isTaxDeductable: boolean;
     hasCapitalGains: boolean;
     merchant: Merchant | null;
     transactionType: TransactionType;
     balance?: number;
+    statementId: string | null;
     constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds?: string[], transactionType?: TransactionType, seed?: string);
     static fromJSON(json: any): GeneralTransaction;
 }
-export declare class TradeTransaction implements ITransaction {
+export declare class TradeTransaction implements TransactionProto {
     transactionId: string;
     accountId: string;
     userId: string;
@@ -85,17 +92,18 @@ export declare class TradeTransaction implements ITransaction {
     tagIds: string[];
     amount: number;
     currency: Currency;
-    date: Date;
+    date: DateProto;
     description: string | null;
     isTaxDeductable: boolean;
     hasCapitalGains: boolean;
     transactionType: TransactionType.Trade;
     quantity: number;
     price: number;
+    statementId: string | null;
     constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, instrumentId: string, quantity: number, price: number, categoryId?: string, tagIds?: string[], seed?: string);
     static fromJSON(json: any): TradeTransaction;
 }
-export declare class TransferTransaction implements ITransaction {
+export declare class TransferTransaction implements TransactionProto {
     transactionId: string;
     accountId: string;
     userId: string;
@@ -104,12 +112,13 @@ export declare class TransferTransaction implements ITransaction {
     tagIds: string[];
     amount: number;
     currency: Currency;
-    date: Date;
+    date: DateProto;
     description: string | null;
     isTaxDeductable: boolean;
     hasCapitalGains: boolean;
     transactionType: TransactionType;
     exchangeRate?: number;
+    statementId: string | null;
     constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds?: string[], exchangeRate?: number, seed?: string);
     static fromJSON(json: any): TransferTransaction;
     /**

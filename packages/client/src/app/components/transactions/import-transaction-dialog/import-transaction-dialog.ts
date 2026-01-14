@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { lastValueFrom } from 'rxjs';
 
-import { Account, TransactionProcessor, ITransaction, ParsedTransaction, Institute, AccountType, Currency, TransactionType } from '@finapp/shared/models';
+import { Account, TransactionProcessor, TransactionProto, ParsedTransaction, Institute, AccountType, Currency, TransactionType, toDateProto } from '@finapp/shared/models';
 import { TransactionService } from '../../../services/transaction';
 import { InstituteService } from '../../../services/institute';
 import { AccountService } from '../../../services/account';
@@ -170,7 +170,7 @@ export interface ImportDialogData {
                                                 (change)="toggleSelection(t, $event.checked)">
                                             </mat-checkbox>
                                         </td>
-                                        <td class="px-4 py-2 text-zinc-300">{{ t.date | date:'shortDate' }}</td>
+                                        <td class="px-4 py-2 text-zinc-300">{{ t.date.timestamp | date:'shortDate' }}</td>
                                         <td class="px-4 py-2 text-white">{{ t.description }}</td>
                                         <td class="px-4 py-2 text-right font-medium" 
                                             [class.text-emerald-400]="t.amount > 0" 
@@ -243,8 +243,8 @@ export class ImportTransactionDialogComponent {
 
     // State
     file = signal<{ name: string, blob: Blob } | null>(null);
-    transactions = signal<ITransaction[]>([]);
-    selection = signal<ITransaction[]>([]);
+    transactions = signal<TransactionProto[]>([]);
+    selection = signal<TransactionProto[]>([]);
     loading = signal(false);
     uploading = signal(false);
     error = signal<string | null>(null);
@@ -357,7 +357,7 @@ export class ImportTransactionDialogComponent {
 
             const txns = parsed.map(t => ({
                 transactionId: crypto.randomUUID(),
-                date: t.date,
+                date: toDateProto(t.date),
                 amount: t.amount,
                 description: t.description,
                 merchant: { name: t.merchant || t.description, merchantId: 'unknown' },
@@ -366,8 +366,9 @@ export class ImportTransactionDialogComponent {
                 currency: new Currency('US Dollar', '$', 'USD'),
                 transactionType: TransactionType.General,
                 categoryId: 'uncategorized',
-                tagIds: []
-            } as ITransaction));
+                tagIds: [],
+                statementId: null
+            } as TransactionProto));
 
             this.transactions.set(txns);
             this.toggleAll(true); // Select all by default
@@ -391,7 +392,7 @@ export class ImportTransactionDialogComponent {
         return len > 0 && len < this.transactions().length;
     }
 
-    isSelected(t: ITransaction) {
+    isSelected(t: TransactionProto) {
         return this.selection().includes(t);
     }
 
@@ -399,7 +400,7 @@ export class ImportTransactionDialogComponent {
         this.selection.set(checked ? [...this.transactions()] : []);
     }
 
-    toggleSelection(t: ITransaction, checked: boolean) {
+    toggleSelection(t: TransactionProto, checked: boolean) {
         this.selection.update(sel => {
             if (checked) return [...sel, t];
             return sel.filter(x => x !== t);

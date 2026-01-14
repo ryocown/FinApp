@@ -3,13 +3,14 @@ import { InstituteTypes, type SupportedInstituteProp } from './institute.js';
 export const SUPPORTED_INSTITUTES: SupportedInstituteProp[] = [
     // Citi Bank
     {
-        instituteId: 'citi',
+        instituteId: 'citiau',
         commonName: 'Citi',
         displayName: 'Citi Bank',
         shortName: 'Citi',
         logo: '/assets/logos/C.svg',
         logoFull: '',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'citiau'
     },
 
     // US Banks
@@ -20,7 +21,8 @@ export const SUPPORTED_INSTITUTES: SupportedInstituteProp[] = [
         shortName: 'Chase',
         logo: '',
         logoFull: '',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'chase'
     },
 
     // Brokerages
@@ -31,7 +33,8 @@ export const SUPPORTED_INSTITUTES: SupportedInstituteProp[] = [
         shortName: 'MS',
         logo: '/assets/logos/MS.svg',
         logoFull: '/assets/logos/MS_BIG.svg',
-        type: InstituteTypes.BROKERAGE
+        type: InstituteTypes.BROKERAGE,
+        supportedInstituteId: 'morgan_stanley'
     },
 
     // Financial Services
@@ -42,7 +45,8 @@ export const SUPPORTED_INSTITUTES: SupportedInstituteProp[] = [
         shortName: 'PYPL',
         logo: '/assets/logos/PYPL.svg',
         logoFull: '/assets/logos/PYPL_BIG.svg',
-        type: InstituteTypes.FINANCIAL_SERVICE
+        type: InstituteTypes.FINANCIAL_SERVICE,
+        supportedInstituteId: 'paypay'
     },
     {
         instituteId: 'etoro',
@@ -51,62 +55,69 @@ export const SUPPORTED_INSTITUTES: SupportedInstituteProp[] = [
         shortName: 'ETOR',
         logo: '/assets/logos/ETOR.svg',
         logoFull: '/assets/logos/ETOR_BIG.svg',
-        type: InstituteTypes.BROKERAGE
+        type: InstituteTypes.BROKERAGE,
+        supportedInstituteId: 'etoro'
     },
     {
-        instituteId: 'amex',
+        instituteId: 'amexau',
         commonName: 'AMEX',
         displayName: 'AMEX',
         shortName: 'AXP',
         logo: '/assets/logos/AXP.svg',
         logoFull: '/assets/logos/AXP_BIG.svg',
-        type: InstituteTypes.FINANCIAL_SERVICE
+        type: InstituteTypes.FINANCIAL_SERVICE,
+        supportedInstituteId: 'amexau'
     },
 
     // Australian Banks
     {
-        instituteId: 'commbank',
+        instituteId: 'commbankau',
         commonName: 'CommBank',
         displayName: 'Commonwealth Bank',
         shortName: 'CBA.AX',
         logo: '/assets/logos/CBA.AX.svg',
         logoFull: '',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'commbankau'
     },
     {
-        instituteId: 'suncorbank',
+        instituteId: 'suncorbankau',
         commonName: 'Suncorp',
         displayName: 'Suncorp Australia',
         shortName: 'SUN.AX',
         logo: '/assets/logos/SUN.AX.svg',
         logoFull: '/assets/logos/SUN.AX_BIG.svg',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'suncorbankau'
     },
     {
-        instituteId: 'anzbank',
+        instituteId: 'anzbankau',
         commonName: 'ANZ',
         displayName: 'ANZ Bank',
         shortName: 'ANZ.AX',
         logo: '/assets/logos/ANZ.AX.svg',
         logoFull: '/assets/logos/ANZ.AX_BIG.svg',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'anzbankau'
     },
     {
-        instituteId: 'nab',
+        instituteId: 'nabau',
         commonName: 'NAB',
         displayName: 'NAB Bank',
         shortName: 'NAB.AX',
         logo: '/assets/logos/NAB.AX.svg',
         logoFull: '/assets/logos/NAB.AX_BIG.svg',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'nabau'
     },
     {
-        instituteId: 'macquarie',
+        instituteId: 'macquarieau',
         commonName: 'Macquarie',
         displayName: 'Macquarie Bank',
         shortName: 'MQG.AX',
         logo: '/assets/logos/MQG.AX.svg',
         logoFull: '/assets/logos/MQG.AX_BIG.svg',
-        type: InstituteTypes.BANK
+        type: InstituteTypes.BANK,
+        supportedInstituteId: 'macquarieau'
     }
 ];

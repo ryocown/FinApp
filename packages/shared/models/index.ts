@@ -5,7 +5,7 @@
 export { type AccountProp, Account, InvestmentAccount, AccountType, AccountTag, BankAccount } from './account.js';
 
 // Transactions
-export { type ITransaction, type IGeneralTransaction, type ITradeTransaction, type ITransferTransaction, GeneralTransaction, TradeTransaction, TransferTransaction, TransactionType, generateTransactionId } from './transaction.js';
+export { type TransactionProto, type GeneralTransactionProto, type TradeTransactionProto, type TransferTransactionProto, GeneralTransaction, TradeTransaction, TransferTransaction, TransactionType, generateTransactionId } from './transaction.js';
 
 // Categories
 export { type ICategory, Category, CategoryType, CategoryGroups, ExpenseTypes, ExpenseTree, StandardCategoryTree } from './category.js';
@@ -31,7 +31,10 @@ export { type MerchantProp, type KnownMerchant, Merchant } from './merchant.js';
 export * from './known_merchants.js';
 
 // Statements
-export { type IStatement, Statement } from './statement.js';
+export { type StatementProto, Statement } from './statement.js';
+
+// Balance History
+export { type BalanceEntryProto, type YearlyBalanceDocProto } from './balance-history.js';
 
 // Tags
 export { type ITag, Tag } from './tag.js';
@@ -43,7 +46,7 @@ export { type ILot, Lot } from './lot.js';
 export { type IPricePoint, PricePoint } from './price_history.js';
 
 // Recurring Transactions
-export { type IRecurringTransaction, type RecurrenceFrequency, RecurringTransaction } from './recurring_transaction.js';
+export { type RecurringTransactionProto, type RecurrenceFrequency, RecurringTransaction } from './recurring_transaction.js';
 
 // Users
 export { type IUser, User } from './user.js';
@@ -53,3 +56,6 @@ export * as DateUtils from '../lib/date_utils.js';
 
 // Importer
 export * from '../importer/index.js';
+
+// Date Protos
+export { type DateProto, toDateProto } from './date-proto.js';

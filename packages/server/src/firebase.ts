@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import path from 'path';
 import dotenv from 'dotenv';
-import { type ITransaction } from '@finapp/shared';
+import { type TransactionProto, toDateProto } from '@finapp/shared';
 import { type Account } from '@finapp/shared';
 
 // Load .env from project root
@@ -62,17 +62,60 @@ export const getAllUserAccounts = async (userId: string): Promise<Account[]> => 
 
   const accountPromises = institutesSnapshot.docs.map(async instituteDoc => {
     const accountsSnapshot = await instituteDoc.ref.collection('accounts').get();
-    return accountsSnapshot.docs.map(doc => Object.assign({}, doc.data(), {
-      accountId: doc.id,
-      instituteId: instituteDoc.id
-    }) as Account);
+    return accountsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      // Date conversion logic
+      if (data.balanceDate) {
+        if (typeof data.balanceDate === 'string' || typeof data.balanceDate === 'number') {
+          data.balanceDate = toDateProto(new Date(data.balanceDate));
+        } else if (typeof data.balanceDate === 'object') {
+          if ('_seconds' in data.balanceDate) {
+            const seconds = (data.balanceDate as any)._seconds;
+            const nanoseconds = (data.balanceDate as any)._nanoseconds || 0;
+            data.balanceDate = toDateProto(new Date(seconds * 1000 + nanoseconds / 1000000));
+          } else if (!('timestamp' in data.balanceDate)) {
+            // Try toDate or generic date object?
+            // If it's a Firestore Timestamp, it has toDate()
+            if (typeof data.balanceDate.toDate === 'function') {
+              data.balanceDate = toDateProto(data.balanceDate.toDate());
+            }
+          }
+        }
+      } else {
+        // Default if missing?
+        data.balanceDate = toDateProto(new Date());
+      }
+
+      // Interest effectiveDate
+      if (data.interest && Array.isArray(data.interest)) {
+        data.interest = data.interest.map((i: any) => {
+          if (i.effectiveDate) {
+            if (typeof i.effectiveDate === 'object' && '_seconds' in i.effectiveDate) {
+              const seconds = (i.effectiveDate as any)._seconds;
+              const nanoseconds = (i.effectiveDate as any)._nanoseconds || 0;
+              i.effectiveDate = toDateProto(new Date(seconds * 1000 + nanoseconds / 1000000));
+            } else if (typeof i.effectiveDate.toDate === 'function') {
+              i.effectiveDate = toDateProto(i.effectiveDate.toDate());
+            } else if (typeof i.effectiveDate === 'string' || typeof i.effectiveDate === 'number') {
+              i.effectiveDate = toDateProto(new Date(i.effectiveDate));
+            }
+          }
+          return i;
+        });
+      }
+
+      return Object.assign({}, data, {
+        accountId: doc.id,
+        instituteId: instituteDoc.id
+      }) as Account;
+    });
   });
 
   const nestedAccounts = await Promise.all(accountPromises);
   return nestedAccounts.flat();
 };
 
-export const resolveTransactionReferences = async (docs: admin.firestore.QueryDocumentSnapshot[]): Promise<ITransaction[]> => {
+export const resolveTransactionReferences = async (docs: admin.firestore.QueryDocumentSnapshot[]): Promise<TransactionProto[]> => {
   const transactionPromises = docs.map(async doc => {
     const data = doc.data();
     let txData: any = null;
@@ -98,22 +141,32 @@ export const resolveTransactionReferences = async (docs: admin.firestore.QueryDo
 
     if (!txData) return null;
 
-    // Convert Firestore Timestamp to ISO string for date
+    // Convert date to DateProto if it isn't already (backwards compatibility or if stored as Timestamp)
     if (txData.date) {
-      if (typeof txData.date.toDate === 'function') {
-        txData.date = txData.date.toDate().toISOString();
-      } else if (typeof txData.date === 'object' && '_seconds' in txData.date) {
-        // Handle raw object if somehow not an instance
-        const seconds = (txData.date as any)._seconds;
-        const nanoseconds = (txData.date as any)._nanoseconds || 0;
-        txData.date = new Date(seconds * 1000 + nanoseconds / 1000000).toISOString();
+      // Check if it's already a DateProto (has timestamp number property)
+      if (typeof txData.date === 'object' && 'timestamp' in txData.date && typeof txData.date.timestamp === 'number') {
+        // Assume it's already DateProto, do nothing or validate
+      } else {
+        // Convert from Timestamp or ISO string
+        let jsDate: Date;
+        if (typeof txData.date.toDate === 'function') {
+          jsDate = txData.date.toDate();
+        } else if (typeof txData.date === 'object' && '_seconds' in txData.date) {
+          const seconds = (txData.date as any)._seconds;
+          const nanoseconds = (txData.date as any)._nanoseconds || 0;
+          jsDate = new Date(seconds * 1000 + nanoseconds / 1000000);
+        } else {
+          // string or number
+          jsDate = new Date(txData.date);
+        }
+        txData.date = toDateProto(jsDate);
       }
     }
 
-    return txData as ITransaction;
+    return txData as TransactionProto;
   });
 
   const results = await Promise.all(transactionPromises);
   // Filter out nulls (broken references)
-  return results.filter((t): t is ITransaction => t !== null);
+  return results.filter((t): t is TransactionProto => t !== null);
 };

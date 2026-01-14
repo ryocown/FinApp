@@ -1,11 +1,11 @@
 import { SupportedInstitute } from '../models/institute.js';
 import { AccountType } from '../models/account.js';
-import type { IStatementImporter } from './importer.js';
+import type { StatementImporterProto } from './importer.js';
 import { ChaseCsvStatementImporter as ChaseBankStatementImporter, ChaseCreditCsvStatementImporter as ChaseCreditStatementImporter } from './institutions/chase.js';
 import { MorganStanleyStatementImporter } from './institutions/morgan_stanley.js';
 import { PayPayStatementImporter } from './institutions/paypay.js';
 
-type ImporterConstructor = new (accountId: string, userId: string) => IStatementImporter;
+type ImporterConstructor = new (accountId: string, userId: string) => StatementImporterProto;
 
 // This maps the institute to the account types it supports.
 export const INSTITUTE_CAPABILITIES: Record<SupportedInstitute, Partial<Record<AccountType, ImporterConstructor>>> = {
@@ -37,7 +37,7 @@ export function getSupportedAccountTypes(institute: SupportedInstitute): Account
   return capabilities ? (Object.keys(capabilities) as AccountType[]) : [];
 }
 
-export function getImporterForInstitute(instituteName: string, accountType: AccountType, accountId: string, userId: string): IStatementImporter | null {
+export function getImporterForInstitute(instituteName: string, accountType: AccountType, accountId: string, userId: string): StatementImporterProto | null {
   const instituteCapabilities = INSTITUTE_CAPABILITIES[instituteName as SupportedInstitute];
   if (!instituteCapabilities) return null;
 

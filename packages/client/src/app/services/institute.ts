@@ -21,8 +21,8 @@ export class InstituteService {
     );
   }
 
-  createInstitute(userId: string, name: string, type: InstituteTypes | string = 'Other'): Observable<Institute> {
-    return this.http.post<InstituteProp>(`${this.apiUrl}/institutes/users/${userId}/institutes`, { userId, name, type }).pipe(
+  createInstitute(userId: string, name: string, type: InstituteTypes | string = 'Other', supportedInstituteId?: string): Observable<Institute> {
+    return this.http.post<InstituteProp>(`${this.apiUrl}/institutes/users/${userId}/institutes`, { userId, name, type, supportedInstituteId }).pipe(
       map(prop => Institute.fromProp(prop)),
       tap(() => this.getInstitutes(userId).subscribe())
     );

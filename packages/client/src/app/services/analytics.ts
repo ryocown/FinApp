@@ -20,4 +20,8 @@ export class AnalyticsService {
       params: { range }
     });
   }
+
+  getMoM(userId: string): Observable<{ current: number; previous: number; diff: number; percent: number }> {
+    return this.http.get<{ current: number; previous: number; diff: number; percent: number }>(`${this.apiUrl}/analytics/users/${userId}/mom`);
+  }
 }

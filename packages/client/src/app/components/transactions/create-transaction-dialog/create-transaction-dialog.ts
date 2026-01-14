@@ -58,6 +58,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
         </mat-form-field>
 
         <mat-form-field>
+          <mat-label>Balance (Optional)</mat-label>
+          <input matInput type="number" formControlName="balance" placeholder="Running balance after this tx">
+        </mat-form-field>
+
+        <mat-form-field>
           <mat-label>Category</mat-label>
           <input matInput formControlName="category">
         </mat-form-field>
@@ -99,6 +104,7 @@ export class CreateTransactionDialogComponent {
     date: [new Date(), Validators.required],
     description: ['', Validators.required],
     amount: ['', Validators.required],
+    balance: [''],
     category: ['Uncategorized'],
     accountId: ['', Validators.required],
     transactionType: [TransactionType.General, Validators.required],
@@ -112,8 +118,18 @@ export class CreateTransactionDialogComponent {
         ? formValue.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
         : [];
 
+      const dateInput = formValue.date!;
+      let finalDate = dateInput;
+      const now = new Date();
+      if (dateInput.getDate() === now.getDate() &&
+        dateInput.getMonth() === now.getMonth() &&
+        dateInput.getFullYear() === now.getFullYear()) {
+        finalDate = now;
+      }
+
       this.dialogRef.close({
         ...formValue,
+        date: finalDate,
         tagIds
       });
     }

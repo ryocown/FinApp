@@ -1,11 +1,11 @@
 
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChildren, QueryList, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { AccountService } from '../../services/account';
 import { AnalyticsService } from '../../services/analytics';
 import { AuthService } from '../../services/auth.service';
 import { InstituteService } from '../../services/institute';
-import { Account, AccountType, Institute } from '@finapp/shared/models';
+import { Account, AccountType, Institute, SUPPORTED_INSTITUTES } from '@finapp/shared/models';
 import { NetWorthChartComponent } from './net-worth-chart/net-worth-chart';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,7 +34,10 @@ export class DashboardComponent {
   private instituteService = inject(InstituteService);
   readonly dialog = inject(MatDialog);
   private router = inject(Router);
+  private renderer = inject(Renderer2);
   authService = inject(AuthService);
+
+  @ViewChildren('glowCard', { read: ElementRef }) glowCards!: QueryList<ElementRef>;
 
   accounts = signal<Account[]>([]);
   institutes = signal<Institute[]>([]);
@@ -80,16 +83,34 @@ export class DashboardComponent {
 
   // Grouped Accounts for Filter Card
   groupedAccounts = computed(() => {
-    const groups: Record<string, Account[]> = {};
-    const instituteMap = new Map(this.institutes().map(i => [i.instituteId, i.name]));
+    const instituteMap = new Map(this.institutes().map(i => [i.instituteId, i]));
+    const groups = new Map<string, Account[]>(); // instituteId -> accounts
 
     this.accounts().forEach(acc => {
-      const instituteName = acc.instituteId ? (instituteMap.get(acc.instituteId) || 'Other') : 'Other';
-      if (!groups[instituteName]) groups[instituteName] = [];
-      groups[instituteName].push(acc);
+      const instId = acc.instituteId || 'other';
+      if (!groups.has(instId)) groups.set(instId, []);
+      groups.get(instId)!.push(acc);
     });
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+
+    const result = Array.from(groups.entries()).map(([instId, accounts]) => {
+      const inst = instituteMap.get(instId);
+      const name = inst ? inst.name : 'Other';
+      const logo = inst ? this.getInstituteLogo(inst) : undefined;
+      return {
+        name,
+        logo,
+        accounts
+      };
+    });
+
+    return result.sort((a, b) => a.name.localeCompare(b.name));
   });
+
+  getInstituteLogo(institute: Institute): string | undefined {
+    if (!institute.supportedInstituteId) return undefined;
+    const supported = SUPPORTED_INSTITUTES.find(s => s.supportedInstituteId === institute.supportedInstituteId);
+    return supported ? supported.logo : undefined;
+  }
 
   // Metrics
   burnRate = computed(() => {
@@ -110,25 +131,27 @@ export class DashboardComponent {
       .reduce((sum, acc) => sum + this.getBalanceInUSD(acc), 0);
   });
 
-  creditScore = computed(() => 785); // Still mocked as we don't have credit report API
+  totalCreditLine = computed(() => {
+    return this.accounts()
+      .filter(a => [AccountType.CREDIT_CARD, AccountType.LOAN].includes(a.type))
+      .reduce((sum, acc) => sum + (acc.limit ? this.convertBalanceToUSD(acc.limit, acc.currency) : 0), 0);
+  });
+
+  // Helper to reuse conversion logic (refactoring getBalanceInUSD)
+  convertBalanceToUSD(amount: number, currency: any): number {
+    const rates = this.rates();
+    if (Object.keys(rates).length === 0) return amount;
+    if (currency.code === 'USD') return amount;
+
+    const pairId = currency.code < 'USD' ? `${currency.code} USD` : `USD${currency.code} `;
+    const rate = rates[pairId];
+    return rate ? amount * rate : amount;
+  }
+
+  // creditScore = computed(() => 785); // Removed per user request
 
   // MoM Changes
-  netWorthMoM = computed(() => {
-    const history = this.netWorthHistory();
-    if (history.length < 2) return { value: 0, trend: 'flat' };
-
-    const current = history[history.length - 1].value;
-    const start = history[0].value;
-
-    if (start === 0 && current === 0) return { value: 0, trend: 'flat' };
-    if (start === 0) return { value: 100, trend: 'up' };
-
-    const diffPercent = ((current - start) / start) * 100;
-    return {
-      value: Math.abs(Math.round(diffPercent * 10) / 10),
-      trend: diffPercent >= 0 ? 'up' : 'down'
-    };
-  });
+  netWorthMoM = signal<{ value: number; percent: number; trend: 'up' | 'down' | 'flat' }>({ value: 0, percent: 0, trend: 'flat' });
 
   // Assets/Liabilities MoM - Approximation based on current only (unavailable history)
   // We will hide or keep mocked for now, or just return 0 to avoid misleading "mock" data
@@ -137,10 +160,25 @@ export class DashboardComponent {
 
   constructor() {
     this.loadData();
+    this.loadMoM();
 
     // Defer history loading slightly or let it run parallel via effect
     effect(() => {
       this.loadHistory(this.range());
+    });
+  }
+
+  loadMoM() {
+    this.analyticsService.getMoM(this.authService.user()!.uid).subscribe({
+      next: (data) => {
+        const trend = data.diff === 0 ? 'flat' : (data.diff > 0 ? 'up' : 'down');
+        this.netWorthMoM.set({
+          value: Math.abs(data.diff),
+          percent: Math.abs(data.percent),
+          trend: trend
+        });
+      },
+      error: (err) => console.error('Failed to load MoM', err)
     });
   }
 
@@ -195,17 +233,7 @@ export class DashboardComponent {
   }
 
   getBalanceInUSD(account: Account): number {
-    const rates = this.rates();
-    if (Object.keys(rates).length === 0) return account.balance || 0;
-
-    if (account.currency.code === 'USD') return account.balance || 0;
-
-    const pairId = account.currency.code < 'USD' ? `${account.currency.code} USD` : `USD${account.currency.code} `;
-    const rate = rates[pairId];
-    if (rate) {
-      return (account.balance || 0) * rate;
-    }
-    return account.balance || 0;
+    return this.convertBalanceToUSD(account.balance || 0, account.currency);
   }
 
   setRange(r: string) {
@@ -255,6 +283,17 @@ export class DashboardComponent {
         this.loadData();
       }
     });
+  }
+
+  onMouseMove(event: MouseEvent) {
+    const card = event.currentTarget as HTMLElement;
+    const rect = card.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // console.log(`Mouse: ${x}, ${y} on Card`, card); // Debugging
+    this.renderer.setStyle(card, '--mouse-x', `${x}px`);
+    this.renderer.setStyle(card, '--mouse-y', `${y}px`);
   }
 
 }

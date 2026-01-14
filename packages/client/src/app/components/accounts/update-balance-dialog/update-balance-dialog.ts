@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, NativeDateAdapter, DateAdapter } from '@angular/material/core';
-import { Account, AccountType } from '@finapp/shared/models';
+import { Account, AccountType, toDateProto, TransactionProto } from '@finapp/shared/models';
 import { AccountService } from '../../../services/account';
 
 export interface EditAccountDialogData {
@@ -78,7 +78,7 @@ export class UpdateBalanceDialogComponent {
 
   form = this.fb.group({
     balance: [this.data.account.balance, Validators.required],
-    balanceDate: [this.data.account.balanceDate ? new Date(this.data.account.balanceDate) : new Date(), Validators.required],
+    balanceDate: [this.data.account.balanceDate ? new Date(this.data.account.balanceDate.timestamp) : new Date(), Validators.required],
   });
 
   save() {
@@ -87,9 +87,21 @@ export class UpdateBalanceDialogComponent {
     this.isSaving.set(true);
     const formValue = this.form.value;
 
+    const dateInput = formValue.balanceDate!;
+    let finalDate = dateInput;
+
+    // If selected date is exactly same calendar day as today, use current time
+    // Otherwise use the input time (which is likely 00:00 from datepicker)
+    const now = new Date();
+    if (dateInput.getDate() === now.getDate() &&
+      dateInput.getMonth() === now.getMonth() &&
+      dateInput.getFullYear() === now.getFullYear()) {
+      finalDate = now;
+    }
+
     const updates: Partial<Account> = {
       balance: Number(formValue.balance),
-      balanceDate: formValue.balanceDate!,
+      balanceDate: toDateProto(finalDate),
     };
 
     this.accountService.updateAccount(this.data.userId, this.data.account.accountId, updates)

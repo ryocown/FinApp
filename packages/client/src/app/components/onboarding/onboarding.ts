@@ -90,8 +90,9 @@ export class OnboardingComponent {
                 const val = this.instituteForm.value;
                 const name = val.name || '';
                 const type = val.type || 'Other';
+                const supportedInstituteId = val.supportedInstituteId || undefined;
 
-                const res = await lastValueFrom(this.instituteService.createInstitute(user.uid, name, type));
+                const res = await lastValueFrom(this.instituteService.createInstitute(user.uid, name, type, supportedInstituteId));
                 // Use the returned ID. Note: createInstitute returns custom object or Institute model?
                 // InstituteService.createInstitute returns Observable<Institute>.
                 // Institute has instituteId property.

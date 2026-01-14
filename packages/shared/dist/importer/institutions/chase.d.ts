@@ -1,5 +1,5 @@
 import { StatementImporter } from '../importer.js';
-import { type ITransaction, TransactionType } from '../../models/transaction.js';
+import { type TransactionProto, TransactionType } from '../../models/transaction.js';
 /**
  * Checking account CSV format:
  *
@@ -10,7 +10,7 @@ import { type ITransaction, TransactionType } from '../../models/transaction.js'
 export declare class ChaseCsvStatementImporter extends StatementImporter {
     constructor(accountId: string, userId: string);
     protected checkTransactionType(record: any): TransactionType;
-    protected processTransaction(record: any): Promise<ITransaction | null>;
+    protected processTransaction(record: any): Promise<TransactionProto | null>;
 }
 /**
  * Credit card CSV format:
@@ -22,5 +22,5 @@ export declare class ChaseCsvStatementImporter extends StatementImporter {
 export declare class ChaseCreditCsvStatementImporter extends StatementImporter {
     constructor(accountId: string, userId: string);
     protected checkTransactionType(record: any): TransactionType;
-    protected processTransaction(record: any): Promise<ITransaction | null>;
+    protected processTransaction(record: any): Promise<TransactionProto | null>;
 }

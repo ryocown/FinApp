@@ -4,7 +4,7 @@ import { v4 } from 'uuid';
 import { db, getUserRef, getAccountRef, getAllUserAccounts, getCollectionData, resolveTransactionReferences } from '../firebase.js';
 import { Account, type AccountProp, AccountTag, AccountType, BankAccount, InvestmentAccount } from "@finapp/shared";
 import { type IBalanceCheckpoint, BalanceCheckpointType } from '@finapp/shared';
-import type { ITransaction } from '@finapp/shared';
+import { type TransactionProto, toDateProto, type DateProto } from '@finapp/shared';
 import { ApiError } from '../errors/index.js';
 import { ReconciliationService } from './reconciliation.js';
 
@@ -17,7 +17,26 @@ export class AccountService {
      * Get all accounts for a user.
      */
     static async getUserAccounts(userId: string): Promise<Account[]> {
-        return getAllUserAccounts(userId);
+        const accounts = await getAllUserAccounts(userId);
+
+        // Stitch current balance from checkpoints
+        await Promise.all(accounts.map(async (account) => {
+            const latestCheckpoint = await ReconciliationService.getLatestCheckpoint(userId, account.accountId);
+            if (latestCheckpoint) {
+                account.balance = latestCheckpoint.balance;
+                account.balanceDate = latestCheckpoint.date;
+            } else {
+                // If no checkpoint, balance is effectively 0? or keep what's on doc?
+                // User wants source of truth to be checkpoints.
+                // If migration hasn't happened, we might fallback.
+                // But for new logic:
+                // account.balance = 0; 
+                // account.balanceDate = ...;
+                // Leave as is if we want to support legacy, but override if checkpoint exists.
+            }
+        }));
+
+        return accounts;
     }
 
     /**
@@ -47,6 +66,10 @@ export class AccountService {
             .collection('accounts')
             .doc(accountId);
 
+        // Ensure balance fields are not stored in the Account document
+        delete (newAccount as any).balance;
+        delete (newAccount as any).balanceDate;
+
         await docRef.set(newAccount);
 
         // Handle initial reconciliation if provided
@@ -54,21 +77,16 @@ export class AccountService {
             const checkpoint: IBalanceCheckpoint = {
                 id: v4(),
                 accountId,
-                date: new Date(initialDate),
+                date: toDateProto(new Date(initialDate)),
                 balance: Number(initialBalance),
                 type: BalanceCheckpointType.MANUAL,
-                createdAt: new Date()
+                createdAt: toDateProto(new Date())
             };
 
             // Save checkpoint
             await docRef.collection('balance_checkpoints').doc(checkpoint.id).set(checkpoint);
 
-            // Update Account with initial balance
-            await docRef.update({
-                balance: checkpoint.balance,
-                balanceDate: checkpoint.date
-            });
-
+            // Populate the return object with the balance for the client
             newAccount.balance = checkpoint.balance;
             newAccount.balanceDate = checkpoint.date;
         }
@@ -83,7 +101,7 @@ export class AccountService {
         userId: string,
         accountId: string,
         options: { limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {}
-    ): Promise<{ transactions: ITransaction[]; nextPageToken: string | null }> {
+    ): Promise<{ transactions: TransactionProto[]; nextPageToken: string | null }> {
         const result = await getAccountRef(userId, accountId);
 
         if (!result) {
@@ -94,7 +112,7 @@ export class AccountService {
         const sortOrder = options.sortOrder || 'desc';
 
         let query: admin.firestore.Query = accountRef.collection('transactions');
-        query = query.orderBy('date', sortOrder);
+        query = query.orderBy('date.timestamp', sortOrder);
 
         if (options.pageToken) {
             const lastDoc = await accountRef.collection('transactions').doc(options.pageToken).get();
@@ -134,24 +152,28 @@ export class AccountService {
         const snapshot = await accountRef.collection('balance_checkpoints').orderBy('date', 'desc').get();
         let checkpoints = snapshot.docs.map(doc => {
             const data = doc.data();
-            // Convert Firestore timestamps to ISO strings
+            // Convert Firestore timestamps to DateProto
             if (data.date) {
                 if (typeof data.date.toDate === 'function') {
-                    data.date = data.date.toDate().toISOString();
+                    data.date = toDateProto(data.date.toDate());
                 } else if (typeof data.date === 'object' && '_seconds' in data.date) {
                     const seconds = (data.date as { _seconds: number })._seconds;
                     const nanoseconds = (data.date as { _nanoseconds?: number })._nanoseconds || 0;
-                    data.date = new Date(seconds * 1000 + nanoseconds / 1000000).toISOString();
+                    data.date = toDateProto(new Date(seconds * 1000 + nanoseconds / 1000000));
+                } else if (typeof data.date === 'string') {
+                    data.date = toDateProto(new Date(data.date));
                 }
             }
 
             if (data.createdAt) {
                 if (typeof data.createdAt.toDate === 'function') {
-                    data.createdAt = data.createdAt.toDate().toISOString();
+                    data.createdAt = toDateProto(data.createdAt.toDate());
                 } else if (typeof data.createdAt === 'object' && '_seconds' in data.createdAt) {
                     const seconds = (data.createdAt as { _seconds: number })._seconds;
                     const nanoseconds = (data.createdAt as { _nanoseconds?: number })._nanoseconds || 0;
-                    data.createdAt = new Date(seconds * 1000 + nanoseconds / 1000000).toISOString();
+                    data.createdAt = toDateProto(new Date(seconds * 1000 + nanoseconds / 1000000));
+                } else if (typeof data.createdAt === 'string') {
+                    data.createdAt = toDateProto(new Date(data.createdAt));
                 }
             }
             return data as IBalanceCheckpoint;
@@ -212,27 +234,19 @@ export class AccountService {
         delete updates.instituteId;
         // delete updates.balance; // Removed: Balance allowed for manual updates
 
+        // Create a manual checkpoint for this balance update if provided
         if (updates.balance !== undefined) {
-            // Create a manual checkpoint for this balance update
             const account = await getAccountRef(userId, accountId);
             if (account) {
                 await ReconciliationService.reconcileAccount(
                     userId,
                     accountId,
-                    updates.balanceDate ? new Date(updates.balanceDate) : new Date(),
+                    updates.balanceDate as DateProto || toDateProto(new Date()),
                     Number(updates.balance)
                 );
-                // Note: reconcileAccount already updates the account document
             }
         }
 
-        // Remove balance from direct updates to avoid race conditions or double writes
-        // since reconcileAccount handles it, OR we let update() below handle it if reconcileAccount doesn't set other fields.
-        // ReconciliationService.reconcileAccount updates 'balance' and 'balanceDate'.
-        // So we should remove 'balance' from 'updates' to prevent overwriting if we want to be safe, 
-        // but since we are doing a partial update here for OTHER fields, we should keep it clean.
-        // Actually, if we pass 'balance' to update(), it might overwrite what reconcile did?
-        // Let's remove 'balance' from 'updates' so this final update call only handles name/type/etc.
         const balanceUpdate = updates.balance;
         delete updates.balance;
         delete updates.balanceDate;

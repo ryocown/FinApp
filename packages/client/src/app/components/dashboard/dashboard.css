@@ -1,60 +1,157 @@
-.dashboard-cards-container {
+/* Dashboard specific styles */
+
+/* --- Loader Animation (Push Down / Bounce Up) --- */
+.dashboard-loader-container {
+    height: 10vh;
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
+    /* Bounce Up Effect for Height Collapse */
+    transition: height 0.8s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
+    opacity: 1;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 2000;
 }
 
-@media (min-width: 768px) {
-    .dashboard-cards-container {
-        flex-direction: row;
+/* When loaded, container collapses */
+.dashboard-loader-container.loaded {
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Scale and vanish loader when loaded */
+.dashboard-loader-container.loaded .morph-loader {
+    transform: scale(0);
+    opacity: 0;
+}
+
+.dashboard-content-wrapper {
+    /* Main wrapper handles opacity/visibility if needed */
+    transition: opacity 0.5s ease;
+}
+
+/* Morph Loader Styles */
+.morph-loader {
+    width: 48px;
+    height: 48px;
+    background: var(--app-theme-text-link);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+    /* fallback */
+    animation: morph 6s ease-in-out infinite;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    z-index: 2001;
+}
+
+@keyframes morph {
+
+    0%,
+    100% {
+        border-radius: 12px;
+        transform: rotate(45deg);
     }
 
-    .dashboard-cards-container>* {
-        flex: 1;
-        min-width: 0;
+    25% {
+        border-radius: 20% 80% 20% 80% / 80% 20% 80% 20%;
+        transform: rotate(135deg);
+    }
+
+    50% {
+        border-radius: 50%;
+        transform: rotate(225deg) scaleX(1.2);
+    }
+
+    75% {
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        transform: rotate(315deg);
     }
 }
 
-/* Chart + Accounts Container */
-.dashboard-chart-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
-    margin-top: 1.5rem;
-}
-
-@media (min-width: 768px) {
-    .dashboard-chart-container {
-        flex-direction: row;
+/* Spring Up Animation for Real Content */
+@keyframes springUp {
+    0% {
+        opacity: 0;
+        transform: translateY(64px);
     }
 
-    /* 3:1 Ratio */
-    .dashboard-chart-section {
-        flex: 3;
-        min-width: 0;
+    50% {
+        opacity: 0.8;
     }
 
-    .dashboard-account-section {
-        flex: 1;
-        min-width: 0;
+    100% {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* Main Body Spacing */
-.dashboard-main-body {
-    /* "only be horizontal gap" -> Use horizontal variable for side padding */
-    padding-left: var(--spaces-and-sizes-large-horizontal);
-    padding-right: var(--spaces-and-sizes-large-horizontal);
-    padding-top: var(--spaces-and-sizes-large);
-    padding-bottom: var(--spaces-and-sizes-large);
+.animate-enter {
+    animation: springUp 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    opacity: 0;
+    /* Start invisible */
 }
 
-/* Ensure chart container has height */
-app-net-worth-chart {
+/* Skeleton Gradient Styling (Matching Header Title) */
+.skeleton-gradient,
+.skeleton-avatar,
+.skeleton-text {
+    /* Mirrored gradient for seamless shimmer loop */
+    background: linear-gradient(45deg,
+            var(--app-theme-particle-3),
+            var(--app-theme-particle-4),
+            var(--app-theme-particle-3)) !important;
+    background-size: 200% 200% !important;
+    animation: gradient-shimmer 3s ease infinite !important;
+    opacity: 0.2;
+    /* slight transparency */
+}
+
+@keyframes gradient-shimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Glow Card (Spotlight Border) Effect */
+.glow-card {
+    position: relative !important;
+    border: 1px solid transparent !important;
+}
+
+.glow-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: radial-gradient(600px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+            var(--app-theme-particle-3),
+            transparent 40%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    pointer-events: none;
+    z-index: 999;
     display: block;
-    width: 100%;
-    height: 100%;
-    min-height: 250px;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.glow-card:hover::before {
+    opacity: 1;
 }

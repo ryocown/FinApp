@@ -22,10 +22,9 @@ import { InstituteTypes, SUPPORTED_INSTITUTES } from '@finapp/shared/models';
         <!-- Supported Institute Quick Select -->
         <mat-form-field>
             <mat-label>Quick Select (Optional)</mat-label>
-             @if (selectedLogo) {
+            @if (selectedLogo) {
                 <div matPrefix class="flex items-center justify-center pointer-events-none" style="width: 32px; height: 32px; margin: 0 12px; vertical-align: middle; align-items: center; display: flex;">
-                    <img [src]="selectedLogo" class="max-w-full max-h-full object-contain" 
-                         style="filter: grayscale(100%) invert(1) contrast(0.2) brightness(1.7);" 
+                    <img [src]="selectedLogo" class="max-w-full max-h-full object-contain theme-logo" 
                          alt="Logo">
                 </div>
             }
@@ -60,6 +59,18 @@ import { InstituteTypes, SUPPORTED_INSTITUTES } from '@finapp/shared/models';
   `,
     styles: [`
     mat-form-field { width: 100%; }
+    
+    /* Logo Styling */
+    .theme-logo {
+        transition: filter 0.3s ease;
+        /* Light Theme Default: Dark Gray to match text */
+        filter: grayscale(100%) opacity(0.7);
+    }
+
+    /* Dark Theme Override: Invert and Brighten */
+    :host-context(.dark-theme) .theme-logo {
+        filter: grayscale(100%) invert(1) contrast(0.2) brightness(1.7);
+    }
   `]
 })
 export class InstituteFormComponent {
@@ -71,7 +82,8 @@ export class InstituteFormComponent {
 
     form = this.fb.group({
         name: ['', [Validators.required, this.uniqueNameValidator()]],
-        type: [InstituteTypes.OTHER, Validators.required]
+        type: [InstituteTypes.OTHER, Validators.required],
+        supportedInstituteId: ['']
     });
 
     selectedLogo: string | null = null;
@@ -88,11 +100,15 @@ export class InstituteFormComponent {
                 });
             }
             this.form.patchValue({
-                type: inst.type
+                type: inst.type,
+                supportedInstituteId: inst.supportedInstituteId
             });
             this.selectedLogo = inst.logo || null;
         } else {
             this.selectedLogo = null;
+            this.form.patchValue({
+                supportedInstituteId: ''
+            });
         }
     }
 

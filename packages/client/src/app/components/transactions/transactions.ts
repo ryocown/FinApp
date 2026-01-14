@@ -5,7 +5,7 @@ import { TransactionService } from '../../services/transaction';
 import { AccountService } from '../../services/account';
 import { InstituteService } from '../../services/institute';
 import { AuthService } from '../../services/auth.service';
-import { ITransaction, Account, TransactionProcessor, ParsedTransaction } from '@finapp/shared/models';
+import { TransactionProto, Account, TransactionProcessor, ParsedTransaction, toDateProto } from '@finapp/shared/models';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,7 +28,7 @@ export class TransactionsComponent {
   private dialog = inject(MatDialog);
 
   displayedColumns: string[] = ['date', 'merchant', 'category', 'amount'];
-  transactions = signal<ITransaction[]>([]);
+  transactions = signal<TransactionProto[]>([]);
   authService = inject(AuthService);
   accountId = signal<string | undefined>(undefined);
 
@@ -57,14 +57,14 @@ export class TransactionsComponent {
     });
   }
 
-  getMerchantName(txn: ITransaction): string {
+  getMerchantName(txn: TransactionProto): string {
     if ('merchant' in txn) {
       return (txn as any).merchant?.name || 'Unknown Merchant';
     }
     return 'Unknown';
   }
 
-  getCategoryName(txn: ITransaction): string {
+  getCategoryName(txn: TransactionProto): string {
     return txn.categoryId || (txn as any).category || 'Uncategorized';
   }
 
@@ -101,13 +101,14 @@ export class TransactionsComponent {
       if (result) {
         // Fix Payload to match Zod Schema
         const newTxn: any = {
-          date: (result.date as Date).toISOString(), // Convert Date to String
+          date: toDateProto(result.date),
           amount: Number(result.amount),
           description: result.description, // Schema expects 'description'
           categoryId: result.category, // Assuming dialog returns ID or Name
           userId: this.authService.user()?.uid,
           accountId: result.accountId,
-          currency: { code: 'USD', symbol: '$', name: 'US Dollar' }
+          currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
+          balance: result.balance ? Number(result.balance) : undefined
         };
 
         // Remove merchant object if it causes validation error, relying on description
@@ -121,7 +122,7 @@ export class TransactionsComponent {
     });
   }
 
-  openEditDialog(transaction: ITransaction) {
+  openEditDialog(transaction: TransactionProto) {
     const dialogRef = this.dialog.open(EditTransactionDialogComponent, {
       width: '600px',
       data: { transaction, userId: this.authService.user()?.uid }

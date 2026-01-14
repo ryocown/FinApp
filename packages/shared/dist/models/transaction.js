@@ -1,6 +1,7 @@
 import { Currency } from "./currency.js";
 import { Merchant } from "./merchant.js";
 import { createDeterministicHash } from '../lib/hash.js';
+import { toDateProto } from "./date-proto.js";
 const TRANSACTION_SALT = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 export function generateTransactionId(parts) {
     // Filter out undefined/null to keep it clean, or just stringify everything.
@@ -29,13 +30,14 @@ export class GeneralTransaction {
     tagIds;
     amount;
     currency;
-    date;
+    date; // FIXED: matches interface
     description;
     isTaxDeductable;
     hasCapitalGains;
     merchant;
     transactionType;
     balance;
+    statementId = null;
     constructor(accountId, userId, amount, currency, date, description, isTaxDeductable, hasCapitalGains, merchant, categoryId, tagIds = [], transactionType = TransactionType.General, seed) {
         // Hash: accountId, userId, amount, currency, date, description, transactionType, merchantName
         this.transactionId = generateTransactionId([
@@ -53,7 +55,7 @@ export class GeneralTransaction {
         this.userId = userId;
         this.amount = amount;
         this.currency = currency;
-        this.date = date;
+        this.date = toDateProto(date);
         this.description = description;
         this.isTaxDeductable = isTaxDeductable;
         this.hasCapitalGains = hasCapitalGains;
@@ -67,6 +69,8 @@ export class GeneralTransaction {
     static fromJSON(json) {
         const transaction = new GeneralTransaction(json.accountId, json.userId, json.amount, Currency.fromJSON(json.currency), new Date(json.date), json.description, json.isTaxDeductable, json.hasCapitalGains, json.merchant ? Merchant.fromJSON(json.merchant) : null, json.categoryId, json.tagIds, json.transactionType);
         transaction.transactionId = json.transactionId;
+        if (json.statementId)
+            transaction.statementId = json.statementId;
         if (json.balance !== undefined)
             transaction.balance = json.balance;
         return transaction;
@@ -81,13 +85,14 @@ export class TradeTransaction {
     tagIds;
     amount;
     currency;
-    date;
+    date; // FIXED: matches interface
     description;
     isTaxDeductable;
     hasCapitalGains;
     transactionType;
     quantity;
     price;
+    statementId = null;
     constructor(accountId, userId, amount, currency, date, description, isTaxDeductable, hasCapitalGains, instrumentId, quantity, price, categoryId, tagIds = [], seed) {
         // Hash: accountId, userId, amount, currency, date, description, instrumentId, quantity, price
         this.transactionId = generateTransactionId([
@@ -107,7 +112,7 @@ export class TradeTransaction {
         this.userId = userId;
         this.amount = amount;
         this.currency = currency;
-        this.date = date;
+        this.date = toDateProto(date);
         this.description = description;
         this.isTaxDeductable = isTaxDeductable;
         this.hasCapitalGains = hasCapitalGains;
@@ -121,7 +126,7 @@ export class TradeTransaction {
         this.tagIds = tagIds;
     }
     static fromJSON(json) {
-        const transaction = new TradeTransaction(json.accountId, json.userId, json.amount, Currency.fromJSON(json.currency), new Date(json.date), json.description, json.isTaxDeductable, json.hasCapitalGains, json.instrumentId, json.quantity, json.price, json.categoryId, json.tagIds);
+        const transaction = new TradeTransaction(json.accountId, json.userId, json.amount, Currency.fromJSON(json.currency), json.date && json.date.timestamp ? new Date(json.date.timestamp) : new Date(json.date), json.description, json.isTaxDeductable, json.hasCapitalGains, json.instrumentId, json.quantity, json.price, json.categoryId, json.tagIds);
         transaction.transactionId = json.transactionId;
         return transaction;
     }
@@ -135,12 +140,13 @@ export class TransferTransaction {
     tagIds;
     amount;
     currency;
-    date;
+    date; // FIXED: matches interface
     description;
     isTaxDeductable;
     hasCapitalGains;
     transactionType;
     exchangeRate;
+    statementId = null;
     constructor(accountId, linkedTransactionId, userId, amount, currency, date, description, categoryId, tagIds = [], exchangeRate, seed) {
         // Hash: accountId, userId, amount, currency, date, description, transactionType
         // EXCLUDING linkedTransactionId to avoid circular dependency and allow linking later without ID change
@@ -159,7 +165,7 @@ export class TransferTransaction {
         this.userId = userId;
         this.amount = amount;
         this.currency = currency;
-        this.date = date;
+        this.date = toDateProto(date);
         this.description = description;
         this.isTaxDeductable = false;
         this.hasCapitalGains = false;
@@ -173,7 +179,7 @@ export class TransferTransaction {
         }
     }
     static fromJSON(json) {
-        const transaction = new TransferTransaction(json.accountId, json.linkedTransactionId, json.userId, json.amount, Currency.fromJSON(json.currency), new Date(json.date), json.description, json.categoryId, json.tagIds, json.exchangeRate);
+        const transaction = new TransferTransaction(json.accountId, json.linkedTransactionId, json.userId, json.amount, Currency.fromJSON(json.currency), json.date && json.date.timestamp ? new Date(json.date.timestamp) : new Date(json.date), json.description, json.categoryId, json.tagIds, json.exchangeRate);
         transaction.transactionId = json.transactionId;
         return transaction;
     }

@@ -1,6 +1,7 @@
 import { Currency } from "./currency.js";
 import { v4 } from "uuid";
 import {} from "./lot.js";
+import { toDateProto } from "./date-proto.js";
 export var AccountType;
 (function (AccountType) {
     // total assets
@@ -52,12 +53,13 @@ export class Account {
     instituteId;
     tags;
     interest;
+    limit;
     constructor(accountNumber, balance, country, currency, name, AccountType, isTaxable = true, userId, instituteId) {
         this.accountId = v4();
         this.userId = userId;
         this.accountNumber = accountNumber;
         this.balance = balance;
-        this.balanceDate = new Date(); // Default to now if not specified
+        this.balanceDate = toDateProto(new Date()); // Default to now if not specified
         this.country = country;
         this.currency = currency;
         this.name = name;
@@ -69,12 +71,12 @@ export class Account {
         this.interest = [];
         this.tags = [];
     }
-    withInterest(rate, effectiveDate = new Date()) {
+    withInterest(rate, effectiveDate = toDateProto(new Date())) {
         try {
             if (!rate)
                 throw 'Account: Unable to add Interest rate without rate or effective date';
             this.interest.push({ rate, effectiveDate });
-            this.interest.sort((a, b) => b.effectiveDate.getTime() - a.effectiveDate.getTime()); // Sorts newest to oldest
+            this.interest.sort((a, b) => b.effectiveDate.timestamp - a.effectiveDate.timestamp); // Sorts newest to oldest
         }
         catch (error) {
             console.error(error);
@@ -108,7 +110,7 @@ export class InvestmentAccount extends Account {
         account.tags = json.tags || [];
         account.positions = json.positions || [];
         if (json.balanceDate) {
-            account.balanceDate = new Date(json.balanceDate);
+            account.balanceDate = json.balanceDate;
         }
         return account;
     }

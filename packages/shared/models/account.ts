@@ -1,6 +1,7 @@
 import { Currency, type ICurrency } from "./currency.js";
 import { v4 } from "uuid";
 import { type ILot } from "./lot.js";
+import { type DateProto, toDateProto } from "./date-proto.js";
 
 export interface AccountProp {
   accountId: string;
@@ -8,14 +9,17 @@ export interface AccountProp {
   userId: string;
 
   accountNumber: string;
+  /** Computed: Not stored in DB */
   balance: number;
-  balanceDate: Date;
+  /** Computed: Not stored in DB */
+  balanceDate: DateProto;
   country: string;
   currency: ICurrency;
   name: string;
   type: AccountType;
   tags: AccountTag[];
   isTaxable: boolean;
+  limit?: number;
 }
 
 export interface Position {
@@ -76,7 +80,7 @@ export enum AccountTag {
 
 export interface Interest {
   rate: number;
-  effectiveDate: Date;
+  effectiveDate: DateProto;
 }
 
 export class Account implements AccountProp {
@@ -85,7 +89,7 @@ export class Account implements AccountProp {
 
   accountNumber: string;
   balance: number;
-  balanceDate: Date;
+  balanceDate: DateProto;
   country: string;
   currency: Currency;
   name: string;
@@ -94,6 +98,7 @@ export class Account implements AccountProp {
   instituteId?: string;
   tags: AccountTag[];
   interest: Interest[];
+  limit?: number;
 
   constructor(accountNumber: string, balance: number, country: string, currency: Currency,
     name: string, AccountType: AccountType, isTaxable: boolean = true, userId: string, instituteId?: string) {
@@ -102,7 +107,7 @@ export class Account implements AccountProp {
 
     this.accountNumber = accountNumber;
     this.balance = balance;
-    this.balanceDate = new Date(); // Default to now if not specified
+    this.balanceDate = toDateProto(new Date()); // Default to now if not specified
     this.country = country;
     this.currency = currency;
     this.name = name;
@@ -115,12 +120,12 @@ export class Account implements AccountProp {
     this.tags = [];
   }
 
-  withInterest(rate: number, effectiveDate: Date = new Date()): Account {
+  withInterest(rate: number, effectiveDate: DateProto = toDateProto(new Date())): Account {
     try {
       if (!rate) throw 'Account: Unable to add Interest rate without rate or effective date';
 
       this.interest.push({ rate, effectiveDate });
-      this.interest.sort((a, b) => b.effectiveDate.getTime() - a.effectiveDate.getTime()); // Sorts newest to oldest
+      this.interest.sort((a, b) => b.effectiveDate.timestamp - a.effectiveDate.timestamp); // Sorts newest to oldest
     } catch (error) {
       console.error(error);
     }
@@ -181,7 +186,7 @@ export class InvestmentAccount extends Account {
     account.tags = json.tags || [];
     account.positions = json.positions || [];
     if (json.balanceDate) {
-      account.balanceDate = new Date(json.balanceDate);
+      account.balanceDate = json.balanceDate;
     }
 
     return account;

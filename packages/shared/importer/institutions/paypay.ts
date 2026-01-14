@@ -1,5 +1,5 @@
 import { StatementImporter } from "../importer.js";
-import { type ITransaction, GeneralTransaction, TransactionType } from "../../models/transaction.js";
+import { type TransactionProto, GeneralTransaction, TransactionType } from "../../models/transaction.js";
 import { CategoryType } from "../../models/category.js";
 import { parseJSTDateToUTC } from "../../lib/date_utils.js";
 
@@ -29,7 +29,7 @@ export class PayPayStatementImporter extends StatementImporter {
     return TransactionType.Unknown;
   }
 
-  protected override async processTransaction(record: any): Promise<ITransaction | null> {
+  protected override async processTransaction(record: any): Promise<TransactionProto | null> {
     const dateStr = record['取引日'];
     const date = parseJSTDateToUTC(dateStr);
 

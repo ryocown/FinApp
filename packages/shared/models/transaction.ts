@@ -1,6 +1,7 @@
 import { Currency } from "./currency.js";
 import { Merchant } from "./merchant.js";
 import { createDeterministicHash } from '../lib/hash.js';
+import { type DateProto, toDateProto } from "./date-proto.js";
 
 const TRANSACTION_SALT = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 
@@ -28,18 +29,30 @@ export function generateTransactionId(parts: (string | number | boolean | null |
  * The net result is allowing the investment account to track its own positions, 
  * while maintaining a single cash account and a single total balance.
  */
-export interface ITransaction {
+export interface TransactionProto {
   transactionId: string;
   accountId: string;
   userId: string;
+
+  // Link to the "Source of Truth"
+  // Null if this is a recent transaction not yet on a statement
+  statementId: string | null;
+
   categoryId?: string;
   tagIds: string[];
 
   amount: number;
   currency: Currency;
-  date: Date;
+
+  // Replaced simple Date with Proto for querying
+  date: DateProto;
+
   description: string | null;
-  balance?: number; // Running balance after transaction
+  /**
+   * Optional running balance after this transaction.
+   * This is computed on read or provided on write (to create a checkpoint).
+   */
+  balance?: number;
   // isTaxDeductable: boolean;
 
   transactionType: TransactionType;
@@ -58,12 +71,12 @@ export enum TransactionType {
   Reconciliation = 'RECONCILIATION'
 }
 
-export interface IGeneralTransaction extends ITransaction {
+export interface GeneralTransactionProto extends TransactionProto {
   transactionType: TransactionType.General;
   merchant: Merchant | null;
 }
 
-export interface ITradeTransaction extends ITransaction {
+export interface TradeTransactionProto extends TransactionProto {
   instrumentId: string;
 
   transactionType: TransactionType.Trade;
@@ -71,13 +84,13 @@ export interface ITradeTransaction extends ITransaction {
   price: number;
 }
 
-export interface ITransferTransaction extends ITransaction {
+export interface TransferTransactionProto extends TransactionProto {
   transactionType: TransactionType.Transfer;
   linkedTransactionId: string;
   exchangeRate?: number;
 }
 
-export class GeneralTransaction implements ITransaction {
+export class GeneralTransaction implements TransactionProto {
   transactionId: string;
   accountId: string;
   userId: string;
@@ -87,13 +100,14 @@ export class GeneralTransaction implements ITransaction {
 
   amount: number;
   currency: Currency;
-  date: Date;
+  date: DateProto; // FIXED: matches interface
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
   merchant: Merchant | null;
   transactionType: TransactionType;
   balance?: number;
+  statementId: string | null = null;
 
   constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean, merchant: Merchant | null, categoryId?: string, tagIds: string[] = [], transactionType: TransactionType = TransactionType.General, seed?: string) {
     // Hash: accountId, userId, amount, currency, date, description, transactionType, merchantName
@@ -113,7 +127,7 @@ export class GeneralTransaction implements ITransaction {
 
     this.amount = amount;
     this.currency = currency;
-    this.date = date;
+    this.date = toDateProto(date);
     this.description = description;
     this.isTaxDeductable = isTaxDeductable;
     this.hasCapitalGains = hasCapitalGains;
@@ -141,12 +155,13 @@ export class GeneralTransaction implements ITransaction {
       json.transactionType
     );
     transaction.transactionId = json.transactionId;
+    if (json.statementId) transaction.statementId = json.statementId;
     if (json.balance !== undefined) transaction.balance = json.balance;
     return transaction;
   }
 }
 
-export class TradeTransaction implements ITransaction {
+export class TradeTransaction implements TransactionProto {
   transactionId: string;
   accountId: string;
   userId: string;
@@ -156,13 +171,14 @@ export class TradeTransaction implements ITransaction {
 
   amount: number;
   currency: Currency;
-  date: Date;
+  date: DateProto; // FIXED: matches interface
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
   transactionType: TransactionType.Trade;
   quantity: number;
   price: number;
+  statementId: string | null = null;
 
   constructor(accountId: string, userId: string, amount: number, currency: Currency, date: Date,
     description: string | null, isTaxDeductable: boolean, hasCapitalGains: boolean,
@@ -187,7 +203,7 @@ export class TradeTransaction implements ITransaction {
 
     this.amount = amount;
     this.currency = currency;
-    this.date = date;
+    this.date = toDateProto(date);
     this.description = description;
     this.isTaxDeductable = isTaxDeductable;
     this.hasCapitalGains = hasCapitalGains;
@@ -207,7 +223,7 @@ export class TradeTransaction implements ITransaction {
       json.userId,
       json.amount,
       Currency.fromJSON(json.currency),
-      new Date(json.date),
+      json.date && json.date.timestamp ? new Date(json.date.timestamp) : new Date(json.date),
       json.description,
       json.isTaxDeductable,
       json.hasCapitalGains,
@@ -222,7 +238,7 @@ export class TradeTransaction implements ITransaction {
   }
 }
 
-export class TransferTransaction implements ITransaction {
+export class TransferTransaction implements TransactionProto {
   transactionId: string;
   accountId: string;
   userId: string;
@@ -232,12 +248,13 @@ export class TransferTransaction implements ITransaction {
 
   amount: number;
   currency: Currency;
-  date: Date;
+  date: DateProto; // FIXED: matches interface
   description: string | null;
   isTaxDeductable: boolean;
   hasCapitalGains: boolean;
   transactionType: TransactionType;
   exchangeRate?: number;
+  statementId: string | null = null;
 
   constructor(accountId: string, linkedTransactionId: string, userId: string, amount: number, currency: Currency, date: Date, description: string | null, categoryId?: string, tagIds: string[] = [], exchangeRate?: number, seed?: string) {
     // Hash: accountId, userId, amount, currency, date, description, transactionType
@@ -258,7 +275,7 @@ export class TransferTransaction implements ITransaction {
 
     this.amount = amount;
     this.currency = currency;
-    this.date = date;
+    this.date = toDateProto(date);
     this.description = description;
     this.isTaxDeductable = false;
     this.hasCapitalGains = false;
@@ -279,7 +296,7 @@ export class TransferTransaction implements ITransaction {
       json.userId,
       json.amount,
       Currency.fromJSON(json.currency),
-      new Date(json.date),
+      json.date && json.date.timestamp ? new Date(json.date.timestamp) : new Date(json.date),
       json.description,
       json.categoryId,
       json.tagIds,

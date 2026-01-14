@@ -7,8 +7,8 @@ import dotenv from 'dotenv';
 import { User } from '../models/user';
 import { Account, AccountType } from '../models/account';
 import { Currency } from '../models/currency';
-import { Institute } from '../models/institute';
-import { type IStatementImporter } from "../importer/importer";
+import { Institute, InstituteTypes } from '../models/institute';
+import { type StatementImporterProto } from "../importer/importer";
 import { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { MorganStanleyStatementImporter } from '../importer/institutions/morgan_stanley';
 import { fromExcelToCsv } from './from_excel_to_csv';
@@ -46,8 +46,8 @@ const morgan3797 = new Account('3797', 0, 'US', usd, 'Morgan Stanley 3797', Acco
 const morgan5008 = new Account('5008', 0, 'US', usd, 'Morgan Stanley 5008', AccountType.INVESTMENT, true, USER_ID);
 const morgan6259 = new Account('6259', 0, 'US', usd, 'Morgan Stanley 6259', AccountType.INVESTMENT, true, USER_ID);
 
-const chaseInstitute = new Institute('Chase', USER_ID, [chase6459, chase8829]);
-const morganInstitute = new Institute('Morgan Stanley', USER_ID, [morgan3747, morgan3797, morgan5008, morgan6259]);
+const chaseInstitute = new Institute('Chase', USER_ID, [chase6459, chase8829], InstituteTypes.BANK);
+const morganInstitute = new Institute('Morgan Stanley', USER_ID, [morgan3747, morgan3797, morgan5008, morgan6259], InstituteTypes.BROKERAGE);
 
 async function processTransactionsBatch(
   db: Firestore,
@@ -129,7 +129,7 @@ async function importAccountWithBatch(
   userId: string,
   instituteId: string,
   account: Account,
-  importerCtor: new (accountId: string, userId: string) => IStatementImporter,
+  importerCtor: new (accountId: string, userId: string) => StatementImporterProto,
   csvFileName: string,
   forcedEndingBalance?: number
 ) {
@@ -155,7 +155,12 @@ async function importAccountWithBatch(
   const csvData = fs.readFileSync(csvPath, 'utf-8');
   const statement = await importerInstance.import(csvData);
   if (forcedEndingBalance !== undefined) {
-    statement.endingBalance = forcedEndingBalance;
+    statement.closingBalance = forcedEndingBalance;
+  }
+
+  if (!statement.transactions) {
+    console.log(`    No transactions found in statement.`);
+    return;
   }
 
   console.log(`    Importing ${statement.transactions.length} transactions...`);
@@ -164,8 +169,9 @@ async function importAccountWithBatch(
   const insertedAmount = await processTransactionsBatch(db, userId, accountRef, statement.transactions);
 
   // 3. Update account balance using ReconciliationService
-  if (statement.endingBalance !== undefined) {
-    console.log(`    Reconciling to ending balance: ${statement.endingBalance} at ${statement.endDate.toISOString()}`);
+  if (statement.closingBalance !== undefined) {
+    const endDate = new Date(statement.periodEnd.timestamp);
+    console.log(`    Reconciling to closing balance: ${statement.closingBalance} at ${endDate.toISOString()}`);
 
     // Dynamic import to ensure env vars are set
     const { ReconciliationService } = await import('../../server/src/services/reconciliation');
@@ -173,8 +179,8 @@ async function importAccountWithBatch(
     await ReconciliationService.reconcileAccount(
       userId,
       accountId,
-      statement.endDate,
-      statement.endingBalance
+      endDate,
+      statement.closingBalance
     );
     console.log(`    Reconciliation complete.`);
   } else {

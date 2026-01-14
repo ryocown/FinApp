@@ -8,11 +8,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { ITransaction } from '@finapp/shared/models';
+import { TransactionProto, toDateProto } from '@finapp/shared/models';
 import { TransactionService } from '../../../services/transaction';
 
 export interface EditTransactionDialogData {
-  transaction: ITransaction;
+  transaction: TransactionProto;
   userId: string;
 }
 
@@ -85,7 +85,7 @@ export class EditTransactionDialogComponent {
   isSaving = signal(false);
 
   form = this.fb.group({
-    date: [new Date(this.data.transaction.date), Validators.required],
+    date: [new Date(this.data.transaction.date.timestamp), Validators.required],
     description: [this.data.transaction.description, Validators.required],
     amount: [this.data.transaction.amount, Validators.required],
     category: [(this.data.transaction as any).category?.name || this.data.transaction.categoryId || 'Uncategorized'],
@@ -98,8 +98,8 @@ export class EditTransactionDialogComponent {
     this.isSaving.set(true);
     const formValue = this.form.value;
 
-    const updates: Partial<ITransaction> = {
-      date: formValue.date!,
+    const updates: Partial<TransactionProto> = {
+      date: toDateProto(formValue.date!),
       description: formValue.description!,
       amount: Number(formValue.amount),
       tagIds: formValue.tags

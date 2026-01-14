@@ -1,8 +1,8 @@
 import admin from 'firebase-admin';
 import { v4 } from 'uuid';
 import { db, getUserRef, getAccountRef, resolveTransactionReferences } from '../firebase.js';
-import type { ITransaction } from '@finapp/shared';
-import { DateUtils } from '@finapp/shared';
+import type { TransactionProto } from '@finapp/shared';
+import { DateUtils, toDateProto } from '@finapp/shared';
 import { ApiError } from '../errors/index.js';
 import { ReconciliationService } from './reconciliation.js';
 import { BalanceCheckpointType } from '@finapp/shared';
@@ -19,60 +19,156 @@ export class TransactionService {
     static async getUserTransactions(
         userId: string,
         options: { accountId?: string; limit?: number; pageToken?: string; sortOrder?: 'asc' | 'desc' } = {}
-    ): Promise<{ transactions: ITransaction[]; nextPageToken: string | null }> {
-        let query: admin.firestore.Query;
-        let collectionRef: admin.firestore.CollectionReference | undefined;
-        const sortOrder = options.sortOrder || 'desc';
-
-        if (options.accountId) {
-            const result = await getAccountRef(userId, options.accountId);
-
-            if (!result) {
-                return { transactions: [], nextPageToken: null };
+    ): Promise<{ transactions: TransactionProto[]; nextPageToken: string | null }> {
+        try {
+            // Enforce default limit to prevent N+1 issues and timeouts
+            if (!options.limit) {
+                options.limit = 50;
             }
 
-            const { ref: accountRef } = result;
-            collectionRef = accountRef.collection('transactions');
-            query = collectionRef.orderBy('date', sortOrder);
-        } else {
-            query = db.collectionGroup('transactions')
-                .where('userId', '==', userId)
-                .orderBy('date', sortOrder);
-        }
+            let query: admin.firestore.Query;
+            let collectionRef: admin.firestore.CollectionReference | undefined;
+            const sortOrder = options.sortOrder || 'desc';
 
-        if (options.pageToken) {
-            let lastDoc: admin.firestore.DocumentSnapshot | null = null;
+            if (options.accountId) {
+                const result = await getAccountRef(userId, options.accountId);
 
-            if (collectionRef) {
-                lastDoc = await collectionRef.doc(options.pageToken).get();
+                if (!result) {
+                    return { transactions: [], nextPageToken: null };
+                }
+
+                const { ref: accountRef } = result;
+                collectionRef = accountRef.collection('transactions');
+                query = collectionRef.orderBy('date.timestamp', sortOrder);
             } else {
-                const cursorSnap = await db.collectionGroup('transactions')
+                query = db.collectionGroup('transactions')
                     .where('userId', '==', userId)
-                    .where('transactionId', '==', options.pageToken)
-                    .limit(1)
-                    .get();
+                    .orderBy('date.timestamp', sortOrder);
+            }
 
-                if (!cursorSnap.empty) {
-                    lastDoc = cursorSnap.docs[0] as admin.firestore.DocumentSnapshot;
+            if (options.pageToken) {
+                let lastDoc: admin.firestore.DocumentSnapshot | null = null;
+
+                if (collectionRef) {
+                    lastDoc = await collectionRef.doc(options.pageToken).get();
+                } else {
+                    const cursorSnap = await db.collectionGroup('transactions')
+                        .where('userId', '==', userId)
+                        .where('transactionId', '==', options.pageToken)
+                        .limit(1)
+                        .get();
+
+                    if (!cursorSnap.empty) {
+                        lastDoc = cursorSnap.docs[0] as admin.firestore.DocumentSnapshot;
+                    }
+                }
+
+                if (lastDoc && lastDoc.exists) {
+                    query = query.startAfter(lastDoc);
                 }
             }
 
-            if (lastDoc && lastDoc.exists) {
-                query = query.startAfter(lastDoc);
+            if (options.limit) {
+                query = query.limit(options.limit);
             }
+
+            const snapshot = await query.get();
+            const transactions = await resolveTransactionReferences(snapshot.docs);
+
+            const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+            const nextPageToken = lastVisible ? lastVisible.id : null;
+
+            // Stitching: Populate balance for transactions
+            // Optimization: Only run stitching if we have transactions and an account context
+            if (options.accountId && transactions.length > 0) {
+                const accountId = options.accountId;
+
+                const timestamps = transactions
+                    .map(t => t.date?.timestamp)
+                    .filter(t => typeof t === 'number' && !isNaN(t));
+
+                if (timestamps.length > 0) {
+                    const minTime = Math.min(...timestamps);
+                    const maxTime = Math.max(...timestamps);
+
+                    // Fetch checkpoints in range [minTime, maxTime] matching account
+                    const accountRef = (await getAccountRef(userId, accountId))?.ref;
+                    if (accountRef) {
+                        const checkpointsSnap = await accountRef.collection('balance_checkpoints')
+                            .where('date.timestamp', '>=', minTime)
+                            .where('date.timestamp', '<=', maxTime)
+                            .get();
+
+                        const checkpointsMap = new Map<number, number>();
+                        checkpointsSnap.docs.forEach(doc => {
+                            const data = doc.data();
+                            if (data.date && typeof data.date.timestamp === 'number') {
+                                checkpointsMap.set(data.date.timestamp, data.balance);
+                            }
+                        });
+
+                        transactions.forEach(tx => {
+                            if (tx.date?.timestamp) {
+                                const bal = checkpointsMap.get(tx.date.timestamp);
+                                if (bal !== undefined) {
+                                    tx.balance = bal;
+                                }
+                            }
+                        });
+
+                        // Spread balances from anchors to neighbors
+                        // Propagate from Newer to Older (Index 0 -> N)
+                        // Bal(Older) = Bal(Newer) - Amt(Newer)
+
+                        if (sortOrder === 'desc') {
+                            // 1. Propagate Down (Newer -> Older)
+                            for (let i = 0; i < transactions.length - 1; i++) {
+                                const currentTx = transactions[i];
+                                const olderTx = transactions[i + 1];
+                                if (currentTx && olderTx && currentTx.balance !== undefined && olderTx.balance === undefined) {
+                                    olderTx.balance = currentTx.balance - currentTx.amount;
+                                }
+                            }
+                            // 2. Propagate Up (Older -> Newer)
+                            for (let i = transactions.length - 1; i > 0; i--) {
+                                const currentTx = transactions[i];
+                                const newerTx = transactions[i - 1];
+                                if (currentTx && newerTx && currentTx.balance !== undefined && newerTx.balance === undefined) {
+                                    newerTx.balance = currentTx.balance + newerTx.amount;
+                                }
+                            }
+                        } else {
+                            // Ascending: Index 0 is Oldest.
+                            // 1. Propagate Down (Older -> Newer)
+                            for (let i = 0; i < transactions.length - 1; i++) {
+                                const currentTx = transactions[i];
+                                const newerTx = transactions[i + 1];
+                                if (currentTx && newerTx && currentTx.balance !== undefined && newerTx.balance === undefined) {
+                                    newerTx.balance = currentTx.balance + newerTx.amount;
+                                }
+                            }
+                            // 2. Propagate Up (Newer -> Older)
+                            for (let i = transactions.length - 1; i > 0; i--) {
+                                const currentTx = transactions[i];
+                                const olderTx = transactions[i - 1];
+                                if (currentTx && olderTx && currentTx.balance !== undefined && olderTx.balance === undefined) {
+                                    olderTx.balance = currentTx.balance - currentTx.amount;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return { transactions, nextPageToken };
+        } catch (error) {
+            logger.error(`Error in getUserTransactions for user ${userId}:`, error);
+            // Return empty list instead of crashing, or rethrow? 
+            // 500 is better than silent failure for debugging, but user experience is bad.
+            // Let's rethrow properly as ApiError if possible, or just let express handler catch it.
+            // But now we have logged it.
+            throw error;
         }
-
-        if (options.limit) {
-            query = query.limit(options.limit);
-        }
-
-        const snapshot = await query.get();
-        const transactions = await resolveTransactionReferences(snapshot.docs);
-
-        const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-        const nextPageToken = lastVisible ? lastVisible.id : null;
-
-        return { transactions, nextPageToken };
     }
 
     /**
@@ -80,8 +176,8 @@ export class TransactionService {
      */
     static async createTransaction(
         userId: string,
-        transaction: ITransaction
-    ): Promise<ITransaction> {
+        transaction: TransactionProto
+    ): Promise<TransactionProto> {
         const result = await getAccountRef(userId, transaction.accountId);
 
         if (!result) {
@@ -91,39 +187,43 @@ export class TransactionService {
         const { ref: accountRef } = result;
 
         const txId = transaction.transactionId || v4();
-        const txWithUserId: ITransaction = {
+
+        // Ensure date is Proto
+        let dateProto = transaction.date;
+        if (typeof transaction.date === 'string') {
+            dateProto = toDateProto(new Date(transaction.date));
+        } else if (transaction.date instanceof Date) {
+            dateProto = toDateProto(transaction.date);
+        } else if (transaction.date && typeof transaction.date === 'object' && !('timestamp' in transaction.date)) {
+            // Handle generic object if needed, but schema should catch valid proto
+            dateProto = toDateProto(transaction.date as unknown as Date);
+        }
+
+        const txWithUserId: TransactionProto = {
             ...transaction,
             transactionId: txId,
-            userId // Ensure userId is set
+            userId, // Ensure userId is set
+            date: dateProto
         };
+
+        // If balance is provided, create a checkpoint
+        if (transaction.balance !== undefined) {
+            await ReconciliationService.createCheckpoint(
+                userId,
+                transaction.accountId,
+                transaction.balance,
+                dateProto,
+                BalanceCheckpointType.MANUAL
+            );
+            // Remove balance from the stored transaction data
+            delete txWithUserId.balance;
+        }
 
         const nestedRef = accountRef.collection('transactions').doc(txId);
         await nestedRef.set(txWithUserId);
 
         const globalRef = getUserRef(userId).collection('transactions').doc(nestedRef.id);
         await globalRef.set({ RefTxId: nestedRef });
-
-        // Update Account Balance if transaction provides a balance and is newer than the latest manual checkpoint
-        if (transaction.balance !== undefined) {
-            const latestManualCheckpoint = await ReconciliationService.getLatestCheckpoint(userId, transaction.accountId, BalanceCheckpointType.MANUAL);
-            const txDate = new Date(transaction.date);
-
-            if (!latestManualCheckpoint || txDate > new Date(latestManualCheckpoint.date)) {
-                await accountRef.update({
-                    balance: transaction.balance,
-                    balanceDate: txDate
-                });
-
-                // Create a checkpoint for this transaction balance update
-                await ReconciliationService.createCheckpoint(
-                    userId,
-                    transaction.accountId,
-                    transaction.balance,
-                    txDate,
-                    BalanceCheckpointType.TRANSACTION
-                );
-            }
-        }
 
         return { ...txWithUserId, transactionId: nestedRef.id };
     }
@@ -134,7 +234,7 @@ export class TransactionService {
     static async batchCreateTransactions(
         userId: string,
         accountId: string,
-        transactions: Partial<ITransaction>[],
+        transactions: Partial<TransactionProto>[],
         options: { skipDuplicates?: boolean } = {}
     ): Promise<{ importedCount: number; duplicateCount: number; minDate: Date | null }> {
         const result = await getAccountRef(userId, accountId);
@@ -149,26 +249,15 @@ export class TransactionService {
         let importedCount = 0;
         let duplicateCount = 0;
 
-        // If skipDuplicates is true, we need to check for existence
-        // We can optimize this by checking all IDs in parallel if the batch is small enough
-        // or just check one by one if we want to be safe. 
-        // For Firestore, we can use getAll() for up to 100 documents usually, or just loop.
-        // Given BATCH_SIZE is usually small (e.g. 400 in script, but Firestore batch limit is 500),
-        // we should be careful.
-
-        const txsToImport: Partial<ITransaction>[] = [];
+        const txsToImport: Partial<TransactionProto>[] = [];
 
         if (options.skipDuplicates) {
             // Deduplicate by ID first within the input
-            const uniqueInput = new Map<string, Partial<ITransaction>>();
+            const uniqueInput = new Map<string, Partial<TransactionProto>>();
             for (const tx of transactions) {
                 if (tx.transactionId) {
                     uniqueInput.set(tx.transactionId, tx);
                 } else {
-                    // If no ID, we can't really check for duplicates easily without generating one
-                    // But usually imports have deterministic IDs or we generate them before calling this
-                    // If we generate random IDs here, we can't detect duplicates from previous runs
-                    // So we assume caller provides deterministic IDs for duplicate detection to work effectively
                     txsToImport.push(tx);
                 }
             }
@@ -196,15 +285,25 @@ export class TransactionService {
 
         for (const txData of txsToImport) {
             const txId = txData.transactionId || v4();
-            const txDate = new Date(txData.date as Date | string);
 
-            const tx: ITransaction = {
+            // Handle date conversion if needed. 
+            // If it's a batch import, caller should have provided compatible date proto or ISO string?
+            // Let's assume input has correct proto OR we convert.
+            let txDateProto: any = txData.date;
+            if (txData.date && typeof txData.date === 'string') {
+                txDateProto = toDateProto(new Date(txData.date));
+            } else if (txData.date && typeof txData.date === 'object' && !('timestamp' in txData.date)) {
+                // Assume it's a Date object
+                txDateProto = toDateProto(txData.date as any);
+            }
+
+            const tx: TransactionProto = {
                 ...txData,
                 transactionId: txId,
                 accountId,
                 userId,
-                date: txDate
-            } as ITransaction;
+                date: txDateProto
+            } as TransactionProto;
 
             const nestedRef = accountRef.collection('transactions').doc(txId);
             batch.set(nestedRef, tx);
@@ -212,8 +311,9 @@ export class TransactionService {
             const globalRef = getUserRef(userId).collection('transactions').doc(txId);
             batch.set(globalRef, { RefTxId: nestedRef });
 
-            if (!minDate || txDate < minDate) {
-                minDate = txDate;
+            const jsDate = new Date(txDateProto.timestamp);
+            if (!minDate || jsDate < minDate) {
+                minDate = jsDate;
             }
             importedCount++;
         }
@@ -259,9 +359,9 @@ export class TransactionService {
      */
     static async createTransfer(
         userId: string,
-        source: ITransaction,
-        destination: ITransaction
-    ): Promise<{ source: ITransaction; destination: ITransaction }> {
+        source: TransactionProto,
+        destination: TransactionProto
+    ): Promise<{ source: TransactionProto; destination: TransactionProto }> {
         // Validate accounts exist
         const sourceAccountResult = await getAccountRef(userId, source.accountId);
         const destAccountResult = await getAccountRef(userId, destination.accountId);
@@ -308,7 +408,7 @@ export class TransactionService {
     static async updateTransaction(
         userId: string,
         transactionId: string,
-        updates: Partial<ITransaction>
+        updates: Partial<TransactionProto>
     ): Promise<void> {
         const globalRef = getUserRef(userId).collection('transactions').doc(transactionId);
         const globalDoc = await globalRef.get();
@@ -329,7 +429,7 @@ export class TransactionService {
             throw ApiError.notFound('Transaction data');
         }
 
-        const currentTx = nestedDoc.data() as ITransaction;
+        const currentTx = nestedDoc.data() as TransactionProto;
 
         // Prevent updating immutable fields
         delete updates.transactionId;
@@ -341,15 +441,25 @@ export class TransactionService {
         }
 
         if (updates.date) {
-            updates.date = DateUtils.ensureDate(updates.date);
+            // Convert to proto if passed as string/date
+            /* Logic to convert updates.date to DateProto if needed */
+            if (updates.date instanceof Date) {
+                updates.date = toDateProto(updates.date);
+            } else if (typeof updates.date === 'string') {
+                updates.date = toDateProto(new Date(updates.date));
+            }
         }
 
         await nestedRef.update(updates);
 
         // Trigger Reconciliation Refresh if amount or date changed
         if (updates.amount !== undefined || updates.date !== undefined) {
-            const currentTxDate = DateUtils.ensureDate(currentTx.date);
-            const minDate = updates.date && updates.date < currentTxDate ? updates.date : currentTxDate;
+            const currentTxDate = new Date(currentTx.date.timestamp);
+            let minDate = currentTxDate;
+            if (updates.date) {
+                const newDate = new Date(updates.date.timestamp);
+                minDate = newDate < currentTxDate ? newDate : currentTxDate;
+            }
             await ReconciliationService.refreshCheckpoints(userId, currentTx.accountId, minDate);
         }
     }

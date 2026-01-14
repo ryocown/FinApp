@@ -285,8 +285,8 @@ export class SignInComponent {
                     this.authService.loginState.set('success');
                     this.cdr.detectChanges();
 
-                    // Animation delay
-                    await new Promise(resolve => setTimeout(resolve, 1200));
+                    // Animation delay - Extended for Logo Drop + Particle Singularity
+                    await new Promise(resolve => setTimeout(resolve, 2800));
                     console.log("[SignIn] Navigating to Dashboard");
                     this.router.navigate(['/']);
                 } else {

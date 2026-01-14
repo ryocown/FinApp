@@ -22,6 +22,8 @@ export { Merchant } from './merchant.js';
 export * from './known_merchants.js';
 // Statements
 export { Statement } from './statement.js';
+// Balance History
+export {} from './balance-history.js';
 // Tags
 export { Tag } from './tag.js';
 // Lots
@@ -36,3 +38,5 @@ export { User } from './user.js';
 export * as DateUtils from '../lib/date_utils.js';
 // Importer
 export * from '../importer/index.js';
+// Date Protos
+export { toDateProto } from './date-proto.js';
