@@ -5,6 +5,7 @@ import { GeminiAIProvider } from '../provider/ai_providers/gemini.js';
 import { InstrumentType } from '@finapp/shared';
 import { getInstrumentsRef } from '../firebase.js';
 import { logger } from '../logger.js';
+import { checkAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ function getAiProvider() {
 }
 
 // Search instruments by query (ticker or name)
-router.get('/search', async (req: Request, res: Response) => {
+router.get('/search', checkAuth, async (req: Request, res: Response) => {
   const { q } = req.query;
 
   if (!q || typeof q !== 'string') {
@@ -84,7 +85,7 @@ router.get('/search', async (req: Request, res: Response) => {
 });
 
 // Get instrument by CUSIP
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', checkAuth, async (req: Request, res: Response) => {
   const { cusip } = req.query;
 
   if (!cusip || typeof cusip !== 'string') {
@@ -117,7 +118,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create new instrument
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', checkAuth, async (req: Request, res: Response) => {
   const { cusip, name, type } = req.body;
 
   if (!cusip || typeof cusip !== 'string') {

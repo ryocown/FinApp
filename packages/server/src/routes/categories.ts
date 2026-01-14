@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { getCategoriesRef } from '../firebase.js';
 import { type ICategory } from '@finapp/shared';
+import { checkAuth } from '../middleware/auth.js';
 
 import { CategorySchema } from '../schemas/index.js';
 import { validate } from '../middleware/validate.js';
@@ -8,8 +9,8 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-// Get all categories
-router.get('/', async (req: Request, res: Response) => {
+// Get all categories (Public or Auth? For now Auth mainly to prevent scraping)
+router.get('/', checkAuth, async (req: Request, res: Response) => {
   try {
     const snapshot = await getCategoriesRef().get();
     const categories = snapshot.docs.map(doc => Object.assign({}, doc.data(), { categoryId: doc.id }));
@@ -21,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create a category
-router.post('/', validate(CategorySchema), async (req: Request, res: Response) => {
+router.post('/', checkAuth, validate(CategorySchema), async (req: Request, res: Response) => {
   try {
     const category: ICategory = req.body;
     const docRef = await getCategoriesRef().add(category);

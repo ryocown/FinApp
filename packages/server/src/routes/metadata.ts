@@ -1,11 +1,12 @@
 import { Router, type Request, type Response } from 'express';
 import { db, getCollectionData } from '../firebase.js';
 import { logger } from '../logger.js';
+import { checkAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get Common Institutes
-router.get('/institutes', async (_req: Request, res: Response) => {
+router.get('/institutes', checkAuth, async (_req: Request, res: Response) => {
     try {
         const snapshot = await db.collection('common_institutes').get();
         const data = getCollectionData(snapshot, 'instituteId');
@@ -17,7 +18,7 @@ router.get('/institutes', async (_req: Request, res: Response) => {
 });
 
 // Get Known Merchants
-router.get('/merchants', async (_req: Request, res: Response) => {
+router.get('/merchants', checkAuth, async (_req: Request, res: Response) => {
     try {
         const snapshot = await db.collection('common_merchants').get();
         // Custom mapping to handle matcher object if needed, or just return as is
@@ -32,7 +33,7 @@ router.get('/merchants', async (_req: Request, res: Response) => {
 // Seed Data (Dev only - strictly speaking should be protected)
 import { seedCommonData } from '../scripts/seed_common.js';
 
-router.post('/seed', async (_req: Request, res: Response) => {
+router.post('/seed', checkAuth, async (_req: Request, res: Response) => {
     try {
         await seedCommonData();
         res.json({ message: 'Seeding complete' });

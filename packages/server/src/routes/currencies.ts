@@ -1,11 +1,12 @@
 import { Router, type Request, type Response } from 'express';
 import { db } from '../firebase.js';
 import { logger } from '../logger.js';
+import { checkAuth } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get latest rates for all currencies
-router.get('/rates', async (req: Request, res: Response) => {
+router.get('/rates', checkAuth, async (req: Request, res: Response) => {
   try {
     // For now, we only have JPYUSD.
     // In a real app, we'd fetch all unique pairs.
